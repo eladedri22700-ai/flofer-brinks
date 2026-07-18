@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { getPrefs, putPrefs } from "../api/live";
 import { disableDemo, enableDemo } from "../api/phase5";
 import {
@@ -15,6 +16,7 @@ import { Input } from "../components/ui/Input";
 import { PageHeader } from "../components/ui/PageHeader";
 import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { useToast } from "../components/ui/ToastProvider";
+import { copyrightLine } from "../lib/legal";
 import styles from "./SettingsPage.module.css";
 import { useEffect, useState, type FormEvent } from "react";
 
@@ -454,6 +456,17 @@ export default function SettingsPage() {
             כבה והסר דמו
           </Button>
         </div>
+      </Card>
+
+      <Card>
+        <h2 className={styles.h2}>זכויות יוצרים</h2>
+        <p className={styles.lead}>{copyrightLine()}</p>
+        <p className={styles.lead}>
+          אין להעתיק או להפיץ את המוצר בלי אישור. פירוט מלא בתנאי השימוש.
+        </p>
+        <Link to="/app/legal" className={styles.legalLink}>
+          לתנאי שימוש וזכויות יוצרים
+        </Link>
       </Card>
     </div>
   );

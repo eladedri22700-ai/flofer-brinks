@@ -1,0 +1,8 @@
+FLOFER BRINKS
+Copyright (c) 2026 FLOFER BRINKS. All rights reserved.
+
+This software, its source code, user interface, branding, and related
+documentation are proprietary. Unauthorized copying, distribution,
+modification, or reverse engineering for competitive use is prohibited.
+
+See in-app page: /app/legal (Hebrew terms of use).

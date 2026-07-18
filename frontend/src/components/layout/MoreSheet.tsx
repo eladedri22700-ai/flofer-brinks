@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { BrandLockup } from "../ui/BrandLockup";
+import { copyrightLine, copyrightShort } from "../../lib/legal";
 import styles from "./MoreSheet.module.css";
 
 type Props = {
@@ -22,6 +23,11 @@ const links = [
   { to: "/app/history", title: "היסטוריה", desc: "סבבים קודמים ודיוק" },
   { to: "/app/summary", title: "סיכום אחרון", desc: "סיכום סבב שהסתיים" },
   { to: "/app/settings", title: "הגדרות", desc: "מפתחות, Telegram, SOS והדגמה" },
+  {
+    to: "/app/legal",
+    title: "זכויות יוצרים ותנאי שימוש",
+    desc: "© הגנה על המוצר · תנאי שימוש",
+  },
 ];
 
 export function MoreSheet({ open, onClose, userName }: Props) {
@@ -52,6 +58,9 @@ export function MoreSheet({ open, onClose, userName }: Props) {
             </li>
           ))}
         </ul>
+        <p className={styles.copyright} title={copyrightLine()}>
+          {copyrightShort()}
+        </p>
         <button type="button" className={styles.close} onClick={onClose}>
           סגור
         </button>

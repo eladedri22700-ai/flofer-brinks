@@ -15,6 +15,16 @@
   line-height: 1.6;
 }
 
+.legalLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: var(--space-8);
+  font-weight: 700;
+  color: var(--brass-600);
+  text-decoration: none;
+}
+
 .checkRow {
   display: flex;
   align-items: center;

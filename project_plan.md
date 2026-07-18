@@ -92,6 +92,9 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 - Manual reorder no longer knocks a live round out of `in_progress`
 - Dashboard: status-aware CTA + full stop order list + «שנה סדר ידנית» → `/app/route`
 
+**Completed (2026-07-18 — Copyright):**
+- In-app `/app/legal` Hebrew terms + © notice in More sheet / Settings; repo `COPYRIGHT.txt`
+
 ## Verify
 
 ```bash
