@@ -7,9 +7,9 @@ type Props = {
 };
 
 const primary = [
-  { to: "/app/dashboard", label: "בית", icon: "dash" },
-  { to: "/app/plan", label: "תכנון", icon: "plan" },
-  { to: "/app/live", label: "נסיעה", icon: "live" },
+  { to: "/app/dashboard", label: "בית", icon: "dash", tour: "nav-home" },
+  { to: "/app/plan", label: "תכנון", icon: "plan", tour: "nav-plan" },
+  { to: "/app/live", label: "נסיעה", icon: "live", tour: "nav-live" },
 ] as const;
 
 function Icon({ name, active }: { name: string; active: boolean }) {
@@ -58,6 +58,7 @@ export function BottomNav({ onMore, moreOpen }: Props) {
           key={item.to}
           to={item.to}
           end={item.to === "/app/dashboard"}
+          data-tour={item.tour}
           className={({ isActive }) =>
             isActive ? `${styles.item} ${styles.active}` : styles.item
           }
@@ -72,6 +73,7 @@ export function BottomNav({ onMore, moreOpen }: Props) {
       ))}
       <button
         type="button"
+        data-tour="nav-more"
         className={moreOpen ? `${styles.item} ${styles.active}` : styles.item}
         onClick={onMore}
         aria-expanded={moreOpen}

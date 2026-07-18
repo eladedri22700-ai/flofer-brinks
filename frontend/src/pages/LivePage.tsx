@@ -363,7 +363,7 @@ export default function LivePage() {
           title="אשרו את הסדר לפני יציאה"
           lead={`${sorted.length} יעדים מחכים. במסך האישור תראו את כל הכתובות על המפה ואת מיקומכם — ואז «התחל סבב».`}
         />
-        <Card className={styles.startCard}>
+        <Card className={styles.startCard} data-tour="live-primary">
           <div className={styles.startStats}>
             <div>
               <span className={styles.statLabel}>יעדים</span>
@@ -507,7 +507,7 @@ export default function LivePage() {
         </div>
       </section>
 
-      <div className={styles.primaryActions}>
+      <div className={styles.primaryActions} data-tour="live-primary">
         <Button size="lg" className={styles.waze} onClick={() => openWaze(navLat, navLng)}>
           נווט בוויז
         </Button>

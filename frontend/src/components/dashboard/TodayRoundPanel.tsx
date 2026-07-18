@@ -26,7 +26,11 @@ export function TodayRoundPanel({ route, depotName = "ברינקס" }: Props) {
 
   if (!brief) {
     return (
-      <Card className={styles.empty} aria-label="אין סבב היום">
+      <Card
+        className={styles.empty}
+        aria-label="אין סבב היום"
+        data-tour="home-round"
+      >
         <h2 className={styles.h2}>סבב היום</h2>
         <p className={styles.emptyText}>
           עוד אין מסלול מחושב. הוסיפו יעדים וחשבו מסלול — ואז תופיע כאן רשימת
@@ -48,7 +52,7 @@ export function TodayRoundPanel({ route, depotName = "ברינקס" }: Props) {
         : { href: "/app/plan", label: "לתכנון הסבב" };
 
   return (
-    <div className={styles.wrap}>
+    <div className={styles.wrap} data-tour="home-round">
       <RoundPulse
         brief={brief}
         depotName={depotName}

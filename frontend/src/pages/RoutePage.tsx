@@ -303,7 +303,7 @@ export default function RoutePage() {
         פתח תצוגה רחבה על המפה
       </Button>
 
-      <Card>
+      <Card data-tour="route-list">
         <h2 className={styles.h2}>סדר היעדים</h2>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext

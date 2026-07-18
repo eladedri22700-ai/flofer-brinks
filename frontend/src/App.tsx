@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppLayout } from "./components/layout/AppLayout";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { GuidedTour } from "./components/tour/GuidedTour";
 import { LoadingScreen } from "./components/ui/LoadingScreen";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { readOnboarding } from "./lib/onboarding";
@@ -30,18 +31,22 @@ const queryClient = new QueryClient({
 
 function AppRoutes() {
   const hydrate = useAuthStore((s) => s.hydrate);
-  const [onboardingDone, setOnboardingDone] = useState(
-    () => readOnboarding().done,
-  );
+  const [onboarding, setOnboarding] = useState(() => readOnboarding());
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
 
-  if (!onboardingDone) {
+  const showPermissions =
+    !onboarding.done && !onboarding.permissionsDone;
+  const showTour = !onboarding.done && onboarding.permissionsDone;
+
+  if (showPermissions) {
     return (
       <Suspense fallback={<LoadingScreen full label="טוען הדרכה" />}>
-        <OnboardingPage onComplete={() => setOnboardingDone(true)} />
+        <OnboardingPage
+          onStartTour={() => setOnboarding(readOnboarding())}
+        />
       </Suspense>
     );
   }
@@ -63,6 +68,12 @@ function AppRoutes() {
         <Route path="/app" element={<Navigate to="/app/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/app/dashboard" replace />} />
       </Routes>
+      {showTour ? (
+        <GuidedTour
+          active
+          onFinished={() => setOnboarding(readOnboarding())}
+        />
+      ) : null}
     </Suspense>
   );
 }

@@ -255,7 +255,7 @@ export default function BoardPage() {
         ) : null}
       </div>
 
-      <div className={styles.startBar}>
+      <div className={styles.startBar} data-tour="board-start">
         {brief.next ? (
           <p className={styles.nextLine}>
             <span className={styles.nextLineLabel}>הבא</span>

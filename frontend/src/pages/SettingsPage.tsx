@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { getPrefs, putPrefs } from "../api/live";
 import { disableDemo, enableDemo } from "../api/phase5";
+import { resetTourForReplay } from "../lib/onboarding";
 import {
   getDepot,
   getKeysStatus,
@@ -456,6 +457,23 @@ export default function SettingsPage() {
             כבה והסר דמו
           </Button>
         </div>
+      </Card>
+
+      <Card>
+        <h2 className={styles.h2}>הדרכה חיה</h2>
+        <p className={styles.lead}>
+          מפעילים שוב את מדריך ההפעלה הראשונה עם נתוני דמו. בסיום חוזרים למצב
+          אמת.
+        </p>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            resetTourForReplay();
+            window.location.assign("/app/dashboard");
+          }}
+        >
+          הפעל הדרכה מחדש
+        </Button>
       </Card>
 
       <Card>

@@ -523,7 +523,7 @@ export default function PlanPage() {
         )}
       </section>
 
-      <div className={styles.optimizeBar}>
+      <div className={styles.optimizeBar} data-tour="plan-optimize">
         <div className={styles.optimizeInner}>
           <Button
             size="lg"

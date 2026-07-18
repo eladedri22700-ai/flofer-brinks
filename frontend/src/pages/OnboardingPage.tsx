@@ -5,7 +5,7 @@ import { usePwaInstall } from "../hooks/usePwaInstall";
 import {
   detectPlatform,
   isStandaloneDisplay,
-  markOnboardingDone,
+  markPermissionsDone,
   notificationsSupported,
   readOnboarding,
   writeOnboarding,
@@ -13,10 +13,11 @@ import {
 import styles from "./OnboardingPage.module.css";
 
 type Props = {
-  onComplete: () => void;
+  /** Permissions done — start live demo tour inside the app */
+  onStartTour: () => void;
 };
 
-type StepId = "install" | "location" | "notify";
+type StepId = "install" | "location" | "notify" | "tour";
 
 async function requestLocation(): Promise<boolean> {
   if (!("geolocation" in navigator)) return false;
@@ -58,7 +59,7 @@ async function requestNotifications(): Promise<boolean> {
   return false;
 }
 
-export default function OnboardingPage({ onComplete }: Props) {
+export default function OnboardingPage({ onStartTour }: Props) {
   const platform = useMemo(() => detectPlatform(), []);
   const { canPrompt, installed, promptInstall } = usePwaInstall();
   const initial = readOnboarding();
@@ -67,7 +68,8 @@ export default function OnboardingPage({ onComplete }: Props) {
   const [step, setStep] = useState<StepId>(() => {
     if (!(initial.installSeen || standalone || installed)) return "install";
     if (initial.locationOk !== true) return "location";
-    return "notify";
+    if (initial.notifyOk === null) return "notify";
+    return "tour";
   });
   const [installSeen, setInstallSeen] = useState(
     initial.installSeen || standalone || installed,
@@ -78,7 +80,7 @@ export default function OnboardingPage({ onComplete }: Props) {
   const [iosSheet, setIosSheet] = useState(false);
   const [animKey, setAnimKey] = useState(0);
 
-  const steps: StepId[] = ["install", "location", "notify"];
+  const steps: StepId[] = ["install", "location", "notify", "tour"];
   const stepIndex = steps.indexOf(step);
 
   function go(next: StepId) {
@@ -130,18 +132,15 @@ export default function OnboardingPage({ onComplete }: Props) {
       const ok = await requestNotifications();
       setNotifyOk(ok);
       writeOnboarding({ notifyOk: ok });
-      if (ok) {
-        markOnboardingDone();
-        onComplete();
-      }
+      if (ok) go("tour");
     } finally {
       setBusy(null);
     }
   }
 
-  function finish() {
-    markOnboardingDone();
-    onComplete();
+  function startLiveTour() {
+    markPermissionsDone();
+    onStartTour();
   }
 
   return (
@@ -269,16 +268,33 @@ export default function OnboardingPage({ onComplete }: Props) {
                 <Button size="md" variant="ghost" onClick={() => go("location")}>
                   חזרה
                 </Button>
-                <Button size="lg" onClick={finish}>
-                  כניסה לאפליקציה
+                <Button size="lg" onClick={() => go("tour")}>
+                  המשך להדרכה חיה
                 </Button>
               </div>
+            </>
+          ) : null}
+
+          {step === "tour" ? (
+            <>
+              <h2 className={styles.panelTitle}>הדרכה חיה עם דמו</h2>
+              <p className={styles.panelDesc}>
+                נפעיל נתוני הדגמה ונעבור יחד על בית ← תכנון ← סדר ← מפה ← נסיעה.
+                מה שמודגש בזהב — זה מה שחשוב בכל שלב. בסוף הדמו ייכבה ותהיו
+                מוכנים למשמרת אמת מחר.
+              </p>
+              <Button size="lg" onClick={startLiveTour}>
+                התחל הדרכה חיה
+              </Button>
+              <Button size="md" variant="ghost" onClick={() => go("notify")}>
+                חזרה
+              </Button>
             </>
           ) : null}
         </div>
 
         <p className={styles.hint}>
-          ההגדרה הזו מופיעה פעם אחת. אחר כך תיכנסו ישר לאפליקציה.
+          ההגדרה וההדרכה מופיעות בהפעלה הראשונה. אחר כך תיכנסו ישר לאפליקציה.
         </p>
       </div>
 

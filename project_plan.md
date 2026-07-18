@@ -95,6 +95,10 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 **Completed (2026-07-18 — Copyright):**
 - In-app `/app/legal` Hebrew terms + © notice in More sheet / Settings; repo `COPYRIGHT.txt`
 
+**Completed (2026-07-18 — Live first-run tour):**
+- Permissions → live coach-mark tour with demo on; finish disables demo for real shift tomorrow
+- Replay from Settings «הפעל הדרכה מחדש»
+
 ## Verify
 
 ```bash
