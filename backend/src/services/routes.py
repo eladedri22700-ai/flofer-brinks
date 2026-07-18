@@ -67,19 +67,35 @@ def stop_to_out(stop: Stop, customer: Customer | None = None) -> StopOut:
     )
 
 
+def _route_priority(route: Route) -> tuple[int, int, int]:
+    """Higher tuple wins: live work > ready order > planning with stops > empty > done."""
+    status_rank = {
+        "in_progress": 50,
+        "optimized": 40,
+        "manual": 40,
+        "planning": 20,
+        "completed": 10,
+    }.get(route.status or "", 0)
+    stop_n = len(route.stops or [])
+    return (status_rank, stop_n, route.id)
+
+
 def get_today_route(db: Session, user_id: int) -> Route | None:
-    return (
+    rows = (
         db.query(Route)
         .options(joinedload(Route.stops).joinedload(Stop.customer))
         .filter(Route.user_id == user_id, Route.date == today_local())
-        .order_by(Route.id.desc())
-        .first()
+        .all()
     )
+    if not rows:
+        return None
+    return max(rows, key=_route_priority)
 
 
 def create_route(db: Session, user_id: int, body: RouteCreate) -> Route:
     existing = get_today_route(db, user_id)
-    if existing and existing.status == "planning":
+    # Never spawn a second "today" route over a live / ready round.
+    if existing and existing.status != "completed":
         return existing
     route = Route(
         user_id=user_id,

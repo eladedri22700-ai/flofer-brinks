@@ -33,6 +33,7 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { PageHeader } from "../components/ui/PageHeader";
 import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { useToast } from "../components/ui/ToastProvider";
+import { isRoundLive } from "../lib/roundBrief";
 import styles from "./RoutePage.module.css";
 
 function formatEta(iso: string | null | undefined): string {
@@ -198,26 +199,42 @@ export default function RoutePage() {
     (route.naive_duration_min != null && route.optimized_duration_min != null
       ? `חיסכון ${Math.max(0, route.naive_duration_min - route.optimized_duration_min)} דק'`
       : null);
+  const live = isRoundLive(route.status);
 
   return (
     <div className={`pageShell ${styles.page}`}>
       <PageHeader
         kicker="מסלול"
-        title="סדר היום"
-        lead="הסדר מחושב לסיום סבב מהיר ביותר: יציאה מברינקס עד חזרה לברינקס. אפשר לגרור, לנעול, או לחשב מחדש אחרי שינוי אילוצים."
+        title="סדר הנקודות"
+        lead={
+          live
+            ? "הסבב פעיל. אפשר לגרור כדי לשנות סדר ליעדים שטרם בוצעו — הזמנים יתעדכנו."
+            : "כאן רואים את כל הנקודות לפי הסדר. גררו לשינוי ידני, נעלו יעד חשוב, ואז אשרו יציאה במפה."
+        }
       />
 
       <div className={styles.ctaStack}>
-        <Button size="lg" className={styles.fullBtn} onClick={() => nav("/app/board")}>
-          אישור סבב והתחלה
-        </Button>
+        {live ? (
+          <Button size="lg" className={styles.fullBtn} onClick={() => nav("/app/live")}>
+            חזרה לנסיעה
+          </Button>
+        ) : (
+          <Button size="lg" className={styles.fullBtn} onClick={() => nav("/app/board")}>
+            אישור סבב והתחלה
+          </Button>
+        )}
         <div className={styles.secondaryRow}>
-          <Button
-            variant="secondary"
-            onClick={() => optimizeM.mutate(undefined)}
-            loading={optimizeM.isPending}
-          >
-            חשב מחדש
+          {!live ? (
+            <Button
+              variant="secondary"
+              onClick={() => optimizeM.mutate(undefined)}
+              loading={optimizeM.isPending}
+            >
+              חשב מחדש
+            </Button>
+          ) : null}
+          <Button variant="ghost" onClick={() => nav("/app/board")}>
+            מפת הסבב
           </Button>
           <Button variant="ghost" onClick={() => nav("/app/plan")}>
             עריכת יעדים

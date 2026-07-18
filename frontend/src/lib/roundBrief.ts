@@ -41,6 +41,8 @@ export function roundStatusHe(status: string | undefined): string {
       return "בנסיעה";
     case "optimized":
       return "מוכן לאישור";
+    case "manual":
+      return "סדר ידני · מוכן";
     case "completed":
       return "הושלם";
     case "planning":
@@ -48,6 +50,15 @@ export function roundStatusHe(status: string | undefined): string {
     default:
       return status || "—";
   }
+}
+
+/** Route has a computed / editable order ready for board or drive. */
+export function isRoundReady(status: string | undefined): boolean {
+  return status === "optimized" || status === "manual" || status === "in_progress";
+}
+
+export function isRoundLive(status: string | undefined): boolean {
+  return status === "in_progress";
 }
 
 export type RoundBrief = {

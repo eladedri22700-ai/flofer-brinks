@@ -9,8 +9,16 @@ type Props = {
 };
 
 const links = [
-  { to: "/app/board", title: "אישור סבב", desc: "מפה · כתובות · מיקום חי · התחל סבב" },
-  { to: "/app/route", title: "מסלול", desc: "מפה, סדר יעדים וצפי חזרה" },
+  {
+    to: "/app/route",
+    title: "סדר הנקודות",
+    desc: "כל הכתובות · גרירה לשינוי ידני",
+  },
+  {
+    to: "/app/board",
+    title: "מפת הסבב",
+    desc: "מפה · אישור יציאה · התחל סבב",
+  },
   { to: "/app/history", title: "היסטוריה", desc: "סבבים קודמים ודיוק" },
   { to: "/app/summary", title: "סיכום אחרון", desc: "סיכום סבב שהסתיים" },
   { to: "/app/settings", title: "הגדרות", desc: "מפתחות, Telegram, SOS והדגמה" },

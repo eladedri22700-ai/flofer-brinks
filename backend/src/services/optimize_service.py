@@ -366,7 +366,13 @@ async def reorder_manual(
     route: Route,
     stop_ids: list[int],
 ) -> dict[str, Any]:
-    """Apply user order, recompute ETAs without re-optimizing."""
+    """Apply user order, recompute ETAs without re-optimizing.
+
+    Keep live rounds as in_progress. Mark ready rounds as manual so the
+    dashboard knows the order was human-adjusted.
+    """
+    if route.status == "in_progress":
+        return await apply_order_etas(db, route, stop_ids, set_status=None)
     return await apply_order_etas(db, route, stop_ids, set_status="manual")
 
 

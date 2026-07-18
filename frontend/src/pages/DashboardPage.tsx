@@ -13,13 +13,15 @@ import {
 import { getPrefs, putPrefs } from "../api/live";
 import { getTodayRoute } from "../api/planning";
 import { apiErrorMessage } from "../api/errors";
-import { RoundPulse } from "../components/round/RoundPulse";
+import {
+  TodayRoundPanel,
+  dashboardPrimaryCta,
+} from "../components/dashboard/TodayRoundPanel";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { useToast } from "../components/ui/ToastProvider";
-import { buildRoundBrief } from "../lib/roundBrief";
 import styles from "./DashboardPage.module.css";
 
 function fmt(min: number | null | undefined): string {
@@ -72,7 +74,10 @@ export default function DashboardPage() {
   const prefsQ = useQuery({ queryKey: ["prefs"], queryFn: getPrefs });
   const accuracyQ = useQuery({ queryKey: ["accuracy"], queryFn: getAccuracy });
   const historyQ = useQuery({ queryKey: ["history-lite"], queryFn: getHistory });
-  const brief = useMemo(() => buildRoundBrief(routeQ.data), [routeQ.data]);
+  const homeCta = useMemo(
+    () => dashboardPrimaryCta(routeQ.data),
+    [routeQ.data],
+  );
 
   useEffect(() => {
     const id = window.setInterval(() => setTick((t) => t + 1), 1000);
@@ -153,48 +158,29 @@ export default function DashboardPage() {
         <h1 className={styles.greetTitle}>
           {greetingHe()}, {firstName}
         </h1>
-        <p className={styles.greetLead}>
-          לוח הבקרה שלך — התחילו סבב, עקבו אחרי השעות, וראו מה המערכת למדה.
-        </p>
+        <p className={styles.greetLead}>{homeCta.lead}</p>
         <div className={styles.homeActions}>
-          <Link to="/app/plan" className={styles.homePrimaryCta}>
-            תכנון סבב להיום
+          <Link to={homeCta.href} className={styles.homePrimaryCta}>
+            {homeCta.label}
           </Link>
-          <Link to="/app/board" className={styles.homeSecondary}>
-            מפת הסבב והתחלה
-          </Link>
-          <Link to="/app/live" className={styles.homeSecondary}>
-            למסך נסיעה
-          </Link>
+          {(routeQ.data?.stops?.length ?? 0) > 0 ? (
+            <>
+              <Link to="/app/route" className={styles.homeSecondary}>
+                סדר הנקודות · שינוי ידני
+              </Link>
+              <Link to="/app/board" className={styles.homeSecondary}>
+                מפת הסבב
+              </Link>
+            </>
+          ) : (
+            <Link to="/app/plan" className={styles.homeSecondary}>
+              לתכנון סבב
+            </Link>
+          )}
         </div>
       </header>
 
-      {brief ? (
-        <RoundPulse
-          brief={brief}
-          depotName="ברינקס"
-          variant="card"
-          ctaHref={
-            routeQ.data?.status === "in_progress" ? "/app/live" : "/app/board"
-          }
-          ctaLabel={
-            routeQ.data?.status === "in_progress"
-              ? "המשך לנסיעה"
-              : "למפה ולאישור הסבב"
-          }
-        />
-      ) : (
-        <Card className={styles.roundEmpty} aria-label="אין סבב היום">
-          <h2 className={styles.h2}>סבב היום</h2>
-          <p className={styles.roundEmptyText}>
-            עוד אין מסלול מחושב. תכננו יעדים, חשבו מסלול — ואז תראו כאן את
-            הכתובת הבאה, זמן הגעה וצפי חזרה לברינקס.
-          </p>
-          <Link to="/app/plan" className={styles.roundEmptyLink}>
-            לתכנון הסבב
-          </Link>
-        </Card>
-      )}
+      <TodayRoundPanel route={routeQ.data} depotName="ברינקס" />
 
       <Card className={styles.tipsCard} statusBar="gold" aria-label="המלצות היום">
         <h2 className={styles.h2}>המלצות היום</h2>

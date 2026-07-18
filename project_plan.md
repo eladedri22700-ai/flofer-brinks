@@ -71,7 +71,7 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 2. **Before pilot:** set real Brinks depot address/coords in Settings (seed depot is temporary Tel Aviv)
 3. GCP Browser Key HTTP referrer: `https://flofer-brinks.onrender.com/*`
 4. User configures Telegram bot + Chat ID and runs «שלח הודעת בדיקה»
-5. Deploy latest (end-of-day blessing + auto geofence lifecycle) to Render if not yet pushed
+5. Production live on Render with commit `aa97d5b` (board UX + end-of-day + auto GPS) — https://flofer-brinks.onrender.com
 6. Free Render Postgres expires ~30 days; free web sleeps after ~15m idle (cold start 30–60s)
 
 **Pilot cleanliness (2026-07-18):** purged smoke-test stops from production; fresh `planning` route for today (empty).
@@ -86,6 +86,11 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 - Board split layout: map + address list both always visible on mobile
 - Map resize/fitBounds after layout; larger numbered pins; clearer road labels
 - Expert board polish: metrics strip (next/return), list↔map sync + scroll, time-window chips, print, focus zoom on pin select
+
+**Completed (2026-07-18 — Home / order model):**
+- `get_today_route` prefers in_progress over empty planning clones; `create_route` won't spawn a second today-route
+- Manual reorder no longer knocks a live round out of `in_progress`
+- Dashboard: status-aware CTA + full stop order list + «שנה סדר ידנית» → `/app/route`
 
 ## Verify
 
