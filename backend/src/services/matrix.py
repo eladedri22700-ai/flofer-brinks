@@ -46,12 +46,22 @@ def _bucket_datetimes(departure: time, day: datetime) -> dict[str, datetime]:
     }
 
 
+def _future_departure(departure: datetime) -> datetime:
+    """Google traffic-aware matrix rejects past departureTime — clamp to soon."""
+    now = datetime.now(JERUSALEM)
+    dep = departure if departure.tzinfo else departure.replace(tzinfo=JERUSALEM)
+    dep = dep.astimezone(JERUSALEM)
+    floor = now + timedelta(minutes=2)
+    return dep if dep >= floor else floor
+
+
 async def _google_matrix(
     coords: list[tuple[float, float]], departure: datetime
 ) -> list[list[int]]:
     settings = get_settings()
     n = len(coords)
     mat = [[0] * n for _ in range(n)]
+    dep = _future_departure(departure)
     # chunk origins/destinations to stay under 625 elements
     chunk = 10
     headers = {
@@ -75,7 +85,7 @@ async def _google_matrix(
                     "destinations": destinations,
                     "travelMode": "DRIVE",
                     "routingPreference": "TRAFFIC_AWARE_OPTIMAL",
-                    "departureTime": departure.isoformat(),
+                    "departureTime": dep.isoformat(),
                     "languageCode": "he",
                 }
                 try:
@@ -84,6 +94,12 @@ async def _google_matrix(
                         headers=headers,
                         json=body,
                     )
+                    if res.is_error:
+                        logger.error(
+                            "Routes matrix HTTP %s: %s",
+                            res.status_code,
+                            res.text[:500],
+                        )
                     res.raise_for_status()
                     # API may return NDJSON array
                     data = res.json()
