@@ -32,69 +32,80 @@
   flex: 1;
 }
 
-.lead {
+.progress {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: var(--space-4);
+}
+
+.dot,
+.dotOn {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--border-strong);
+  transition: background var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+
+.dotOn {
+  background: var(--brass-500);
+  transform: scale(1.15);
+}
+
+.stepMeta {
   margin: 0;
   text-align: center;
-  color: var(--text-secondary);
-  font-size: 15px;
-  line-height: 1.5;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
 }
 
-.steps {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.panel {
   display: flex;
   flex-direction: column;
-  gap: var(--space-12);
-}
-
-.card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-10);
-  padding: var(--space-16);
-  border-radius: var(--radius-16);
+  gap: var(--space-16);
+  padding: var(--space-20);
+  border-radius: var(--radius-20);
   border: 1px solid var(--border);
   background: var(--surface-1);
   box-shadow: var(--shadow-card);
+  min-height: 280px;
+  animation: panelIn 280ms var(--ease);
 }
 
-.cardHead {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-12);
-}
-
-.num {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: grid;
-  place-content: center;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--on-primary);
-  background: var(--primary);
-}
-
-.numDone {
-  background: var(--success);
-}
-
-.cardTitle {
+.panelTitle {
   margin: 0;
-  font-size: 16px;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 1.2;
 }
 
-.cardDesc {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: var(--text-muted);
-  line-height: 1.45;
+.panelDesc {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  margin-top: auto;
+  flex-wrap: wrap;
+}
+
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .status {
@@ -115,20 +126,13 @@
   color: var(--text-muted);
 }
 
-.footer {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
-  padding-top: var(--space-16);
-}
-
 .hint {
-  margin: 0;
+  margin: auto 0 0;
   text-align: center;
   font-size: 12px;
   color: var(--text-muted);
   line-height: 1.4;
+  padding-top: var(--space-12);
 }
 
 /* iOS install sheet */
@@ -195,7 +199,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .sheetOverlay,
-  .sheet {
+  .sheet,
+  .panel {
     animation: none;
   }
 }

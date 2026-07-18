@@ -69,7 +69,11 @@ export default function PlanPage() {
   const { show } = useToast();
   const nav = useNavigate();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>("manual");
+  const [tab, setTab] = useState<Tab>(() =>
+    typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches
+      ? "shot"
+      : "manual",
+  );
   const [optStep, setOptStep] = useState<number | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [constraintsSavingId, setConstraintsSavingId] = useState<number | null>(
@@ -416,9 +420,9 @@ export default function PlanPage() {
         <div className={styles.tabs} role="tablist" aria-label="אופן הזנה">
           {(
             [
+              ["shot", "צילום"],
               ["manual", "ידני"],
               ["file", "קובץ"],
-              ["shot", "צילום"],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -471,7 +475,7 @@ export default function PlanPage() {
         {stopCount === 0 ? (
           <EmptyState
             title="עדיין אין יעדים"
-            description="התחילו מהזנה ידנית, או העלו קובץ / צילום מסך."
+            description="צלמו את הרשימה מ־Zebra, בחרו מהגלריה, או הזינו ידנית."
           />
         ) : (
           <StopsList

@@ -16,6 +16,8 @@ type Props = {
   onComplete: () => void;
 };
 
+type StepId = "install" | "location" | "notify";
+
 async function requestLocation(): Promise<boolean> {
   if (!("geolocation" in navigator)) return false;
   return new Promise((resolve) => {
@@ -60,15 +62,29 @@ export default function OnboardingPage({ onComplete }: Props) {
   const platform = useMemo(() => detectPlatform(), []);
   const { canPrompt, installed, promptInstall } = usePwaInstall();
   const initial = readOnboarding();
+  const standalone = installed || isStandaloneDisplay();
+
+  const [step, setStep] = useState<StepId>(() => {
+    if (!(initial.installSeen || standalone || installed)) return "install";
+    if (initial.locationOk !== true) return "location";
+    return "notify";
+  });
   const [installSeen, setInstallSeen] = useState(
-    initial.installSeen || isStandaloneDisplay() || installed,
+    initial.installSeen || standalone || installed,
   );
   const [locationOk, setLocationOk] = useState<boolean | null>(initial.locationOk);
   const [notifyOk, setNotifyOk] = useState<boolean | null>(initial.notifyOk);
   const [busy, setBusy] = useState<"install" | "loc" | "notify" | null>(null);
   const [iosSheet, setIosSheet] = useState(false);
+  const [animKey, setAnimKey] = useState(0);
 
-  const standalone = installed || isStandaloneDisplay();
+  const steps: StepId[] = ["install", "location", "notify"];
+  const stepIndex = steps.indexOf(step);
+
+  function go(next: StepId) {
+    setAnimKey((k) => k + 1);
+    setStep(next);
+  }
 
   async function onInstall() {
     setBusy("install");
@@ -78,6 +94,7 @@ export default function OnboardingPage({ onComplete }: Props) {
         if (outcome === "accepted" || standalone) {
           setInstallSeen(true);
           writeOnboarding({ installSeen: true });
+          go("location");
           return;
         }
       }
@@ -85,6 +102,10 @@ export default function OnboardingPage({ onComplete }: Props) {
         setIosSheet(true);
         setInstallSeen(true);
         writeOnboarding({ installSeen: true });
+      } else {
+        setInstallSeen(true);
+        writeOnboarding({ installSeen: true });
+        go("location");
       }
     } finally {
       setBusy(null);
@@ -97,6 +118,7 @@ export default function OnboardingPage({ onComplete }: Props) {
       const ok = await requestLocation();
       setLocationOk(ok);
       writeOnboarding({ locationOk: ok });
+      if (ok) go("notify");
     } finally {
       setBusy(null);
     }
@@ -108,6 +130,10 @@ export default function OnboardingPage({ onComplete }: Props) {
       const ok = await requestNotifications();
       setNotifyOk(ok);
       writeOnboarding({ notifyOk: ok });
+      if (ok) {
+        markOnboardingDone();
+        onComplete();
+      }
     } finally {
       setBusy(null);
     }
@@ -123,127 +149,137 @@ export default function OnboardingPage({ onComplete }: Props) {
       <div className={styles.aurora} aria-hidden />
       <div className={styles.inner}>
         <BrandLockup size="lg" stacked to={null} titleAs="h1" />
-        <p className={styles.lead}>
-          פעם אחת בלבד — התקינו למסך הבית, אשרו מיקום בזמן השימוש, והפעילו
-          התראות. אחר כך תיכנסו ישר לאפליקציה.
+
+        <div className={styles.progress} aria-label="התקדמות הגדרה">
+          {steps.map((id, i) => (
+            <span
+              key={id}
+              className={i <= stepIndex ? styles.dotOn : styles.dot}
+              aria-current={i === stepIndex ? "step" : undefined}
+            />
+          ))}
+        </div>
+        <p className={styles.stepMeta}>
+          שלב {stepIndex + 1} מתוך {steps.length}
         </p>
 
-        <ol className={styles.steps}>
-          <li className={styles.card}>
-            <div className={styles.cardHead}>
-              <span className={`${styles.num} ${installSeen || standalone ? styles.numDone : ""}`}>
-                1
-              </span>
-              <div>
-                <h2 className={styles.cardTitle}>שמירה במסך הבית</h2>
-                <p className={styles.cardDesc}>
-                  {platform === "ios"
-                    ? "באייפון: הכפתור פותח הוראות קצרות להוספה למסך הבית (Safari)."
-                    : "הוסיפו את FLOFER BRINKS כמו אפליקציה — בלי חנות."}
-                </p>
-              </div>
-            </div>
-            {standalone ? (
-              <p className={`${styles.status} ${styles.statusOk}`}>כבר מותקן במסך הבית ✓</p>
-            ) : (
-              <Button
-                size="lg"
-                loading={busy === "install"}
-                onClick={() => void onInstall()}
-              >
-                {canPrompt ? "הוסף למסך הבית" : "הוסף למסך הבית — הוראות"}
-              </Button>
-            )}
-          </li>
-
-          <li className={styles.card}>
-            <div className={styles.cardHead}>
-              <span
-                className={`${styles.num} ${locationOk === true ? styles.numDone : ""}`}
-              >
-                2
-              </span>
-              <div>
-                <h2 className={styles.cardTitle}>מיקום בזמן השימוש</h2>
-                <p className={styles.cardDesc}>
-                  נדרש לניווט, התקרבות ליעד וצפי חזרה לסניף. בחרו «בעת שימוש
-                  באפליקציה».
-                </p>
-              </div>
-            </div>
-            {locationOk === true ? (
-              <p className={`${styles.status} ${styles.statusOk}`}>מיקום אושר ✓</p>
-            ) : (
-              <>
-                <Button
-                  size="lg"
-                  variant={locationOk === false ? "secondary" : "primary"}
-                  loading={busy === "loc"}
-                  onClick={() => void onLocation()}
-                >
-                  {locationOk === false ? "נסה שוב לאשר מיקום" : "אשר מיקום"}
-                </Button>
-                {locationOk === false ? (
-                  <p className={`${styles.status} ${styles.statusWarn}`}>
-                    המיקום נחסם. אפשר לאשר בהגדרות האייפון → Safari / FLOFER BRINKS →
-                    מיקום.
-                  </p>
-                ) : null}
-              </>
-            )}
-          </li>
-
-          <li className={styles.card}>
-            <div className={styles.cardHead}>
-              <span
-                className={`${styles.num} ${notifyOk === true ? styles.numDone : ""}`}
-              >
-                3
-              </span>
-              <div>
-                <h2 className={styles.cardTitle}>התראות האפליקציה</h2>
-                <p className={styles.cardDesc}>
-                  {notificationsSupported()
-                    ? "באייפון עובד אחרי התקנה למסך הבית (iOS 16.4+). אפשר גם Telegram בהגדרות."
-                    : "הדפדפן לא תומך בהתראות — השתמשו ב־Telegram מההגדרות."}
-                </p>
-              </div>
-            </div>
-            {!notificationsSupported() ? (
-              <p className={`${styles.status} ${styles.statusMuted}`}>
-                התראות דפדפן לא זמינות כאן
+        <div key={animKey} className={styles.panel}>
+          {step === "install" ? (
+            <>
+              <h2 className={styles.panelTitle}>שמירה במסך הבית</h2>
+              <p className={styles.panelDesc}>
+                {platform === "ios"
+                  ? "באייפון זה נפתח כמו אפליקציה אמיתית מ־Safari — בלי חנות."
+                  : "הוסיפו את FLOFER BRINKS למסך הבית — אייקון מלא, בלי שורת דפדפן."}
               </p>
-            ) : notifyOk === true ? (
-              <p className={`${styles.status} ${styles.statusOk}`}>התראות אושרו ✓</p>
-            ) : (
-              <>
+              {standalone || installSeen ? (
+                <p className={`${styles.status} ${styles.statusOk}`}>
+                  {standalone ? "כבר מותקן במסך הבית ✓" : "ההוראות נשמרו — אפשר להמשיך"}
+                </p>
+              ) : null}
+              {!standalone ? (
+                <Button size="lg" loading={busy === "install"} onClick={() => void onInstall()}>
+                  {canPrompt ? "הוסף למסך הבית" : "הראה איך מוסיפים"}
+                </Button>
+              ) : null}
+              {(installSeen || standalone) && (
                 <Button
                   size="lg"
-                  variant={notifyOk === false ? "secondary" : "primary"}
-                  loading={busy === "notify"}
-                  onClick={() => void onNotify()}
+                  variant={standalone ? "primary" : "secondary"}
+                  onClick={() => go("location")}
                 >
-                  {notifyOk === false ? "נסה שוב לאשר התראות" : "אשר התראות"}
+                  המשך
                 </Button>
-                {notifyOk === false ? (
-                  <p className={`${styles.status} ${styles.statusWarn}`}>
-                    ההתראות נחסמו. אפשר להפעיל בהגדרות המכשיר לאפליקציה.
-                  </p>
-                ) : null}
-              </>
-            )}
-          </li>
-        </ol>
+              )}
+            </>
+          ) : null}
 
-        <div className={styles.footer}>
-          <Button size="lg" onClick={finish}>
-            כניסה לאפליקציה
-          </Button>
-          <p className={styles.hint}>
-            המסך הזה לא יופיע שוב במכשיר הזה. אפשר לשנות הרשאות בכל רגע בהגדרות
-            האייפון.
-          </p>
+          {step === "location" ? (
+            <>
+              <h2 className={styles.panelTitle}>מיקום בזמן השימוש</h2>
+              <p className={styles.panelDesc}>
+                נדרש לניווט, התקרבות ליעד וצפי חזרה לסניף. בחרו «בעת שימוש באפליקציה».
+              </p>
+              {locationOk === true ? (
+                <p className={`${styles.status} ${styles.statusOk}`}>מיקום אושר ✓</p>
+              ) : (
+                <>
+                  <Button
+                    size="lg"
+                    variant={locationOk === false ? "secondary" : "primary"}
+                    loading={busy === "loc"}
+                    onClick={() => void onLocation()}
+                  >
+                    {locationOk === false ? "נסה שוב לאשר מיקום" : "אשר מיקום"}
+                  </Button>
+                  {locationOk === false ? (
+                    <p className={`${styles.status} ${styles.statusWarn}`}>
+                      המיקום נחסם. אפשר לאשר בהגדרות המכשיר → FLOFER BRINKS → מיקום.
+                    </p>
+                  ) : null}
+                </>
+              )}
+              <div className={styles.row}>
+                <Button size="md" variant="ghost" onClick={() => go("install")}>
+                  חזרה
+                </Button>
+                <Button
+                  size="md"
+                  variant="secondary"
+                  onClick={() => go("notify")}
+                >
+                  {locationOk === true ? "המשך" : "דלג לעת עתה"}
+                </Button>
+              </div>
+            </>
+          ) : null}
+
+          {step === "notify" ? (
+            <>
+              <h2 className={styles.panelTitle}>התראות האפליקציה</h2>
+              <p className={styles.panelDesc}>
+                {notificationsSupported()
+                  ? "באייפון עובד אחרי התקנה למסך הבית (iOS 16.4+). אפשר גם Telegram בהגדרות."
+                  : "הדפדפן לא תומך בהתראות — השתמשו ב־Telegram מההגדרות."}
+              </p>
+              {!notificationsSupported() ? (
+                <p className={`${styles.status} ${styles.statusMuted}`}>
+                  התראות דפדפן לא זמינות כאן
+                </p>
+              ) : notifyOk === true ? (
+                <p className={`${styles.status} ${styles.statusOk}`}>התראות אושרו ✓</p>
+              ) : (
+                <>
+                  <Button
+                    size="lg"
+                    variant={notifyOk === false ? "secondary" : "primary"}
+                    loading={busy === "notify"}
+                    onClick={() => void onNotify()}
+                  >
+                    {notifyOk === false ? "נסה שוב לאשר התראות" : "אשר התראות"}
+                  </Button>
+                  {notifyOk === false ? (
+                    <p className={`${styles.status} ${styles.statusWarn}`}>
+                      ההתראות נחסמו. אפשר להפעיל בהגדרות המכשיר לאפליקציה.
+                    </p>
+                  ) : null}
+                </>
+              )}
+              <div className={styles.row}>
+                <Button size="md" variant="ghost" onClick={() => go("location")}>
+                  חזרה
+                </Button>
+                <Button size="lg" onClick={finish}>
+                  כניסה לאפליקציה
+                </Button>
+              </div>
+            </>
+          ) : null}
         </div>
+
+        <p className={styles.hint}>
+          ההגדרה הזו מופיעה פעם אחת. אחר כך תיכנסו ישר לאפליקציה.
+        </p>
       </div>
 
       {iosSheet ? (
@@ -275,8 +311,14 @@ export default function OnboardingPage({ onComplete }: Props) {
                 ליחצו <strong>«הוסף»</strong> — ואז פתחו את האייקון מהמסך הראשי
               </li>
             </ol>
-            <Button size="lg" onClick={() => setIosSheet(false)}>
-              הבנתי
+            <Button
+              size="lg"
+              onClick={() => {
+                setIosSheet(false);
+                go("location");
+              }}
+            >
+              הבנתי — המשך
             </Button>
           </div>
         </div>

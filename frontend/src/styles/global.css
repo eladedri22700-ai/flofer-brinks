@@ -12,6 +12,7 @@ html {
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  touch-action: manipulation;
 }
 
 html,
@@ -76,6 +77,27 @@ select,
 textarea {
   font-family: inherit;
   font-size: 16px; /* iOS Safari: avoid auto-zoom on focus */
+}
+
+button,
+[role="button"],
+a {
+  touch-action: manipulation;
+}
+
+/* Standalone PWA (added to home screen) — hide browser chrome feel */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  body {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  input,
+  textarea,
+  [contenteditable="true"] {
+    user-select: text;
+    -webkit-user-select: text;
+  }
 }
 
 .num {

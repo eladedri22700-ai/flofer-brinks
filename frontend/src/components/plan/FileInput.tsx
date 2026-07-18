@@ -28,10 +28,11 @@ export function FileInputTab({ onImport, onCommit, loading }: Props) {
   return (
     <div className={styles.wrap}>
       <label className={styles.drop}>
-        <span>גררו קובץ Excel/CSV לכאן או לחצו לבחירה</span>
+        <span className={styles.dropTitle}>בחרו קובץ Excel / CSV</span>
+        <span className={styles.dropHint}>מהקבצים במכשיר או מהמחשב</span>
         <input
           type="file"
-          accept=".csv,.xlsx,.xls"
+          accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           onChange={(e) => void handleFile(e.target.files?.[0] ?? null)}
         />
       </label>
