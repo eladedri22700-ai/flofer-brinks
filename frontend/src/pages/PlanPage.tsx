@@ -425,7 +425,11 @@ export default function PlanPage() {
         ) : null}
       </Card>
 
-      <section className={styles.section} aria-labelledby="add-heading">
+      <section
+        className={styles.section}
+        aria-labelledby="add-heading"
+        data-tour="plan-add"
+      >
         <div className={styles.sectionHead}>
           <h2 id="add-heading" className={styles.h2}>
             הוספת יעד

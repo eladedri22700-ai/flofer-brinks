@@ -105,6 +105,10 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 - Demo seed/purge scoped per `user_id` so one phone cannot wipe another's demo
 - Logout clears saved login; successful login auto-saves credentials + JWT ~30 days
 
+**Completed (2026-07-18 — Clearer guided tour):**
+- Boot screen «מפעילים יחד מצב הדגמה»; per-screen bullets for buttons
+- Settings tour: API keys, day/night, depot, SOS/geofence; plan-add + nav explained
+
 ## Verify
 
 ```bash

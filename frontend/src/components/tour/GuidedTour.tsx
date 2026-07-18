@@ -21,7 +21,7 @@ function measureTarget(attr: string | undefined): Rect | null {
   if (!el) return null;
   const r = el.getBoundingClientRect();
   if (r.width < 2 || r.height < 2) return null;
-  const pad = 8;
+  const pad = 10;
   return {
     top: Math.max(4, r.top - pad),
     left: Math.max(4, r.left - pad),
@@ -37,6 +37,7 @@ export function GuidedTour({ active, onFinished }: Props) {
   const [hole, setHole] = useState<Rect | null>(null);
   const [busy, setBusy] = useState(false);
   const [demoReady, setDemoReady] = useState(false);
+  const [demoError, setDemoError] = useState(false);
 
   const step = TOUR_STEPS[index];
   const total = TOUR_STEPS.length;
@@ -45,6 +46,7 @@ export function GuidedTour({ active, onFinished }: Props) {
     if (!active) return;
     let cancelled = false;
     setBusy(true);
+    setDemoError(false);
     void enableDemo()
       .then(() => {
         if (cancelled) return;
@@ -52,7 +54,10 @@ export function GuidedTour({ active, onFinished }: Props) {
         void qc.invalidateQueries();
       })
       .catch(() => {
-        if (!cancelled) setDemoReady(true);
+        if (cancelled) return;
+        // Continue tour even if demo seed fails — still explain screens.
+        setDemoError(true);
+        setDemoReady(true);
       })
       .finally(() => {
         if (!cancelled) setBusy(false);
@@ -75,13 +80,13 @@ export function GuidedTour({ active, onFinished }: Props) {
     const tick = () => {
       const rect = measureTarget(step.target);
       setHole(rect);
-      if (!rect && step.target && tries < 20) {
+      if (!rect && step.target && tries < 28) {
         tries += 1;
-        timer = window.setTimeout(tick, 120);
+        timer = window.setTimeout(tick, 140);
       }
     };
 
-    timer = window.setTimeout(tick, 80);
+    timer = window.setTimeout(tick, 100);
     const onResize = () => setHole(measureTarget(step.target));
     window.addEventListener("resize", onResize);
     window.addEventListener("scroll", onResize, true);
@@ -123,9 +128,25 @@ export function GuidedTour({ active, onFinished }: Props) {
     setIndex((i) => Math.max(0, i - 1));
   }
 
-  if (!active || !step) return null;
+  if (!active) return null;
 
-  const holeAtBottom = hole != null && hole.top + hole.height > window.innerHeight * 0.55;
+  if (!demoReady || !step) {
+    return createPortal(
+      <div className={styles.boot} role="status" aria-live="polite">
+        <div className={styles.bootCard}>
+          <p className={styles.bootTitle}>מפעילים יחד מצב הדגמה…</p>
+          <p className={styles.bootBody}>
+            טוענים מסלול לדוגמה כדי שתראו איך כל מסך עובד. זה רק אצלכם — לא
+            משפיע על נתונים אמיתיים.
+          </p>
+        </div>
+      </div>,
+      document.body,
+    );
+  }
+
+  const holeAtBottom =
+    hole != null && hole.top + hole.height > window.innerHeight * 0.52;
   const cardClass = holeAtBottom
     ? `${styles.card} ${styles.cardTop}`
     : styles.card;
@@ -133,7 +154,9 @@ export function GuidedTour({ active, onFinished }: Props) {
   return createPortal(
     <>
       <div className={styles.demoBanner} role="status">
-        מצב הדגמה · הדרכה חיה
+        {demoError
+          ? "הדרכה חיה · הדמו לא נטען במלואו — ממשיכים להסביר את המסכים"
+          : "מצב הדגמה פעיל · הדרכה חיה ביחד"}
       </div>
       <div className={styles.overlay} aria-live="polite">
         {hole ? (
@@ -156,17 +179,24 @@ export function GuidedTour({ active, onFinished }: Props) {
         aria-modal="true"
         aria-label={step.title}
       >
-        <span className={styles.badge}>
-          הדרכה {index + 1}/{total}
-        </span>
+        <div className={styles.meta}>
+          <span className={styles.badge}>
+            שלב {index + 1}/{total}
+          </span>
+          <span className={styles.screen}>{step.screen}</span>
+        </div>
         <h2 className={styles.title}>{step.title}</h2>
         <p className={styles.body}>{step.body}</p>
+        {step.bullets && step.bullets.length > 0 ? (
+          <ul className={styles.bullets}>
+            {step.bullets.map((b) => (
+              <li key={b}>{b}</li>
+            ))}
+          </ul>
+        ) : null}
         {step.clickHint ? (
           <p className={styles.hint}>{step.clickHint}</p>
         ) : null}
-        <p className={`${styles.progress} num`}>
-          שלב {index + 1} מתוך {total}
-        </p>
         <div className={styles.actions}>
           {index > 0 ? (
             <Button variant="ghost" size="md" onClick={back} disabled={busy}>
@@ -174,7 +204,7 @@ export function GuidedTour({ active, onFinished }: Props) {
             </Button>
           ) : null}
           <Button size="lg" loading={busy} onClick={next}>
-            {index >= total - 1 ? "סיים · עבור למצב אמת" : "המשך"}
+            {index >= total - 1 ? "סיים · עבור למצב אמת" : "הבנתי · המשך"}
           </Button>
         </div>
         <Button

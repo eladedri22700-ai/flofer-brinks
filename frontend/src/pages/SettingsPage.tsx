@@ -291,7 +291,8 @@ export default function SettingsPage() {
         </ul>
       </Card>
 
-      <Card>
+      <Card data-tour="settings-api">
+        <h2 className={styles.h2}>מפתחות API</h2>
         <form className={styles.form} onSubmit={onSubmit}>
           <div className={styles.help}>
             <p>
