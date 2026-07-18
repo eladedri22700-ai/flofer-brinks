@@ -196,6 +196,11 @@ async def optimize_route(db: Session, route: Route) -> dict[str, Any]:
         "depot_name": depot.name,
         "depot_address": depot.address,
         "return_hm": return_hm,
+        "return_at": (
+            _min_to_dt(route.date, result.return_min).isoformat()
+            if result.return_min is not None
+            else None
+        ),
         "depot_he": (
             f"המסלול יוצא מ{depot.name} וחוזר לאותה נקודה"
             + (f" בשעה {return_hm}." if return_hm else ".")

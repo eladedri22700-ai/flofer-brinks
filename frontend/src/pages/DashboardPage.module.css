@@ -73,6 +73,28 @@
 .h2 { margin: 0; font-size: 15px; font-weight: 600; }
 
 /* Live-round hero clock */
+.roundEmpty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+}
+
+.roundEmptyText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.roundEmptyLink {
+  font-weight: 700;
+  color: var(--brass-500);
+  text-decoration: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
 .tipsCard {
   display: flex;
   flex-direction: column;

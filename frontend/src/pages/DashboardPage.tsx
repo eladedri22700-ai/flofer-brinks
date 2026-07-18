@@ -11,12 +11,15 @@ import {
   patchWorkDay,
 } from "../api/phase5";
 import { getPrefs, putPrefs } from "../api/live";
+import { getTodayRoute } from "../api/planning";
 import { apiErrorMessage } from "../api/errors";
+import { RoundPulse } from "../components/round/RoundPulse";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { useToast } from "../components/ui/ToastProvider";
+import { buildRoundBrief } from "../lib/roundBrief";
 import styles from "./DashboardPage.module.css";
 
 function fmt(min: number | null | undefined): string {
@@ -64,10 +67,12 @@ export default function DashboardPage() {
   const [tick, setTick] = useState(0);
 
   const dashQ = useQuery({ queryKey: ["dashboard"], queryFn: getDashboard });
+  const routeQ = useQuery({ queryKey: ["route-today"], queryFn: getTodayRoute });
   const daysQ = useQuery({ queryKey: ["work-days", month], queryFn: () => getWorkDays(month) });
   const prefsQ = useQuery({ queryKey: ["prefs"], queryFn: getPrefs });
   const accuracyQ = useQuery({ queryKey: ["accuracy"], queryFn: getAccuracy });
   const historyQ = useQuery({ queryKey: ["history-lite"], queryFn: getHistory });
+  const brief = useMemo(() => buildRoundBrief(routeQ.data), [routeQ.data]);
 
   useEffect(() => {
     const id = window.setInterval(() => setTick((t) => t + 1), 1000);
@@ -156,13 +161,40 @@ export default function DashboardPage() {
             תכנון סבב להיום
           </Link>
           <Link to="/app/board" className={styles.homeSecondary}>
-            אישור סבב והתחלה
+            מפת הסבב והתחלה
           </Link>
           <Link to="/app/live" className={styles.homeSecondary}>
             למסך נסיעה
           </Link>
         </div>
       </header>
+
+      {brief ? (
+        <RoundPulse
+          brief={brief}
+          depotName="ברינקס"
+          variant="card"
+          ctaHref={
+            routeQ.data?.status === "in_progress" ? "/app/live" : "/app/board"
+          }
+          ctaLabel={
+            routeQ.data?.status === "in_progress"
+              ? "המשך לנסיעה"
+              : "למפה ולאישור הסבב"
+          }
+        />
+      ) : (
+        <Card className={styles.roundEmpty} aria-label="אין סבב היום">
+          <h2 className={styles.h2}>סבב היום</h2>
+          <p className={styles.roundEmptyText}>
+            עוד אין מסלול מחושב. תכננו יעדים, חשבו מסלול — ואז תראו כאן את
+            הכתובת הבאה, זמן הגעה וצפי חזרה לברינקס.
+          </p>
+          <Link to="/app/plan" className={styles.roundEmptyLink}>
+            לתכנון הסבב
+          </Link>
+        </Card>
+      )}
 
       <Card className={styles.tipsCard} statusBar="gold" aria-label="המלצות היום">
         <h2 className={styles.h2}>המלצות היום</h2>
