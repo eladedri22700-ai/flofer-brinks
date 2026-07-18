@@ -7,6 +7,9 @@ export type OnboardingState = {
   permissionsDone: boolean;
   installSeen: boolean;
   locationOk: boolean | null;
+  /** Background / screen-off guidance acknowledged */
+  backgroundOk: boolean | null;
+  wakeLockOk: boolean | null;
   notifyOk: boolean | null;
   completedAt?: string;
 };
@@ -16,6 +19,8 @@ const EMPTY: OnboardingState = {
   permissionsDone: false,
   installSeen: false,
   locationOk: null,
+  backgroundOk: null,
+  wakeLockOk: null,
   notifyOk: null,
 };
 

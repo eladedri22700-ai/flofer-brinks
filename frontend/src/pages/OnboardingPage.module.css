@@ -88,6 +88,41 @@
   color: var(--text-secondary);
 }
 
+.tips {
+  margin: 0;
+  padding: 0 0 0 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  text-align: start;
+}
+
+.tips li::marker {
+  color: var(--brass-500);
+}
+
+.checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.checkOk {
+  color: var(--success);
+}
+
+.checkWarn {
+  color: var(--warning);
+}
+
 .row {
   display: flex;
   align-items: center;

@@ -114,6 +114,10 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 - Step waits: add dummy address, VIP, demo photo OCR, commit, optimize, lock
 - Demo helpers: «מלא כתובת דמה», «השתמש בצילום דמה» + `/demo/zebra-list.svg`
 
+**Completed (2026-07-18 — Field permissions onboarding):**
+- Location (precise + short watch), background/screen-off OS checklist + Wake Lock sample, push notification test
+- Platform tips (iOS Always / Android Allow all the time + battery) before live tour
+
 ## Verify
 
 ```bash

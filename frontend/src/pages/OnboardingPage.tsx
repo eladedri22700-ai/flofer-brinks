@@ -6,57 +6,45 @@ import {
   detectPlatform,
   isStandaloneDisplay,
   markPermissionsDone,
-  notificationsSupported,
   readOnboarding,
   writeOnboarding,
 } from "../lib/onboarding";
+import {
+  notificationsSupported,
+  requestLocationAccess,
+  requestNotificationAccess,
+  requestWakeLockSample,
+} from "../lib/permissions";
 import styles from "./OnboardingPage.module.css";
 
 type Props = {
-  /** Permissions done — start live demo tour inside the app */
   onStartTour: () => void;
 };
 
-type StepId = "install" | "location" | "notify" | "tour";
+type StepId = "install" | "location" | "background" | "notify" | "tour";
 
-async function requestLocation(): Promise<boolean> {
-  if (!("geolocation" in navigator)) return false;
-  return new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      () => resolve(true),
-      () => resolve(false),
-      { enableHighAccuracy: true, timeout: 20_000, maximumAge: 0 },
-    );
-  });
-}
-
-async function requestNotifications(): Promise<boolean> {
-  if (!notificationsSupported()) return false;
-  if (Notification.permission === "granted") return true;
-  if (Notification.permission === "denied") return false;
-  const result = await Notification.requestPermission();
-  if (result === "granted") {
-    try {
-      const reg = await navigator.serviceWorker?.ready;
-      if (reg) {
-        await reg.showNotification("FLOFER BRINKS", {
-          body: "ההתראות מוכנות. תקבלו עדכונים חשובים בזמן הסבב.",
-          icon: "/icons/icon-192.png",
-          badge: "/icons/icon-192.png",
-          tag: "flofer-onboard",
-        });
-      } else {
-        new Notification("FLOFER BRINKS", {
-          body: "ההתראות מוכנות.",
-          icon: "/icons/icon-192.png",
-        });
-      }
-    } catch {
-      /* permission granted even if demo notification fails */
-    }
-    return true;
+function backgroundBullets(platform: "ios" | "android" | "desktop"): string[] {
+  if (platform === "ios") {
+    return [
+      "הגדרות → FLOFER BRINKS → מיקום → «תמיד» (או לפחות בזמן שימוש)",
+      "הגדרות → כללי → רענון ברקע → הפעילו ל־FLOFER BRINKS",
+      "אל תסגרו את האפליקציה מהחלון התחתון באמצע סבב",
+      "בזמן נסיעה המסך יישאר דולק (Wake Lock) כדי שה־GPS לא ייעצר",
+    ];
   }
-  return false;
+  if (platform === "android") {
+    return [
+      "הגדרות → אפליקציות → FLOFER BRINKS → הרשאות → מיקום → «אפשר תמיד»",
+      "באותו מסך: השתמשו במיקום מדויק (Precise)",
+      "סוללה → ללא הגבלות / לא מייעלים את האפליקציה הזו",
+      "בזמן נסיעה המסך יישאר דולק כדי לעדכן מיקום בזמן אמת",
+    ];
+  }
+  return [
+    "אשרו מיקום מדויק בדפדפן",
+    "השאירו את החלון פתוח בזמן סבב",
+    "בטלפון בשטח — התקינו למסך הבית לחוויית אפליקציה מלאה",
+  ];
 }
 
 export default function OnboardingPage({ onStartTour }: Props) {
@@ -68,6 +56,7 @@ export default function OnboardingPage({ onStartTour }: Props) {
   const [step, setStep] = useState<StepId>(() => {
     if (!(initial.installSeen || standalone || installed)) return "install";
     if (initial.locationOk !== true) return "location";
+    if (initial.backgroundOk !== true) return "background";
     if (initial.notifyOk === null) return "notify";
     return "tour";
   });
@@ -75,13 +64,21 @@ export default function OnboardingPage({ onStartTour }: Props) {
     initial.installSeen || standalone || installed,
   );
   const [locationOk, setLocationOk] = useState<boolean | null>(initial.locationOk);
+  const [backgroundOk, setBackgroundOk] = useState<boolean | null>(
+    initial.backgroundOk,
+  );
+  const [wakeLockOk, setWakeLockOk] = useState<boolean | null>(initial.wakeLockOk);
   const [notifyOk, setNotifyOk] = useState<boolean | null>(initial.notifyOk);
-  const [busy, setBusy] = useState<"install" | "loc" | "notify" | null>(null);
+  const [busy, setBusy] = useState<"install" | "loc" | "bg" | "notify" | null>(
+    null,
+  );
   const [iosSheet, setIosSheet] = useState(false);
   const [animKey, setAnimKey] = useState(0);
+  const [locTried, setLocTried] = useState(initial.locationOk !== null);
 
-  const steps: StepId[] = ["install", "location", "notify", "tour"];
+  const steps: StepId[] = ["install", "location", "background", "notify", "tour"];
   const stepIndex = steps.indexOf(step);
+  const bgTips = backgroundBullets(platform);
 
   function go(next: StepId) {
     setAnimKey((k) => k + 1);
@@ -117,10 +114,24 @@ export default function OnboardingPage({ onStartTour }: Props) {
   async function onLocation() {
     setBusy("loc");
     try {
-      const ok = await requestLocation();
+      const ok = await requestLocationAccess();
+      setLocTried(true);
       setLocationOk(ok);
       writeOnboarding({ locationOk: ok });
-      if (ok) go("notify");
+      if (ok) go("background");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function onBackground() {
+    setBusy("bg");
+    try {
+      const wake = await requestWakeLockSample();
+      setWakeLockOk(wake);
+      setBackgroundOk(true);
+      writeOnboarding({ backgroundOk: true, wakeLockOk: wake });
+      go("notify");
     } finally {
       setBusy(null);
     }
@@ -129,7 +140,7 @@ export default function OnboardingPage({ onStartTour }: Props) {
   async function onNotify() {
     setBusy("notify");
     try {
-      const ok = await requestNotifications();
+      const ok = await requestNotificationAccess();
       setNotifyOk(ok);
       writeOnboarding({ notifyOk: ok });
       if (ok) go("tour");
@@ -159,7 +170,7 @@ export default function OnboardingPage({ onStartTour }: Props) {
           ))}
         </div>
         <p className={styles.stepMeta}>
-          שלב {stepIndex + 1} מתוך {steps.length}
+          שלב {stepIndex + 1} מתוך {steps.length} · הרשאות לשטח
         </p>
 
         <div key={animKey} className={styles.panel}>
@@ -168,8 +179,8 @@ export default function OnboardingPage({ onStartTour }: Props) {
               <h2 className={styles.panelTitle}>שמירה במסך הבית</h2>
               <p className={styles.panelDesc}>
                 {platform === "ios"
-                  ? "באייפון זה נפתח כמו אפליקציה אמיתית מ־Safari — בלי חנות."
-                  : "הוסיפו את FLOFER BRINKS למסך הבית — אייקון מלא, בלי שורת דפדפן."}
+                  ? "באייפון זה חייב להיות מהמסך הבית (לא מטאב Safari) — אחרת מיקום ברקע והתראות מוגבלים."
+                  : "הוסיפו למסך הבית כאפליקציה — כך אפשר לאשר מיקום «תמיד» והתראות כמו באפליקציה רגילה."}
               </p>
               {standalone || installSeen ? (
                 <p className={`${styles.status} ${styles.statusOk}`}>
@@ -187,7 +198,7 @@ export default function OnboardingPage({ onStartTour }: Props) {
                   variant={standalone ? "primary" : "secondary"}
                   onClick={() => go("location")}
                 >
-                  המשך
+                  המשך לאישור מיקום
                 </Button>
               )}
             </>
@@ -195,12 +206,20 @@ export default function OnboardingPage({ onStartTour }: Props) {
 
           {step === "location" ? (
             <>
-              <h2 className={styles.panelTitle}>מיקום בזמן השימוש</h2>
+              <h2 className={styles.panelTitle}>מיקום מדויק בזמן אמת</h2>
               <p className={styles.panelDesc}>
-                נדרש לניווט, התקרבות ליעד וצפי חזרה לסניף. בחרו «בעת שימוש באפליקציה».
+                בלי זה אין ניווט, זיהוי הגעה ליעד, או עדכון חזרה לסניף. לחצו למטה
+                ואשרו <strong>מיקום מדויק</strong> / «בעת השימוש באפליקציה».
               </p>
+              <ul className={styles.tips}>
+                <li>נדרש GPS פעיל (לא רק רשת)</li>
+                <li>בחלון המערכת — בחרו לאפשר, לא «רק הפעם» אם אפשר</li>
+                <li>נבדוק גם מעקב קצר כדי לוודא שהמיקום חי</li>
+              </ul>
               {locationOk === true ? (
-                <p className={`${styles.status} ${styles.statusOk}`}>מיקום אושר ✓</p>
+                <p className={`${styles.status} ${styles.statusOk}`}>
+                  מיקום אושר ונבדק ✓
+                </p>
               ) : (
                 <>
                   <Button
@@ -209,11 +228,14 @@ export default function OnboardingPage({ onStartTour }: Props) {
                     loading={busy === "loc"}
                     onClick={() => void onLocation()}
                   >
-                    {locationOk === false ? "נסה שוב לאשר מיקום" : "אשר מיקום"}
+                    {locationOk === false
+                      ? "נסה שוב — אשר מיקום מדויק"
+                      : "אשר מיקום מדויק עכשיו"}
                   </Button>
                   {locationOk === false ? (
                     <p className={`${styles.status} ${styles.statusWarn}`}>
-                      המיקום נחסם. אפשר לאשר בהגדרות המכשיר → FLOFER BRINKS → מיקום.
+                      נחסם. פתחו הגדרות המכשיר → FLOFER BRINKS → מיקום → אפשר
+                      (מדויק), ואז לחצו שוב כאן.
                     </p>
                   ) : null}
                 </>
@@ -222,31 +244,86 @@ export default function OnboardingPage({ onStartTour }: Props) {
                 <Button size="md" variant="ghost" onClick={() => go("install")}>
                   חזרה
                 </Button>
-                <Button
-                  size="md"
-                  variant="secondary"
-                  onClick={() => go("notify")}
-                >
-                  {locationOk === true ? "המשך" : "דלג לעת עתה"}
+                {locationOk === true ? (
+                  <Button size="lg" onClick={() => go("background")}>
+                    המשך
+                  </Button>
+                ) : (
+                  <Button
+                    size="md"
+                    variant="secondary"
+                    disabled={!locTried}
+                    onClick={() => go("background")}
+                  >
+                    דלג (לא מומלץ)
+                  </Button>
+                )}
+              </div>
+            </>
+          ) : null}
+
+          {step === "background" ? (
+            <>
+              <h2 className={styles.panelTitle}>מיקום כשהמסך כבוי / ברקע</h2>
+              <p className={styles.panelDesc}>
+                בסבב אמיתי המיקום חייב להמשיך לרוץ גם כשהמסך נעול או כשעוברים
+                לוויז. בדפדפן יש מגבלות — לכן חשוב להגדיר במכשיר:
+              </p>
+              <ul className={styles.tips}>
+                {bgTips.map((t) => (
+                  <li key={t}>{t}</li>
+                ))}
+              </ul>
+              {wakeLockOk === true ? (
+                <p className={`${styles.status} ${styles.statusOk}`}>
+                  נעילת מסך (Wake Lock) זמינה ✓ — תופעל אוטומטית בנסיעה
+                </p>
+              ) : wakeLockOk === false ? (
+                <p className={`${styles.status} ${styles.statusMuted}`}>
+                  Wake Lock לא זמין כאן — השאירו את המסך דולק בזמן סבב
+                </p>
+              ) : null}
+              <Button
+                size="lg"
+                loading={busy === "bg"}
+                onClick={() => void onBackground()}
+              >
+                הפעל שמירת מסך דולק ואשר שהבנתי
+              </Button>
+              <div className={styles.row}>
+                <Button size="md" variant="ghost" onClick={() => go("location")}>
+                  חזרה
                 </Button>
+                {backgroundOk ? (
+                  <Button size="md" variant="secondary" onClick={() => go("notify")}>
+                    המשך להתראות
+                  </Button>
+                ) : null}
               </div>
             </>
           ) : null}
 
           {step === "notify" ? (
             <>
-              <h2 className={styles.panelTitle}>התראות האפליקציה</h2>
+              <h2 className={styles.panelTitle}>התראות (פושים)</h2>
               <p className={styles.panelDesc}>
                 {notificationsSupported()
-                  ? "באייפון עובד אחרי התקנה למסך הבית (iOS 16.4+). אפשר גם Telegram בהגדרות."
-                  : "הדפדפן לא תומך בהתראות — השתמשו ב־Telegram מההגדרות."}
+                  ? "אשרו התראות מהמערכת — תקבלו עדכונים על התקרבות ליעד, עיכובים וסיכום. באייפון זה עובד אחרי התקנה למסך הבית (iOS 16.4+)."
+                  : "הדפדפן לא תומך בהתראות כאן — הגדירו Telegram בהגדרות כגיבוי."}
               </p>
+              <ul className={styles.tips}>
+                <li>אחרי האישור תישלח התראת בדיקה קצרה</li>
+                <li>אל תחסמו את FLOFER BRINKS בהגדרות ההתראות של המכשיר</li>
+                <li>אפשר גם Telegram מההגדרות כגיבוי בשטח</li>
+              </ul>
               {!notificationsSupported() ? (
                 <p className={`${styles.status} ${styles.statusMuted}`}>
-                  התראות דפדפן לא זמינות כאן
+                  התראות דפדפן לא זמינות — המשיכו ותגדירו Telegram אחר כך
                 </p>
               ) : notifyOk === true ? (
-                <p className={`${styles.status} ${styles.statusOk}`}>התראות אושרו ✓</p>
+                <p className={`${styles.status} ${styles.statusOk}`}>
+                  התראות אושרו ✓ (נשלחה בדיקה)
+                </p>
               ) : (
                 <>
                   <Button
@@ -255,21 +332,27 @@ export default function OnboardingPage({ onStartTour }: Props) {
                     loading={busy === "notify"}
                     onClick={() => void onNotify()}
                   >
-                    {notifyOk === false ? "נסה שוב לאשר התראות" : "אשר התראות"}
+                    {notifyOk === false
+                      ? "נסה שוב לאשר התראות"
+                      : "אשר התראות פוש עכשיו"}
                   </Button>
                   {notifyOk === false ? (
                     <p className={`${styles.status} ${styles.statusWarn}`}>
-                      ההתראות נחסמו. אפשר להפעיל בהגדרות המכשיר לאפליקציה.
+                      נחסם. הגדרות המכשיר → FLOFER BRINKS → התראות → הפעלה.
                     </p>
                   ) : null}
                 </>
               )}
               <div className={styles.row}>
-                <Button size="md" variant="ghost" onClick={() => go("location")}>
+                <Button size="md" variant="ghost" onClick={() => go("background")}>
                   חזרה
                 </Button>
-                <Button size="lg" onClick={() => go("tour")}>
-                  המשך להדרכה חיה
+                <Button
+                  size="lg"
+                  onClick={() => go("tour")}
+                  variant={notifyOk === true ? "primary" : "secondary"}
+                >
+                  {notifyOk === true ? "המשך להדרכה חיה" : "המשך בלי התראות"}
                 </Button>
               </div>
             </>
@@ -277,14 +360,24 @@ export default function OnboardingPage({ onStartTour }: Props) {
 
           {step === "tour" ? (
             <>
-              <h2 className={styles.panelTitle}>הדרכה חיה עם דמו</h2>
+              <h2 className={styles.panelTitle}>מוכנים להדרכה חיה</h2>
               <p className={styles.panelDesc}>
-                נפעיל נתוני הדגמה ונעבור יחד על בית ← תכנון ← סדר ← מפה ← נסיעה.
-                מה שמודגש בזהב — זה מה שחשוב בכל שלב. בסוף הדמו ייכבה ותהיו
-                מוכנים למשמרת אמת מחר.
+                ההרשאות הוגדרו. עכשיו נתרגל יחד עם דמו: הוספת כתובות, VIP, צילום,
+                חישוב מסלול ונעילה — ואז תעברו למצב אמת.
               </p>
+              <ul className={styles.checklist}>
+                <li className={locationOk ? styles.checkOk : styles.checkWarn}>
+                  מיקום {locationOk ? "✓" : "— לא אושר"}
+                </li>
+                <li className={backgroundOk ? styles.checkOk : styles.checkWarn}>
+                  רקע / מסך {backgroundOk ? "✓" : "—"}
+                </li>
+                <li className={notifyOk ? styles.checkOk : styles.checkWarn}>
+                  התראות {notifyOk ? "✓" : "— לא אושרו"}
+                </li>
+              </ul>
               <Button size="lg" onClick={startLiveTour}>
-                התחל הדרכה חיה
+                התחל הדרכה חיה עם דמו
               </Button>
               <Button size="md" variant="ghost" onClick={() => go("notify")}>
                 חזרה
@@ -294,7 +387,7 @@ export default function OnboardingPage({ onStartTour }: Props) {
         </div>
 
         <p className={styles.hint}>
-          ההגדרה וההדרכה מופיעות בהפעלה הראשונה. אחר כך תיכנסו ישר לאפליקציה.
+          בלי מיקום והתראות החוויה בשטח חלקית. אפשר לתקן תמיד בהגדרות המכשיר.
         </p>
       </div>
 
@@ -325,6 +418,7 @@ export default function OnboardingPage({ onStartTour }: Props) {
               </li>
               <li>
                 ליחצו <strong>«הוסף»</strong> — ואז פתחו את האייקון מהמסך הראשי
+                (משם מאשרים מיקום והתראות)
               </li>
             </ol>
             <Button
@@ -334,7 +428,7 @@ export default function OnboardingPage({ onStartTour }: Props) {
                 go("location");
               }}
             >
-              הבנתי — המשך
+              הבנתי — המשך למיקום
             </Button>
           </div>
         </div>
