@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 # Each username is a fully isolated account (own routes, prefs, demo, work days).
 PILOT_USERS = [
     {
-        "username": "daniel",
-        "password": "DanielBrinks2026!",
+        "username": "FLOFER",
+        "password": "1234",
         "full_name": "דניאל",
         "role": "team_leader",
     },
@@ -24,7 +24,6 @@ PILOT_USERS = [
         "full_name": "אלעד",
         "role": "team_leader",
     },
-    # Legacy seed name — keep for older bookmarks; same isolation as elad if recreated empty
     {
         "username": "leader",
         "password": "Brinks2026!",
@@ -48,7 +47,6 @@ def _ensure_user(db, *, username: str, password: str, full_name: str, role: str)
         db.add(UserSettings(user_id=user.id))
         logger.info("Seeded user '%s'", username)
     else:
-        # Keep password in sync for pilot so shared credentials stay known.
         user.password_hash = hash_password(password)
         user.full_name = full_name
         if db.query(UserSettings).filter(UserSettings.user_id == user.id).first() is None:
@@ -57,9 +55,25 @@ def _ensure_user(db, *, username: str, password: str, full_name: str, role: str)
     return user
 
 
+def _migrate_legacy_daniel(db) -> None:
+    """Rename old 'daniel' account to FLOFER so existing data stays with him."""
+    legacy = db.query(User).filter(User.username == "daniel").first()
+    if legacy is None:
+        return
+    existing = db.query(User).filter(User.username == "FLOFER").first()
+    if existing is not None:
+        logger.info("FLOFER already exists — left legacy 'daniel' as-is")
+        return
+    legacy.username = "FLOFER"
+    legacy.password_hash = hash_password("1234")
+    legacy.full_name = "דניאל"
+    logger.info("Migrated user 'daniel' → 'FLOFER'")
+
+
 def seed() -> None:
     db = SessionLocal()
     try:
+        _migrate_legacy_daniel(db)
         for row in PILOT_USERS:
             _ensure_user(db, **row)
 

@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from src.core.exceptions import AppError
@@ -7,7 +8,12 @@ from src.schemas.auth import TokenResponse, UserOut
 
 
 def authenticate_user(db: Session, username: str, password: str) -> TokenResponse:
-    user = db.query(User).filter(User.username == username).first()
+    key = username.strip()
+    user = (
+        db.query(User)
+        .filter(func.lower(User.username) == key.lower())
+        .first()
+    )
     if user is None or not verify_password(password, user.password_hash):
         raise AppError(
             code="invalid_credentials",

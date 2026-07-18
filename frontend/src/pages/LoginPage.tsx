@@ -1,14 +1,15 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { loginRequest, type ApiError } from "../api/client";
 import { BrandLockup } from "../components/ui/BrandLockup";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { useToast } from "../components/ui/ToastProvider";
+import { readSavedLogin, writeSavedLogin } from "../lib/savedLogin";
 import { useAuthStore } from "../store/authStore";
 import styles from "./LoginPage.module.css";
 
-function prefillsUsername(): string {
+function usernameFromQuery(): string {
   try {
     const u = new URLSearchParams(window.location.search).get("user");
     if (u && /^[a-zA-Z0-9_]{2,32}$/.test(u)) return u;
@@ -21,16 +22,19 @@ function prefillsUsername(): string {
 export default function LoginPage() {
   const setSession = useAuthStore((s) => s.setSession);
   const { show } = useToast();
-  const initialUser = useMemo(() => prefillsUsername(), []);
-  const [username, setUsername] = useState(initialUser);
-  const [password, setPassword] = useState("");
+  const saved = readSavedLogin();
+  const [username, setUsername] = useState(
+    () => usernameFromQuery() || saved?.username || "FLOFER",
+  );
+  const [password, setPassword] = useState(() => saved?.password || "");
   const [loading, setLoading] = useState(false);
+  const autoTried = useRef(false);
 
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function doLogin(user: string, pass: string) {
     setLoading(true);
     try {
-      const res = await loginRequest(username.trim(), password);
+      const res = await loginRequest(user.trim(), pass);
+      writeSavedLogin(user.trim(), pass);
       setSession(res.access_token, res.user);
     } catch (err) {
       const apiErr = err as ApiError;
@@ -38,6 +42,20 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  useEffect(() => {
+    if (autoTried.current) return;
+    const remembered = readSavedLogin();
+    if (!remembered) return;
+    autoTried.current = true;
+    void doLogin(remembered.username, remembered.password);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot auto login
+  }, []);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    await doLogin(username, password);
   }
 
   return (
@@ -49,8 +67,8 @@ export default function LoginPage() {
         </div>
         <p className={styles.subtitle}>ניהול סבב חכם לראשי צוות</p>
         <p className={styles.isoNote}>
-          לכל ראש צוות חשבון נפרד — הסבבים, ההגדרות והדמו לא מסונכרנים עם טלפון
-          אחר. היכנסו עם הפרטים שקיבלתם בלבד.
+          לכל ראש צוות חשבון נפרד. אחרי כניסה מוצלחת הפרטים נשמרים במכשיר — בפעם
+          הבאה תיכנסו אוטומטית.
         </p>
         <form className={styles.form} onSubmit={onSubmit}>
           <Input
@@ -74,7 +92,7 @@ export default function LoginPage() {
             כניסה למערכת
           </Button>
         </form>
-        <p className={styles.footnote}>גישה מאובטחת · חשבון אישי לכל משתמש</p>
+        <p className={styles.footnote}>שמירה אוטומטית במכשיר · חשבון אישי</p>
       </Card>
     </main>
   );

@@ -67,7 +67,7 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 
 ## Next steps
 
-1. **Daniel (isolated):** https://flofer-brinks.onrender.com/?user=daniel — login `daniel` (own routes/prefs/demo; not synced with tester)
+1. **Daniel (isolated):** https://flofer-brinks.onrender.com — login `FLOFER` / `1234` (auto-saved on device; not synced with tester)
 2. **Tester (Elad):** same URL, login `elad` — separate account; use «התנתקות» before switching users on one phone
 3. **Before pilot:** set real Brinks depot in Settings (shared office coords; seed is temporary Tel Aviv)
 4. GCP Browser Key HTTP referrer: `https://flofer-brinks.onrender.com/*`
@@ -101,9 +101,9 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 
 **Completed (2026-07-18 — Tour settings + account isolation):**
 - Tour covers Settings: depot, day/night theme, drive/SOS prefs
-- Login gate (no shared `demo` session in prod); pilot users `daniel` / `elad` / `leader`
+- Login gate (no shared `demo` session in prod); pilot `FLOFER`/`1234` + `elad` / `leader`
 - Demo seed/purge scoped per `user_id` so one phone cannot wipe another's demo
-- Logout in More sheet; deep-link `?user=daniel` prefills username
+- Logout clears saved login; successful login auto-saves credentials + JWT ~30 days
 
 ## Verify
 

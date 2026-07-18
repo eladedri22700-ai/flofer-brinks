@@ -18,7 +18,8 @@ class Settings(BaseSettings):
         "postgresql+psycopg2://routemaster:routemaster@localhost:5432/routemaster"
     )
     jwt_secret: str = "change-me-to-a-long-random-string"
-    jwt_expire_hours: int = 24
+    # Long-lived pilot sessions — phones stay signed in across days.
+    jwt_expire_hours: int = 720
     google_maps_server_key: str = ""
     google_maps_browser_key: str = ""
     anthropic_api_key: str = ""

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { BrandLockup } from "../ui/BrandLockup";
 import { copyrightLine, copyrightShort } from "../../lib/legal";
+import { clearSavedLogin } from "../../lib/savedLogin";
 import { useAuthStore } from "../../store/authStore";
 import styles from "./MoreSheet.module.css";
 
@@ -40,6 +41,7 @@ export function MoreSheet({ open, onClose, userName }: Props) {
   if (!open) return null;
 
   function logout() {
+    clearSavedLogin();
     clearSession();
     qc.clear();
     onClose();
