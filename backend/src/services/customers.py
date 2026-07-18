@@ -76,26 +76,39 @@ def find_or_create_customer(
     geocode_confidence: float | None = None,
 ) -> Customer:
     normalized = normalize_address(address)
+    clean_name = (name or "").strip() or "לקוח"
     existing = (
         db.query(Customer)
         .filter(
             Customer.normalized_address == normalized,
-            Customer.name == name.strip(),
+            Customer.name == clean_name,
         )
         .first()
     )
+    # Same place, different OCR name → reuse address match
+    if existing is None:
+        existing = (
+            db.query(Customer)
+            .filter(Customer.normalized_address == normalized)
+            .order_by(Customer.id.asc())
+            .first()
+        )
     if existing:
-        # Keep registry fresh when the same customer is re-used
         existing.lat = lat
         existing.lng = lng
         if geocode_confidence is not None:
             existing.geocode_confidence = geocode_confidence
         if category in CATEGORY_DEFAULTS:
             existing.category = category
+        # Prefer a more descriptive name when OCR improves
+        if clean_name and clean_name != "לקוח" and (
+            not existing.name or existing.name == "לקוח" or len(clean_name) > len(existing.name)
+        ):
+            existing.name = clean_name
         return existing
 
     customer = Customer(
-        name=name.strip(),
+        name=clean_name,
         normalized_address=normalized,
         lat=lat,
         lng=lng,
@@ -108,7 +121,105 @@ def find_or_create_customer(
     return customer
 
 
+async def remember_drafts(db: Session, drafts: list[dict]) -> tuple[int, list[int]]:
+    """Persist uploaded/extracted addresses into the customer library for next rounds."""
+    from src.services import maps
+
+    ids: list[int] = []
+    for raw in drafts:
+        name = str(raw.get("customer_name") or "לקוח").strip() or "לקוח"
+        address = str(raw.get("address") or "").strip()
+        if len(address) < 2:
+            continue
+        lat = raw.get("lat")
+        lng = raw.get("lng")
+        conf = raw.get("geocode_confidence")
+        category = str(raw.get("category") or "other")
+        try:
+            if lat is None or lng is None:
+                geo = await maps.geocode(address)
+                lat = float(geo["lat"])
+                lng = float(geo["lng"])
+                address = str(geo.get("formatted_address") or address)
+                conf = float(geo.get("confidence") or 0.6)
+            else:
+                lat = float(lat)
+                lng = float(lng)
+            customer = find_or_create_customer(
+                db,
+                name=name,
+                address=address,
+                lat=lat,
+                lng=lng,
+                category=category,
+                geocode_confidence=float(conf) if conf is not None else None,
+            )
+            # Keep a readable address for library display (via a zero-route note is overkill);
+            # store original in notes if empty
+            if not customer.notes:
+                customer.notes = address
+            ids.append(customer.id)
+        except Exception:
+            continue
+    db.commit()
+    # unique preserve order
+    seen: set[int] = set()
+    unique_ids: list[int] = []
+    for i in ids:
+        if i not in seen:
+            seen.add(i)
+            unique_ids.append(i)
+    return len(unique_ids), unique_ids
+
+
+async def create_customer_manual(
+    db: Session,
+    *,
+    name: str,
+    address: str,
+    lat: float | None = None,
+    lng: float | None = None,
+    place_id: str | None = None,
+    category: str = "other",
+    geocode_confidence: float | None = None,
+) -> Customer:
+    from src.services import maps
+
+    resolved_address = address.strip()
+    resolved_lat = lat
+    resolved_lng = lng
+    conf = geocode_confidence
+    if place_id:
+        details = await maps.place_details(place_id)
+        resolved_lat = float(details["lat"])
+        resolved_lng = float(details["lng"])
+        resolved_address = str(details.get("formatted_address") or resolved_address)
+        conf = float(details.get("confidence") or 0.8)
+    elif resolved_lat is None or resolved_lng is None:
+        geo = await maps.geocode(resolved_address)
+        resolved_lat = float(geo["lat"])
+        resolved_lng = float(geo["lng"])
+        resolved_address = str(geo.get("formatted_address") or resolved_address)
+        conf = float(geo.get("confidence") or 0.7)
+
+    customer = find_or_create_customer(
+        db,
+        name=name,
+        address=resolved_address,
+        lat=float(resolved_lat),
+        lng=float(resolved_lng),
+        category=category,
+        geocode_confidence=conf,
+    )
+    customer.notes = resolved_address
+    db.commit()
+    db.refresh(customer)
+    return customer
+
+
 def display_address(db: Session, customer: Customer) -> str:
+    if customer.notes and customer.notes.strip():
+        return customer.notes.strip()
     last = (
         db.query(Stop.address)
         .filter(Stop.customer_id == customer.id)

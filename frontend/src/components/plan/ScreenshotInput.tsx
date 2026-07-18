@@ -37,7 +37,8 @@ export function ScreenshotInputTab({ onExtract, onCommit, loading }: Props) {
   return (
     <div className={styles.wrap}>
       <p className={styles.lead}>
-        צלמו את רשימת היעדים מ־Zebra, או בחרו צילום מסך מהגלריה.
+        צלמו את רשימת היעדים מ־Zebra, או בחרו צילום מסך מהגלריה. כל כתובת
+        שנזהתה נשמרת אוטומטית בספריית «שמורים» לפעמים הבאות.
       </p>
 
       {/* Two inputs: capture forces camera; without capture opens gallery/photos */}

@@ -16,5 +16,15 @@ class CustomerOut(BaseModel):
     geocode_confidence: float | None = None
 
 
+class CustomerCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=128)
+    address: str = Field(min_length=2, max_length=255)
+    lat: float | None = None
+    lng: float | None = None
+    place_id: str | None = None
+    category: str = "other"
+    geocode_confidence: float | None = None
+
+
 class AddFromCustomersBody(BaseModel):
     customer_ids: list[int] = Field(min_length=1, max_length=40)

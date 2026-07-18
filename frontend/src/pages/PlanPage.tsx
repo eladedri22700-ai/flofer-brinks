@@ -471,14 +471,24 @@ export default function PlanPage() {
           {tab === "file" ? (
             <FileInputTab
               loading={bulkM.isPending}
-              onImport={(file) => importFile(route.id, file)}
+              onImport={async (file) => {
+                const drafts = await importFile(route.id, file);
+                void qc.invalidateQueries({ queryKey: ["customers"] });
+                show("הכתובות נשמרו בספריית הלקוחות", "success");
+                return drafts;
+              }}
               onCommit={(drafts) => bulkM.mutate(drafts)}
             />
           ) : null}
           {tab === "shot" ? (
             <ScreenshotInputTab
               loading={bulkM.isPending}
-              onExtract={extractFromImage}
+              onExtract={async (file) => {
+                const drafts = await extractFromImage(file);
+                void qc.invalidateQueries({ queryKey: ["customers"] });
+                show("הכתובות מהצילום נשמרו לספרייה", "success");
+                return drafts;
+              }}
               onCommit={(drafts) => bulkM.mutate(drafts)}
             />
           ) : null}

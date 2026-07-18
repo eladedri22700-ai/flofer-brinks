@@ -82,6 +82,19 @@ export const listCustomers = (q = "", limit = 80) => {
   return apiFetch<CustomerDto[]>(`/api/customers${qs ? `?${qs}` : ""}`);
 };
 
+export const createCustomer = (body: {
+  name: string;
+  address: string;
+  lat?: number | null;
+  lng?: number | null;
+  place_id?: string | null;
+  category?: string;
+}) =>
+  apiFetch<CustomerDto>("/api/customers", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
 export const addStopsFromCustomers = (routeId: number, customerIds: number[]) =>
   apiFetch<StopDto[]>(`/api/routes/${routeId}/stops/from-customers`, {
     method: "POST",

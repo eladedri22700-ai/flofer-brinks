@@ -24,6 +24,7 @@ from src.schemas.routes import (
     StopUpdate,
 )
 from src.services import ocr
+from src.services.customers import remember_drafts
 from src.services.file_import import parse_stops_file
 from src.services.optimize_service import optimize_route, reorder_manual
 from src.services.routes import (
@@ -266,12 +267,15 @@ async def import_file(
             status_code=400,
         )
     drafts = parse_stops_file(file.filename or "file.csv", raw)
+    # Persist every imported address into the customer library for future rounds
+    await remember_drafts(db, drafts)
     return [DraftStop.model_validate(d) for d in drafts]
 
 
 @router.post("/stops/extract-from-image", response_model=list[DraftStop])
 async def extract_image(
     file: UploadFile = File(...),
+    db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ) -> list[DraftStop]:
     content_type = (file.content_type or "").lower()
@@ -291,4 +295,6 @@ async def extract_image(
             status_code=400,
         )
     drafts = await ocr.extract_from_image(raw, content_type or "image/jpeg")
+    # Save OCR addresses immediately — available under «שמורים» next time
+    await remember_drafts(db, drafts)
     return [DraftStop.model_validate(d) for d in drafts]

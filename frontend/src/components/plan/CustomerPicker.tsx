@@ -1,9 +1,16 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { listCustomers } from "../../api/planning";
-import type { CustomerDto } from "../../api/client";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiErrorMessage } from "../../api/errors";
+import {
+  autocomplete,
+  createCustomer,
+  listCustomers,
+  placeDetails,
+} from "../../api/planning";
+import type { CustomerDto, PlaceSuggestion } from "../../api/client";
 import { Button } from "../ui/Button";
 import { Skeleton } from "../ui/Skeleton";
+import { useToast } from "../ui/ToastProvider";
 import styles from "./CustomerPicker.module.css";
 
 type Props = {
@@ -17,8 +24,15 @@ export function CustomerPickerTab({
   onAdd,
   loading,
 }: Props) {
+  const { show } = useToast();
+  const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [formOpen, setFormOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
+  const [placeId, setPlaceId] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
 
   const customersQ = useQuery({
     queryKey: ["customers", q],
@@ -26,8 +40,39 @@ export function CustomerPickerTab({
   });
 
   const excluded = useMemo(() => new Set(excludeCustomerIds), [excludeCustomerIds]);
-
   const rows = (customersQ.data ?? []).filter((c) => !excluded.has(c.id));
+
+  useEffect(() => {
+    if (address.trim().length < 2 || placeId) {
+      setSuggestions([]);
+      return;
+    }
+    const t = window.setTimeout(() => {
+      void autocomplete(address.trim())
+        .then(setSuggestions)
+        .catch(() => setSuggestions([]));
+    }, 300);
+    return () => window.clearTimeout(t);
+  }, [address, placeId]);
+
+  const createM = useMutation({
+    mutationFn: () =>
+      createCustomer({
+        name: name.trim(),
+        address: address.trim(),
+        place_id: placeId,
+      }),
+    onSuccess: (c) => {
+      show("הלקוח נשמר בספרייה", "success");
+      setName("");
+      setAddress("");
+      setPlaceId(null);
+      setFormOpen(false);
+      void qc.invalidateQueries({ queryKey: ["customers"] });
+      setSelected((prev) => new Set(prev).add(c.id));
+    },
+    onError: (e) => show(apiErrorMessage(e), "error"),
+  });
 
   function toggle(id: number) {
     setSelected((prev) => {
@@ -38,15 +83,19 @@ export function CustomerPickerTab({
     });
   }
 
-  function selectAllVisible() {
-    setSelected(new Set(rows.map((c) => c.id)));
+  async function pickSuggestion(s: PlaceSuggestion) {
+    setAddress(s.description);
+    setPlaceId(s.place_id);
+    setSuggestions([]);
+    try {
+      const d = await placeDetails(s.place_id);
+      setAddress(d.formatted_address || s.description);
+    } catch {
+      /* keep description */
+    }
   }
 
-  function clearSelection() {
-    setSelected(new Set());
-  }
-
-  function submit() {
+  function submitSelected() {
     const ids = [...selected];
     if (!ids.length) return;
     onAdd(ids);
@@ -56,8 +105,62 @@ export function CustomerPickerTab({
   return (
     <div className={styles.wrap}>
       <p className={styles.lead}>
-        בחרו לקוחות שמורים והוסיפו לסבב של היום — בלי להקליד כתובת מחדש.
+        כל כתובת מצילום / קובץ / הזנה נשמרת כאן אוטומטית. אפשר גם להוסיף לקוח
+        ידנית לספרייה, ואז לבחור לסבב.
       </p>
+
+      <button
+        type="button"
+        className={styles.addToggle}
+        onClick={() => setFormOpen((v) => !v)}
+      >
+        {formOpen ? "סגור טופס לקוח חדש" : "+ הוסף לקוח שמור ידנית"}
+      </button>
+
+      {formOpen ? (
+        <div className={styles.form}>
+          <label className={styles.field}>
+            <span>שם לקוח</span>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="לדוגמה: בנק לאומי דיזנגוף"
+              autoComplete="organization"
+            />
+          </label>
+          <label className={styles.field}>
+            <span>כתובת</span>
+            <input
+              value={address}
+              onChange={(e) => {
+                setAddress(e.target.value);
+                setPlaceId(null);
+              }}
+              placeholder="התחילו להקליד כתובת…"
+              autoComplete="street-address"
+            />
+          </label>
+          {suggestions.length > 0 ? (
+            <ul className={styles.suggest}>
+              {suggestions.map((s) => (
+                <li key={s.place_id}>
+                  <button type="button" onClick={() => void pickSuggestion(s)}>
+                    {s.description}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <Button
+            size="lg"
+            loading={createM.isPending}
+            disabled={!name.trim() || address.trim().length < 2}
+            onClick={() => createM.mutate()}
+          >
+            שמור בספרייה
+          </Button>
+        </div>
+      ) : null}
 
       <label className={styles.searchLabel}>
         <span className={styles.srOnly}>חיפוש לקוח</span>
@@ -73,11 +176,19 @@ export function CustomerPickerTab({
       </label>
 
       <div className={styles.toolbar}>
-        <button type="button" className={styles.linkBtn} onClick={selectAllVisible}>
+        <button
+          type="button"
+          className={styles.linkBtn}
+          onClick={() => setSelected(new Set(rows.map((c) => c.id)))}
+        >
           בחר הכל ברשימה
         </button>
         {selected.size > 0 ? (
-          <button type="button" className={styles.linkBtn} onClick={clearSelection}>
+          <button
+            type="button"
+            className={styles.linkBtn}
+            onClick={() => setSelected(new Set())}
+          >
             נקה בחירה ({selected.size})
           </button>
         ) : (
@@ -89,19 +200,14 @@ export function CustomerPickerTab({
         <div className={styles.list}>
           <Skeleton height={56} />
           <Skeleton height={56} />
-          <Skeleton height={56} />
         </div>
-      ) : null}
-
-      {customersQ.isError ? (
-        <p className={styles.empty}>לא הצלחנו לטעון את רשימת הלקוחות. נסו שוב.</p>
       ) : null}
 
       {!customersQ.isLoading && rows.length === 0 ? (
         <p className={styles.empty}>
           {q.trim()
             ? "לא נמצאו לקוחות תואמים."
-            : "עדיין אין לקוחות שמורים. הוסיפו יעד פעם אחת (צילום / ידני / קובץ) — והוא יישמר לסבבים הבאים."}
+            : "הספרייה ריקה. הוסיפו לקוח ידנית למעלה, או העלו צילום/קובץ — הכתובות יישמרו כאן."}
         </p>
       ) : null}
 
@@ -121,11 +227,11 @@ export function CustomerPickerTab({
           size="lg"
           disabled={!selected.size || loading}
           loading={loading}
-          onClick={submit}
+          onClick={submitSelected}
         >
           {selected.size
             ? `הוסף ${selected.size} לסבב`
-            : "בחרו לקוחות להוספה"}
+            : "בחרו לקוחות להוספה לסבב"}
         </Button>
       </div>
     </div>
