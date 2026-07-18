@@ -108,6 +108,22 @@ def duplicate_route(db: Session, route: Route, user_id: int) -> Route:
     )
 
 
+def _day_blessing(
+    *,
+    done_n: int,
+    total_n: int,
+    exceptions_n: int,
+    overtime_min: int | None,
+) -> str:
+    if total_n > 0 and done_n + 0 >= total_n and exceptions_n == 0:
+        return "יום מושלם — כל היעדים בוצעו בלי חריגות. כל הכבוד!"
+    if overtime_min and overtime_min >= 30:
+        return "סיימתם יום ארוך ומאתגר — תודה על המאמץ. לנוח קצת, מגיע לכם."
+    if done_n >= max(1, total_n - 1):
+        return "כל הכבוד! יום העבודה הסתיים בהצלחה. נסיעה בטוחה הביתה."
+    return "יום העבודה נסגר. תודה על העבודה היום — נתראה מחר."
+
+
 def route_summary(db: Session, route: Route) -> dict:
     stops = sorted(route.stops or [], key=lambda s: s.sequence_order)
     done = [s for s in stops if s.status == "done"]
@@ -135,7 +151,7 @@ def route_summary(db: Session, route: Route) -> dict:
     for cid, vals in by_c.items():
         cust = db.query(Customer).filter(Customer.id == cid).first()
         if cust:
-            top.append({"name": cust.name, "avg_min": round(sum(vals) / len(vals), 1)})
+            top.append({"name": cust.name, "avg_min": round(median(vals), 1)})
     top.sort(key=lambda x: -x["avg_min"])
 
     planned_end = None
@@ -148,6 +164,38 @@ def route_summary(db: Session, route: Route) -> dict:
     lasts = [s.actual_departure for s in done if s.actual_departure]
     if lasts:
         actual_end = max(lasts).isoformat()
+
+    wd = (
+        db.query(WorkDay)
+        .filter(WorkDay.route_id == route.id)
+        .first()
+    )
+    total_min = wd.total_min if wd else None
+    overtime_min = wd.overtime_min if wd else None
+
+    stop_ids = [s.id for s in stops]
+    samples_today = 0
+    if stop_ids:
+        samples_today = (
+            db.query(ServiceSample)
+            .filter(
+                ServiceSample.stop_id.in_(stop_ids),
+                ServiceSample.is_outlier.is_(False),
+            )
+            .count()
+        )
+
+    blessing = _day_blessing(
+        done_n=len(done),
+        total_n=len(stops),
+        exceptions_n=len(exceptions),
+        overtime_min=overtime_min,
+    )
+    learning_he = (
+        f"נשמרו {samples_today} מדידות שירות — ההערכות לסבבים הבאים ישתפרו."
+        if samples_today
+        else "ככל שתסעו עם GPS פתוח, המערכת תלמד זמני שירות ונסיעה ותדייק את ההערכות."
+    )
 
     return {
         "route_id": route.id,
@@ -162,6 +210,11 @@ def route_summary(db: Session, route: Route) -> dict:
         "exceptions": exceptions,
         "top_slow_customers": top[:5],
         "message_he": "הסבב הושלם",
+        "blessing_he": blessing,
+        "learning_he": learning_he,
+        "samples_today": samples_today,
+        "work_total_min": total_min,
+        "overtime_min": overtime_min,
     }
 
 

@@ -12,6 +12,30 @@ import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { useToast } from "../components/ui/ToastProvider";
 import styles from "./SummaryPage.module.css";
 
+type SummaryDto = {
+  stops_done: number;
+  stops_total: number;
+  savings_he: string;
+  message_he: string;
+  blessing_he?: string;
+  learning_he?: string;
+  samples_today?: number;
+  work_total_min?: number | null;
+  overtime_min?: number | null;
+  exceptions: { name: string; code: string }[];
+  top_slow_customers: { name: string; avg_min: number }[];
+  planned_finish: string | null;
+  actual_finish: string | null;
+};
+
+function formatMin(m: number | null | undefined): string | null {
+  if (m == null || Number.isNaN(m)) return null;
+  const h = Math.floor(m / 60);
+  const min = m % 60;
+  if (h <= 0) return `${min} דק'`;
+  return `${h}:${String(min).padStart(2, "0")} שע'`;
+}
+
 export default function SummaryPage() {
   const { routeId } = useParams();
   const nav = useNavigate();
@@ -54,20 +78,17 @@ export default function SummaryPage() {
     return <LoadingScreen label="מכין את סיכום היום" />;
   }
 
-  const s = sumQ.data as {
-    stops_done: number;
-    stops_total: number;
-    savings_he: string;
-    message_he: string;
-    exceptions: { name: string; code: string }[];
-    top_slow_customers: { name: string; avg_min: number }[];
-    planned_finish: string | null;
-    actual_finish: string | null;
-  };
+  const s = sumQ.data as SummaryDto;
+  const blessing = s.blessing_he || "כל הכבוד! יום העבודה הסתיים.";
+  const workLabel = formatMin(s.work_total_min);
 
   return (
     <div className={`pageShell ${styles.page}`}>
       <PageHeader kicker="סיום יום" title="סיכום סבב" lead={s.message_he} />
+
+      <Card className={styles.blessing} statusBar="gold">
+        <p className={styles.blessingText}>{blessing}</p>
+      </Card>
 
       <div className={styles.seal}>
         <VaultDial completed={s.stops_done} total={s.stops_total} size={120} />
@@ -78,6 +99,14 @@ export default function SummaryPage() {
         <p className={styles.meta}>
           יעדים שבוצעו: {s.stops_done}/{s.stops_total}
         </p>
+        {workLabel ? (
+          <p className={`${styles.meta} num`}>
+            משך יום: {workLabel}
+            {s.overtime_min && s.overtime_min > 0
+              ? ` · מעבר לתקן: ${s.overtime_min} דק'`
+              : ""}
+          </p>
+        ) : null}
         {s.planned_finish ? (
           <p className={`${styles.meta} num`}>
             סיום מתוכנן:{" "}
@@ -91,6 +120,13 @@ export default function SummaryPage() {
           </p>
         ) : null}
       </Card>
+
+      {s.learning_he ? (
+        <Card>
+          <h2 className={styles.h2}>למידה לזמנים מדויקים יותר</h2>
+          <p className={styles.meta}>{s.learning_he}</p>
+        </Card>
+      ) : null}
 
       {s.exceptions?.length ? (
         <Card>
@@ -113,7 +149,7 @@ export default function SummaryPage() {
             {s.top_slow_customers.map((c) => (
               <li key={c.name} className={styles.item}>
                 <span className={styles.itemName}>{c.name}</span>
-                <span className={`${styles.itemMeta} num`}>ממוצע {c.avg_min} דק'</span>
+                <span className={`${styles.itemMeta} num`}>חציון {c.avg_min} דק'</span>
               </li>
             ))}
           </ul>

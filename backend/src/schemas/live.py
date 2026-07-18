@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 class GpsBody(BaseModel):
     lat: float | None = None
     lng: float | None = None
+    source: str | None = None  # manual | geofence
 
 
 class CompleteStopBody(BaseModel):
@@ -16,6 +17,7 @@ class CompleteStopBody(BaseModel):
     lat: float | None = None
     lng: float | None = None
     departure_at: datetime | None = None
+    source: str | None = None  # manual | geofence | next_stop
 
 
 class SkipStopBody(BaseModel):
@@ -27,6 +29,8 @@ class WorkDayPatch(BaseModel):
     end_at: datetime | None = None
     note: str | None = None
     event: str | None = None  # exit | enter for geofence
+    lat: float | None = None
+    lng: float | None = None
 
 
 class RouteEventBody(BaseModel):

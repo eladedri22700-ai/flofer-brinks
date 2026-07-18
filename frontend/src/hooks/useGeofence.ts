@@ -29,10 +29,15 @@ type Options = {
   onDepotEnter: (pos: GeoPoint) => void;
 };
 
+/** Dwell inside radius before auto-arrive (filters GPS jitter). */
+const ENTER_DWELL_MS = 20_000;
+/** Dwell outside radius after arrive before auto-complete. */
+const EXIT_DWELL_MS = 45_000;
+
 /**
  * Battery-aware geofence: high accuracy only within 1km of next stop.
  * Approach: once when crossing approachM.
- * Enter: inside radius for >= 30s. Exit: outside for >= 60s after arrived.
+ * Enter: inside radius for >= 20s. Exit: outside for >= 45s after arrived.
  */
 export function useGeofence(opts: Options) {
   const [position, setPosition] = useState<GeoPoint | null>(null);
@@ -96,7 +101,7 @@ export function useGeofence(opts: Options) {
               if (insideSince.current == null) insideSince.current = Date.now();
               else if (
                 !entered.current &&
-                Date.now() - insideSince.current >= 30_000
+                Date.now() - insideSince.current >= ENTER_DWELL_MS
               ) {
                 entered.current = true;
                 o.onEnterTarget(pos);
@@ -105,7 +110,7 @@ export function useGeofence(opts: Options) {
               insideSince.current = null;
               if (entered.current) {
                 if (outsideSince.current == null) outsideSince.current = Date.now();
-                else if (Date.now() - outsideSince.current >= 60_000) {
+                else if (Date.now() - outsideSince.current >= EXIT_DWELL_MS) {
                   entered.current = false;
                   outsideSince.current = null;
                   o.onExitTarget(pos);

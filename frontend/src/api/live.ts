@@ -18,10 +18,15 @@ export const putPrefs = (body: Partial<UserPrefs>) =>
 export const startRoute = (routeId: number) =>
   apiFetch<RouteDto>(`/api/routes/${routeId}/start`, { method: "POST", body: "{}" });
 
-export const arriveStop = (stopId: number, lat?: number, lng?: number) =>
+export const arriveStop = (
+  stopId: number,
+  lat?: number,
+  lng?: number,
+  source: "manual" | "geofence" = "manual",
+) =>
   apiFetch<{ ok: boolean; stop: StopDto }>(`/api/stops/${stopId}/arrive`, {
     method: "POST",
-    body: JSON.stringify({ lat, lng }),
+    body: JSON.stringify({ lat, lng, source }),
   });
 
 export const completeStop = (
@@ -31,6 +36,7 @@ export const completeStop = (
     exception_note?: string;
     lat?: number;
     lng?: number;
+    source?: "manual" | "geofence" | "next_stop";
   },
 ) =>
   apiFetch<{ ok: boolean }>(`/api/stops/${stopId}/complete`, {
@@ -46,7 +52,14 @@ export const skipStop = (stopId: number, note?: string) =>
 
 export const workDayEvent = (
   routeId: number,
-  body: { event?: string; start_at?: string; end_at?: string; note?: string },
+  body: {
+    event?: string;
+    start_at?: string;
+    end_at?: string;
+    note?: string;
+    lat?: number;
+    lng?: number;
+  },
 ) =>
   apiFetch<Record<string, unknown>>(`/api/routes/${routeId}/work-day`, {
     method: "POST",
@@ -120,6 +133,7 @@ export async function completeStopResilient(
     exception_note?: string;
     lat?: number;
     lng?: number;
+    source?: "manual" | "geofence" | "next_stop";
   },
 ): Promise<"ok" | "queued"> {
   try {

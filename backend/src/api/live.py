@@ -74,7 +74,9 @@ async def post_arrive(
 ) -> dict:
     stop, _route = _get_stop_for_user(db, stop_id, user)
     body = body or GpsBody()
-    stop = live_svc.mark_arrive(db, stop, lat=body.lat, lng=body.lng)
+    stop = live_svc.mark_arrive(
+        db, stop, lat=body.lat, lng=body.lng, source=body.source
+    )
     await telegram_notify.notify_event(
         db,
         user.id,
@@ -140,6 +142,7 @@ def post_complete(
         lat=body.lat,
         lng=body.lng,
         departure_at=body.departure_at,
+        source=body.source,
     )
     return result
 
@@ -166,7 +169,7 @@ def post_work_day(
     route = get_route_for_user(db, route_id, user.id)
     if body.event in ("exit", "enter"):
         wd = live_svc.depot_geofence_event(
-            db, route, user.id, event=body.event, lat=None, lng=None
+            db, route, user.id, event=body.event, lat=body.lat, lng=body.lng
         )
     else:
         wd = live_svc.patch_work_day(

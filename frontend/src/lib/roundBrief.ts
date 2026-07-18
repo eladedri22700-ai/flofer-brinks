@@ -62,6 +62,19 @@ export type RoundBrief = {
   status: string;
 };
 
+/** Short Hebrew time-window chip for list / board scan. */
+export function stopWindowHe(
+  stop: Pick<StopDto, "tw_type" | "tw_start" | "tw_end">,
+): string | null {
+  const hm = (t: string | null | undefined) => (t ? t.slice(0, 5) : "");
+  if (stop.tw_type === "before" && stop.tw_end) return `עד ${hm(stop.tw_end)}`;
+  if (stop.tw_type === "after" && stop.tw_start) return `מ־${hm(stop.tw_start)}`;
+  if (stop.tw_type === "window" && stop.tw_start && stop.tw_end) {
+    return `${hm(stop.tw_start)}–${hm(stop.tw_end)}`;
+  }
+  return null;
+}
+
 export function buildRoundBrief(route: RouteDto | null | undefined): RoundBrief | null {
   if (!route || !route.stops?.length) return null;
   const stops = sortedStops(route);

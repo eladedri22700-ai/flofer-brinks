@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiErrorMessage } from "../api/errors";
@@ -25,6 +25,7 @@ import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { StatusBanner } from "../components/ui/StatusBanner";
 import { useToast } from "../components/ui/ToastProvider";
 import { useGeofence } from "../hooks/useGeofence";
+import { useNextStopAdvance } from "../hooks/useNextStopAdvance";
 import { useWakeLock } from "../hooks/useWakeLock";
 import { cacheActiveRoute, queueLength } from "../lib/offlineQueue";
 import styles from "./LivePage.module.css";
@@ -76,6 +77,7 @@ export default function LivePage() {
   const [approachBanner, setApproachBanner] = useState(false);
   const [returnAt, setReturnAt] = useState<string | null>(null);
   const [delayMin, setDelayMin] = useState(0);
+  const autoBusy = useRef(false);
 
   const routeQ = useQuery({ queryKey: ["route-today"], queryFn: getTodayRoute });
   const prefsQ = useQuery({ queryKey: ["prefs"], queryFn: getPrefs });
@@ -83,6 +85,12 @@ export default function LivePage() {
   const route = routeQ.data;
 
   useWakeLock(Boolean(route && route.status === "in_progress"));
+
+  useEffect(() => {
+    if (route?.status !== "completed") return;
+    show("יום עבודה הסתיים — כל הכבוד!", "success");
+    nav(`/app/summary/${route.id}`, { replace: true });
+  }, [route?.status, route?.id, nav, show]);
 
   useEffect(() => {
     if (route) void cacheActiveRoute(route);
@@ -119,12 +127,13 @@ export default function LivePage() {
     sorted.find((s) => s.status === "arrived") ??
     sorted.find((s) => s.status === "pending") ??
     null;
-  const nextUp = current
-    ? sorted.find(
-        (s) =>
-          s.status === "pending" && s.sequence_order > current.sequence_order,
-      )
-    : null;
+  const nextUp =
+    (current
+      ? sorted.find(
+          (s) =>
+            s.status === "pending" && s.sequence_order > current.sequence_order,
+        )
+      : null) ?? null;
   const doneCount = sorted.filter((s) => s.status === "done" || s.status === "skipped").length;
 
   const target = current
@@ -138,19 +147,21 @@ export default function LivePage() {
 
   const onEnterTarget = useCallback(
     (pos: { lat: number; lng: number }) => {
-      if (!current || current.status === "arrived") {
-        setPromptArrive(true);
-        return;
-      }
-      void arriveStop(current.id, pos.lat, pos.lng)
+      if (!current || current.status === "arrived") return;
+      if (autoBusy.current) return;
+      autoBusy.current = true;
+      void arriveStop(current.id, pos.lat, pos.lng, "geofence")
         .then(() => {
-          setPromptArrive(true);
           setApproachBanner(false);
+          show(`זוהתה הגעה ל«${current.customer_name}»`, "success");
           invalidate();
         })
-        .catch(() => setPromptArrive(true));
+        .catch(() => undefined)
+        .finally(() => {
+          autoBusy.current = false;
+        });
     },
-    [current],
+    [current, show],
   );
 
   const onApproach = useCallback(
@@ -172,21 +183,45 @@ export default function LivePage() {
     [route, current, show],
   );
 
-  const onExitTarget = useCallback(
-    (pos: { lat: number; lng: number }) => {
+  const autoCompleteCurrent = useCallback(
+    (
+      pos: { lat: number; lng: number },
+      source: "geofence" | "next_stop",
+    ) => {
       if (!current || current.status !== "arrived") return;
+      if (autoBusy.current) return;
+      autoBusy.current = true;
+      const name = current.customer_name;
       void completeStopResilient(current.id, {
         exception_code: exception,
         lat: pos.lat,
         lng: pos.lng,
-      }).then((r) => {
-        setPromptArrive(false);
-        setException("none");
-        if (r === "queued") show("נשמר במצב לא מקוון", "success");
-        invalidate();
-      });
+        source,
+      })
+        .then((r) => {
+          setPromptArrive(false);
+          setException("none");
+          if (r === "queued") show("נשמר במצב לא מקוון", "success");
+          else if (source === "next_stop") {
+            show(`«${name}» הושלם — ממשיכים ליעד הבא`, "success");
+          } else {
+            show(`«${name}» הושלם אוטומטית`, "success");
+          }
+          invalidate();
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          autoBusy.current = false;
+        });
     },
     [current, exception, show],
+  );
+
+  const onExitTarget = useCallback(
+    (pos: { lat: number; lng: number }) => {
+      autoCompleteCurrent(pos, "geofence");
+    },
+    [autoCompleteCurrent],
   );
 
   const geo = useGeofence({
@@ -202,15 +237,39 @@ export default function LivePage() {
     onApproach,
     onDepotExit: (pos) => {
       if (!route) return;
-      void workDayEvent(route.id, { event: "exit" }).catch(() => undefined);
+      void workDayEvent(route.id, {
+        event: "exit",
+        lat: pos.lat,
+        lng: pos.lng,
+      }).catch(() => undefined);
       void logRouteEvent(route.id, "depot_exit_gps", pos).catch(() => undefined);
+      show("יציאה מסניף ברינקס — יום העבודה התחיל", "success");
     },
     onDepotEnter: (pos) => {
       if (!route) return;
-      void workDayEvent(route.id, { event: "enter" }).catch(() => undefined);
-      void logRouteEvent(route.id, "depot_enter_gps", pos).catch(() => undefined);
-      invalidate();
+      void workDayEvent(route.id, {
+        event: "enter",
+        lat: pos.lat,
+        lng: pos.lng,
+      })
+        .then(() => {
+          void logRouteEvent(route.id, "depot_enter_gps", pos).catch(() => undefined);
+          show("חזרתם לסניף — יום העבודה הסתיים", "success");
+          nav(`/app/summary/${route.id}`, { replace: true });
+        })
+        .catch(() => {
+          invalidate();
+        });
     },
+  });
+
+  useNextStopAdvance({
+    enabled: Boolean(route && route.status === "in_progress"),
+    position: geo.position,
+    current,
+    nextUp,
+    radiusM: prefsQ.data?.geofence_radius_m ?? 150,
+    onAdvance: (pos) => autoCompleteCurrent(pos, "next_stop"),
   });
 
   const completeM = useMutation({
@@ -219,6 +278,7 @@ export default function LivePage() {
         exception_code: exception,
         lat: geo.position?.lat,
         lng: geo.position?.lng,
+        source: "manual",
       }),
     onSuccess: (r) => {
       setPromptArrive(false);
@@ -291,6 +351,10 @@ export default function LivePage() {
     );
   }
 
+  if (route.status === "completed") {
+    return <LoadingScreen label="מכינים את ברכת הסיום והסיכום" />;
+  }
+
   if (route.status !== "in_progress") {
     return (
       <div className="pageShell">
@@ -325,14 +389,14 @@ export default function LivePage() {
     return (
       <div className="pageShell">
         <EmptyState
-          title="כל היעדים הושלמו"
-          description="חזרו לסניף וסגרו את היום בסיכום."
+          title="כל היעדים הושלמו — כל הכבוד!"
+          description="חזרו לסניף ברינקס. כשתגיעו — היום ייסגר אוטומטית ותקבלו ברכה וסיכום. אפשר גם לסגור ידנית."
           action={
             <Button
               size="lg"
               onClick={() => {
                 void workDayEvent(route.id, { event: "enter" }).finally(() => {
-                  window.location.href = `/app/summary/${route.id}`;
+                  nav(`/app/summary/${route.id}`, { replace: true });
                 });
               }}
             >
@@ -340,6 +404,16 @@ export default function LivePage() {
             </Button>
           }
         />
+        {geo.denied ? (
+          <StatusBanner tone="warning">
+            אין הרשאת מיקום — סגירת היום האוטומטית דורשת GPS. השתמשו בכפתור למעלה.
+          </StatusBanner>
+        ) : (
+          <StatusBanner tone="info" role="status">
+            מזהים מיקום בזמן אמת
+            {geo.position ? " · מחכים לחזרה לסניף" : " · ממתינים ל-GPS"}
+          </StatusBanner>
+        )}
       </div>
     );
   }
@@ -361,6 +435,12 @@ export default function LivePage() {
       {geo.denied ? (
         <StatusBanner tone="warning">
           אין הרשאת מיקום — אפשר להמשיך ידנית: נווט בוויז וסמנו «הגעתי».
+        </StatusBanner>
+      ) : null}
+
+      {current.status === "arrived" && !promptArrive ? (
+        <StatusBanner tone="success" role="status">
+          במקום אצל «{current.customer_name}» — ביציאה היעד ייסגר אוטומטית
         </StatusBanner>
       ) : null}
 

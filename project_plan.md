@@ -19,6 +19,7 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 | G | Live keys, HTTPS deploy, dry-run DoD | done — https://flofer-brinks.onrender.com |
 | H | Round confirm board (`/app/board`) — map + addresses + live GPS + Start | done |
 | I | First-run onboarding (A2HS + location + notifications) | done |
+| J | End-of-day blessing + auto GPS stop lifecycle + timing learning | done (2026-07-18) |
 
 **Theme:** light default + dark toggle. Typography: Secular One (display) · Varela Round (UI) · IBM Plex Mono (data).
 
@@ -66,10 +67,25 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 
 ## Next steps
 
-1. Field pilot tomorrow on phone: https://flofer-brinks.onrender.com (`leader` / `Brinks2026!`)
-2. GCP Browser Key HTTP referrer: `https://flofer-brinks.onrender.com/*`
-3. User configures Telegram bot + Chat ID and runs «שלח הודעת בדיקה»
-4. Free Render Postgres expires ~30 days; free web sleeps after ~15m idle (cold start 30–60s)
+1. Field pilot on phone: https://flofer-brinks.onrender.com (`leader` / `Brinks2026!`) — keep GPS on during the round
+2. **Before pilot:** set real Brinks depot address/coords in Settings (seed depot is temporary Tel Aviv)
+3. GCP Browser Key HTTP referrer: `https://flofer-brinks.onrender.com/*`
+4. User configures Telegram bot + Chat ID and runs «שלח הודעת בדיקה»
+5. Deploy latest (end-of-day blessing + auto geofence lifecycle) to Render if not yet pushed
+6. Free Render Postgres expires ~30 days; free web sleeps after ~15m idle (cold start 30–60s)
+
+**Pilot cleanliness (2026-07-18):** purged smoke-test stops from production; fresh `planning` route for today (empty).
+
+**Completed (2026-07-18 — Stage J):**
+- Auto-arrive (~20s in geofence) and auto-complete (~45s outside) without manual mark
+- Auto-complete previous stop when crew reaches next stop geofence
+- Depot enter closes the work day and navigates to summary with Hebrew blessing
+- Service/leg samples keep feeding learned ETAs (median / p80)
+
+**Completed (2026-07-18 — Board map UX):**
+- Board split layout: map + address list both always visible on mobile
+- Map resize/fitBounds after layout; larger numbered pins; clearer road labels
+- Expert board polish: metrics strip (next/return), list↔map sync + scroll, time-window chips, print, focus zoom on pin select
 
 ## Verify
 

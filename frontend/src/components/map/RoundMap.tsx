@@ -31,9 +31,10 @@ type PolylineLike = { setMap: (m: unknown) => void };
 
 function pinSvg(label: string, fill: string, selected: boolean): string {
   const stroke = selected ? "#0b1f3a" : "#ffffff";
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="38" viewBox="0 0 30 38">
-    <path d="M15 1C8.4 1 3 6.4 3 13c0 9.8 12 23 12 23s12-13.2 12-23C27 6.4 21.6 1 15 1z" fill="${fill}" stroke="${stroke}" stroke-width="2"/>
-    <text x="15" y="17" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" font-weight="700" fill="#0b1f3a">${label}</text>
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="46" viewBox="0 0 36 46">
+    <path d="M18 2C9.7 2 3 8.7 3 17c0 12.5 15 27 15 27s15-14.5 15-27C33 8.7 26.3 2 18 2z" fill="${fill}" stroke="${stroke}" stroke-width="2.5"/>
+    <circle cx="18" cy="17" r="10" fill="#ffffff"/>
+    <text x="18" y="21.5" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="13" font-weight="700" fill="#0b1f3a">${label}</text>
   </svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
@@ -80,9 +81,13 @@ export function RoundMap({
   const onSelectRef = useRef(onSelectStop);
   onSelectRef.current = onSelectStop;
 
+  const boundsRef = useRef<{ isEmpty: () => boolean } | null>(null);
+
   useEffect(() => {
     if (!mapKey || !canvasRef.current || stops.length === 0) return;
     let cancelled = false;
+    let resizeObs: ResizeObserver | null = null;
+    let resizeTimer: number | undefined;
 
     void loadGoogleMaps(mapKey).then(() => {
       if (cancelled || !window.google?.maps || !canvasRef.current) return;
@@ -94,11 +99,18 @@ export function RoundMap({
       if (!mapRef.current) {
         mapRef.current = new g.Map(canvasRef.current, {
           center,
-          zoom: 11,
+          zoom: 12,
           disableDefaultUI: true,
           zoomControl: true,
+          zoomControlOptions: {
+            position: g.ControlPosition?.RIGHT_BOTTOM ?? 9,
+          },
+          mapTypeControl: false,
+          fullscreenControl: false,
+          streetViewControl: false,
           gestureHandling: "greedy",
           styles: ROUND_MAP_STYLES,
+          clickableIcons: false,
         });
         infoRef.current = new g.InfoWindow();
       }
@@ -128,8 +140,8 @@ export function RoundMap({
             zIndex: 1,
             icon: {
               url: pinSvg("ב", "#c9a227", false),
-              scaledSize: { width: 32, height: 40 },
-              anchor: { x: 16, y: 40 },
+              scaledSize: { width: 38, height: 48 },
+              anchor: { x: 19, y: 48 },
             },
           }),
         );
@@ -140,28 +152,28 @@ export function RoundMap({
         path.push(pos);
         bounds.extend(pos);
         const selected = s.id === selectedStopId;
-        const fill = s.priority === "vip" ? "#d8b84a" : "#0f2d52";
+        const fill = s.priority === "vip" ? "#b8860b" : "#0f2d52";
         const marker = new g.Marker({
           map,
           position: pos,
-          title: s.customer_name,
+          title: `${i + 1}. ${s.customer_name}`,
           zIndex: selected ? 50 : 10 + i,
           icon: {
-            url: pinSvg(String(i + 1), selected ? "#e8d07a" : fill, selected),
+            url: pinSvg(String(i + 1), selected ? "#c9a227" : fill, selected),
             scaledSize: selected
-              ? { width: 36, height: 44 }
-              : { width: 30, height: 38 },
-            anchor: selected ? { x: 18, y: 44 } : { x: 15, y: 38 },
+              ? { width: 42, height: 52 }
+              : { width: 36, height: 46 },
+            anchor: selected ? { x: 21, y: 52 } : { x: 18, y: 46 },
           },
         });
         marker.addListener("click", () => {
           onSelectRef.current?.(s.id);
           const eta = formatEta(s.eta);
           infoRef.current?.setContent(
-            `<div dir="rtl" style="font-family:Varela Round,sans-serif;max-width:220px;padding:4px">
-              <div style="font-weight:700;color:#0b1f3a">${escapeHtml(s.customer_name)}</div>
-              <div style="font-size:13px;color:#3d516c;margin-top:4px">${escapeHtml(s.address)}</div>
-              ${eta ? `<div style="font-family:IBM Plex Mono,monospace;margin-top:6px;color:#8a6a12">ETA ${eta}</div>` : ""}
+            `<div dir="rtl" style="font-family:Varela Round,sans-serif;max-width:240px;padding:6px">
+              <div style="font-weight:700;font-size:15px;color:#0b1f3a">${i + 1}. ${escapeHtml(s.customer_name)}</div>
+              <div style="font-size:13px;color:#3d516c;margin-top:4px;line-height:1.35">${escapeHtml(s.address)}</div>
+              ${eta ? `<div style="font-family:IBM Plex Mono,monospace;margin-top:8px;font-weight:700;color:#8a6a12">הגעה ${eta}</div>` : ""}
             </div>`,
           );
           infoRef.current?.open({ map, anchor: marker });
@@ -174,22 +186,68 @@ export function RoundMap({
       lineRef.current = new g.Polyline({
         map,
         path,
-        strokeColor: "#c9a227",
-        strokeOpacity: 0.95,
-        strokeWeight: 4,
+        strokeColor: "#8a6a12",
+        strokeOpacity: 1,
+        strokeWeight: 5,
         geodesic: true,
+        zIndex: 2,
       });
 
+      boundsRef.current = bounds;
+
+      const paintBounds = () => {
+        if (cancelled || !mapRef.current || !boundsRef.current) return;
+        if (boundsRef.current.isEmpty()) return;
+        g.event.trigger(mapRef.current, "resize");
+        mapRef.current.fitBounds(boundsRef.current as never, {
+          top: 56,
+          right: 40,
+          bottom: 56,
+          left: 40,
+        });
+      };
+
       if (geometryChanged && !bounds.isEmpty()) {
-        map.fitBounds(bounds, { top: 48, right: 48, bottom: 72, left: 48 });
+        window.requestAnimationFrame(paintBounds);
       } else if (selectedStopId != null) {
+        g.event.trigger(map, "resize");
         const sel = stops.find((s) => s.id === selectedStopId);
-        if (sel) map.panTo({ lat: sel.lat, lng: sel.lng });
+        if (sel) {
+          map.panTo({ lat: sel.lat, lng: sel.lng });
+          const z = map.getZoom() ?? 12;
+          map.setZoom(Math.min(16, Math.max(14, z)));
+        }
+      }
+
+      if (canvasRef.current) {
+        let lastW = 0;
+        let lastH = 0;
+        resizeObs = new ResizeObserver((entries) => {
+          const box = entries[0]?.contentRect;
+          if (!box) return;
+          const w = Math.round(box.width);
+          const h = Math.round(box.height);
+          if (w < 40 || h < 40) return;
+          if (w === lastW && h === lastH) return;
+          const grew = lastW > 0 && (Math.abs(w - lastW) > 48 || Math.abs(h - lastH) > 48);
+          lastW = w;
+          lastH = h;
+          window.clearTimeout(resizeTimer);
+          resizeTimer = window.setTimeout(() => {
+            if (cancelled || !mapRef.current) return;
+            g.event.trigger(mapRef.current, "resize");
+            // Re-fit only on meaningful pane resize (list toggle), not pin taps.
+            if (grew) paintBounds();
+          }, 100);
+        });
+        resizeObs.observe(canvasRef.current);
       }
     });
 
     return () => {
       cancelled = true;
+      window.clearTimeout(resizeTimer);
+      resizeObs?.disconnect();
     };
   }, [mapKey, stops, depot, selectedStopId]);
 

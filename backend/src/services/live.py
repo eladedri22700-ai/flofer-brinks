@@ -108,6 +108,7 @@ def mark_arrive(
     *,
     lat: float | None = None,
     lng: float | None = None,
+    source: str | None = None,
 ) -> Stop:
     if stop.status in ("done", "skipped"):
         raise AppError(
@@ -115,11 +116,26 @@ def mark_arrive(
             message_he="היעד כבר הושלם או דולג.",
             status_code=400,
         )
+    was_pending = stop.status == "pending"
     stop.status = "arrived"
     stop.actual_arrival = stop.actual_arrival or _now()
     if lat is not None and lng is not None:
         stop.actual_park_lat = lat
         stop.actual_park_lng = lng
+    if was_pending:
+        db.add(
+            RouteEvent(
+                route_id=stop.route_id,
+                type="stop_arrived",
+                payload={
+                    "stop_id": stop.id,
+                    "source": source or "manual",
+                    "lat": lat,
+                    "lng": lng,
+                    "at": stop.actual_arrival.isoformat() if stop.actual_arrival else None,
+                },
+            )
+        )
     db.commit()
     db.refresh(stop)
     return stop
@@ -135,6 +151,7 @@ def complete_stop(
     lat: float | None = None,
     lng: float | None = None,
     departure_at: datetime | None = None,
+    source: str | None = None,
 ) -> dict[str, Any]:
     code = exception_code if exception_code in EXCEPTION_CODES else "other"
     now = departure_at or _now()
@@ -177,7 +194,11 @@ def complete_stop(
         RouteEvent(
             route_id=route.id,
             type="stop_completed",
-            payload={"stop_id": stop.id, "exception_code": code},
+            payload={
+                "stop_id": stop.id,
+                "exception_code": code,
+                "source": source or "manual",
+            },
         )
     )
     db.commit()

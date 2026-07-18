@@ -11,7 +11,11 @@ declare global {
         LatLngBounds: new () => GoogleBounds;
         InfoWindow: new (opts?: Record<string, unknown>) => GoogleInfoWindow;
         SymbolPath?: { CIRCLE: unknown };
-        event: { clearInstanceListeners: (t: unknown) => void };
+        ControlPosition?: { RIGHT_BOTTOM: number };
+        event: {
+          clearInstanceListeners: (t: unknown) => void;
+          trigger: (instance: unknown, eventName: string) => void;
+        };
       };
     };
   }
@@ -23,6 +27,7 @@ export type GoogleMapInstance = {
   fitBounds: (b: GoogleBounds, padding?: number | Record<string, number>) => void;
   panTo: (c: LatLng) => void;
   setZoom: (z: number) => void;
+  getZoom: () => number | undefined;
 };
 
 export type GoogleBounds = {
@@ -76,11 +81,11 @@ export function loadGoogleMaps(key: string): Promise<void> {
   });
 }
 
-/** Light operational map — navy roads, muted labels (works with light theme). */
+/** Light operational map — clear roads + readable street names for field use. */
 export const ROUND_MAP_STYLES: Record<string, unknown>[] = [
-  { elementType: "geometry", stylers: [{ color: "#e8eef6" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#3d516c" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#ffffff" }] },
+  { elementType: "geometry", stylers: [{ color: "#f0f4f8" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#1a2f4a" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#ffffff" }, { weight: 3 }] },
   {
     featureType: "road",
     elementType: "geometry",
@@ -89,15 +94,29 @@ export const ROUND_MAP_STYLES: Record<string, unknown>[] = [
   {
     featureType: "road",
     elementType: "geometry.stroke",
-    stylers: [{ color: "#cfd9e8" }],
+    stylers: [{ color: "#b8c5d6" }],
+  },
+  {
+    featureType: "road",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#0f2d52" }, { visibility: "on" }],
+  },
+  {
+    featureType: "road.highway",
+    elementType: "geometry",
+    stylers: [{ color: "#dde6f2" }],
   },
   {
     featureType: "water",
     elementType: "geometry",
-    stylers: [{ color: "#b8c9de" }],
+    stylers: [{ color: "#c5d6ea" }],
   },
   {
     featureType: "poi",
+    stylers: [{ visibility: "simplified" }],
+  },
+  {
+    featureType: "poi.business",
     stylers: [{ visibility: "off" }],
   },
   {
