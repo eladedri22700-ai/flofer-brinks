@@ -16,7 +16,7 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 | D | Learning + dashboard AI tips | done |
 | E | Telegram bot alerts + test ping | done (needs user bot token + chat id) |
 | F | Offline / GPS permissions / PWA hardening | done |
-| G | Live keys, HTTPS deploy, dry-run DoD | keys live · HTTPS via `start-field.ps1` |
+| G | Live keys, HTTPS deploy, dry-run DoD | done — https://flofer-brinks.onrender.com |
 | H | Round confirm board (`/app/board`) — map + addresses + live GPS + Start | done |
 | I | First-run onboarding (A2HS + location + notifications) | done |
 
@@ -40,7 +40,7 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 | Maps / OCR | Google / Anthropic or mock |
 | Alerts | Telegram Bot API |
 | Export | CSV + PDF (reportlab) |
-| Deploy | Docker Compose (db+api), optional `SERVE_FRONTEND` |
+| Deploy | Render free (Docker + Postgres) · local Docker Compose |
 
 ## Phase Roadmap
 
@@ -52,7 +52,7 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 | 4 | Live Mode + capture | done |
 | 5 | Intelligence + Polish | done |
 | Pilot pack | Docker, scripts, compare API, docs | done |
-| Field finish | UX + Telegram + board map + DoD | active (deploy left) |
+| Field finish | UX + Telegram + board map + DoD | done (Render free pilot) |
 
 ## Architecture decisions
 
@@ -66,9 +66,10 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 
 ## Next steps
 
-1. User configures Telegram bot + Chat ID and runs «שלח הודעת בדיקה»
-2. Field dry-run on phone via HTTPS tunnel (`.\start-field.ps1 -Detach`)
-3. Add GCP Maps Browser Key referrer `https://*.trycloudflare.com/*`
+1. Field pilot tomorrow on phone: https://flofer-brinks.onrender.com (`leader` / `Brinks2026!`)
+2. GCP Browser Key HTTP referrer: `https://flofer-brinks.onrender.com/*`
+3. User configures Telegram bot + Chat ID and runs «שלח הודעת בדיקה»
+4. Free Render Postgres expires ~30 days; free web sleeps after ~15m idle (cold start 30–60s)
 
 ## Verify
 
