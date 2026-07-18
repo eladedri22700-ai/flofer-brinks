@@ -1,0 +1,216 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.item {
+  touch-action: none;
+  padding: var(--space-12);
+  border-radius: var(--radius-12);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.row {
+  display: flex;
+  gap: var(--space-12);
+  align-items: flex-start;
+}
+
+.grip {
+  min-width: 56px;
+  min-height: 56px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-8);
+  background: var(--surface);
+  color: var(--steel-400);
+  cursor: grab;
+  font-size: 18px;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.name {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.seq {
+  color: var(--gold-400);
+  font-family: var(--font-mono);
+}
+
+.vip {
+  color: var(--navy-950);
+  background: var(--gold-metallic);
+  border-radius: var(--radius-full);
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.addr {
+  color: var(--text-secondary);
+}
+
+.meta {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.twBadge {
+  color: var(--primary);
+  background: var(--primary-050);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.quickActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin-top: var(--space-8);
+}
+
+.chip,
+.chipOn {
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-body);
+}
+
+.chipOn {
+  border-color: var(--border-brass);
+  color: var(--text-inverse);
+  background: var(--gold-metallic);
+}
+
+.constraints {
+  margin-top: var(--space-12);
+  padding: var(--space-12);
+  border-radius: var(--radius-12);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.constraintsHint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.segments {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.seg,
+.segActive {
+  min-height: 40px;
+  border-radius: var(--radius-8);
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.segActive {
+  border-color: var(--primary);
+  background: var(--primary-050);
+  color: var(--primary);
+}
+
+.timeLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.timeInput {
+  min-height: 48px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-8);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  padding: 0 12px;
+  font-family: var(--font-mono);
+  direction: ltr;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--brass-500);
+}
+
+.warn {
+  margin-top: var(--space-8);
+  padding: var(--space-12);
+  border: 1px solid rgba(245, 166, 35, 0.45);
+  border-radius: var(--radius-8);
+  color: var(--warning);
+  font-size: 14px;
+}
+
+.coords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin-top: var(--space-8);
+}
+
+.coordInput {
+  min-height: 48px;
+  width: 120px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-8);
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 0 var(--space-8);
+  font-family: var(--font-mono);
+  direction: ltr;
+}
+
+.empty {
+  text-align: center;
+  padding: var(--space-48) var(--space-16);
+  color: var(--text-secondary);
+}

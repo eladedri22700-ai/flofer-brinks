@@ -1,0 +1,28 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+.drop {
+  display: grid;
+  place-items: center;
+  min-height: 140px;
+  border: 1px dashed var(--border-gold);
+  border-radius: var(--radius-16);
+  background: rgba(201, 162, 39, 0.06);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--space-24);
+  text-align: center;
+}
+
+.drop input {
+  display: none;
+}
+
+.scan {
+  margin: 0 0 var(--space-8);
+  color: var(--gold-300);
+  font-weight: 500;
+}

@@ -1,0 +1,36 @@
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.kicker {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brass-400);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--type-page);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.lead {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--text-secondary);
+  font-size: var(--type-body);
+  max-width: 42ch;
+  line-height: 1.55;
+}

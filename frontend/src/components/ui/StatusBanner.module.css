@@ -1,0 +1,38 @@
+.banner {
+  padding: var(--space-12) var(--space-16);
+  border-radius: var(--radius-12);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.info {
+  color: var(--text-secondary);
+  background: var(--info-bg);
+  border-color: rgba(91, 156, 245, 0.3);
+}
+
+.warning {
+  color: var(--text-primary);
+  background: var(--warning-bg);
+  border-color: rgba(240, 180, 41, 0.35);
+}
+
+.danger {
+  color: var(--text-primary);
+  background: var(--danger-bg);
+  border-color: rgba(239, 90, 90, 0.35);
+}
+
+.success {
+  color: var(--text-primary);
+  background: var(--success-bg);
+  border-color: rgba(61, 203, 122, 0.35);
+}
+
+.brass {
+  color: var(--text-secondary);
+  background: rgba(201, 162, 39, 0.08);
+  border-color: var(--border-brass);
+}

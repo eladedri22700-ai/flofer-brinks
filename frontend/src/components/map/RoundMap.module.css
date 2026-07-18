@@ -1,0 +1,81 @@
+.wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  border-radius: inherit;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.legend {
+  position: absolute;
+  inset-inline-start: var(--space-12);
+  bottom: var(--space-12);
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  padding: var(--space-8) var(--space-12);
+  border-radius: var(--radius-8);
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface-1) 92%, transparent);
+  backdrop-filter: blur(8px);
+  font-size: 12px;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-inline-end: 4px;
+  vertical-align: middle;
+}
+
+.dotDepot {
+  background: var(--primary);
+  box-shadow: 0 0 0 2px var(--brass-400);
+}
+
+.dotStop {
+  background: var(--brass-500);
+}
+
+.dotPath {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--brass-500);
+  vertical-align: middle;
+}
+
+.dotYou {
+  background: var(--info);
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.placeholder {
+  display: grid;
+  place-content: center;
+  height: 100%;
+  min-height: 220px;
+  padding: var(--space-24);
+  text-align: center;
+  color: var(--text-secondary);
+  background:
+    radial-gradient(ellipse at 30% 20%, var(--primary-050), transparent 55%),
+    var(--surface-2);
+}
+
+.placeholder p {
+  margin: 0;
+  max-width: 28ch;
+}

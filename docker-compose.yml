@@ -1,0 +1,39 @@
+name: routemaster
+
+services:
+  db:
+    image: postgres:16
+    container_name: routemaster-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: routemaster
+      POSTGRES_PASSWORD: routemaster
+      POSTGRES_DB: routemaster
+    ports:
+      - "5432:5432"
+    volumes:
+      - routemaster_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U routemaster -d routemaster"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+    container_name: routemaster-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg2://routemaster:routemaster@db:5432/routemaster
+      JWT_SECRET: ${JWT_SECRET:-change-me-pilot-secret-please}
+      DEMO_AUTH: "true"
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://127.0.0.1:5180,http://localhost:5180,http://127.0.0.1:8000,http://localhost:8000}
+    ports:
+      - "8000:8000"
+
+volumes:
+  routemaster_pgdata:

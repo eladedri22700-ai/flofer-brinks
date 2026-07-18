@@ -1,0 +1,55 @@
+.card {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, transparent 40%),
+    var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-16);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-20);
+}
+
+:root[data-theme="dark"] .card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 42%),
+    var(--surface-raised);
+}
+
+.bar_gold,
+.bar_info,
+.bar_success,
+.bar_danger {
+  padding-inline-start: calc(var(--space-20) + 8px);
+}
+
+.bar_gold::before,
+.bar_info::before,
+.bar_success::before,
+.bar_danger::before {
+  content: "";
+  position: absolute;
+  inset-block: 12px;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+}
+
+.bar_gold::before {
+  background: var(--gold-metallic);
+}
+
+.bar_info::before {
+  background: var(--info);
+}
+
+.bar_success::before {
+  background: var(--success);
+}
+
+.bar_danger::before {
+  background: var(--danger);
+}
+
+.bar_none::before {
+  content: none;
+}

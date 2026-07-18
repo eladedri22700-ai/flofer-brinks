@@ -1,0 +1,222 @@
+Read the rules in @.cursor/rules/ and @docs/spec.md fully before planning.
+They are the source of truth: the rules are a binding behavioral contract,
+spec.md describes the product.
+
+This is a greenfield project - the repository contains only those files.
+
+Plan the execution of Phase 1 (Foundation) ONLY. The full Phase 1 brief follows below.
+Do NOT plan Phases 2-5. Do NOT add features beyond what Phase 1 specifies, even if
+spec.md describes them - those phases are built later, on my instruction.
+
+Your plan must state explicitly:
+1. The exact file tree you will create.
+2. The order of creation, and why that order (dependencies first).
+3. Every assumption you are making that the spec does not answer - list them, do not
+   silently resolve them.
+4. Any point where the rules and the Phase 1 brief appear to conflict - raise it,
+   do not pick one on your own.
+
+Do not write any code until I explicitly approve the plan.
+
+═══════════════════════════════════════════════════════════════════
+PHASE 1 BRIEF
+═══════════════════════════════════════════════════════════════════
+
+📋 [CONTEXT]:
+Project: BRINKS RouteMaster - a premium PWA for a Brinks (cash logistics) team leader.
+Purpose: Daily route optimization for 10-25 stops with time windows, VIP priorities,
+traffic-aware ETAs, smart breaks, live navigation mode with geofenced arrival detection,
+Waze deep-link navigation, and end-of-day analytics. Hebrew RTL UI, dark premium design.
+Tech Stack: React 18 + TypeScript + Vite (PWA) | FastAPI + SQLAlchemy | PostgreSQL (Docker)
+| Google OR-Tools | Google Maps Platform | Anthropic Claude API (OCR).
+Current Phase: 1 of 5 (Foundation)
+Last Task: None - fresh project.
+Current Status: Empty repository containing only .cursorrules and docs/spec.md.
+
+───────────────────────────────────────────────────
+
+🔨 [TASK]:
+Scaffold the complete project foundation: monorepo structure, database, backend skeleton,
+frontend skeleton with the full design system, and JWT authentication. NO business
+features yet (no routes/stops logic) - foundation only, but visually polished.
+
+Sub-tasks:
+1. Create monorepo structure:
+   /backend  - FastAPI app (src/main.py, src/core/config.py, src/models/, src/api/,
+               src/services/, src/db/session.py, requirements.txt, .env.example)
+   /frontend - Vite React-TS app (src/styles/tokens.css, src/styles/global.css,
+               src/components/ui/, src/pages/, src/api/client.ts, src/App.tsx)
+   Root: docker-compose.yml (postgres:16 + volumes), project_plan.md, README.md, .gitignore
+
+2. Database (SQLAlchemy models + Alembic migration) - includes the LEARNING ENGINE
+   tables from day one (populated in Phase 4, used in Phase 5):
+   - users: id, username, password_hash, full_name, role ('team_leader'|'manager'), created_at
+   - depots: id, name, address, lat, lng  (single Brinks branch, seeded)
+   - customers: id, name, normalized_address (UNIQUE with name), lat, lng,
+     category ('bank_branch'|'atm'|'retail_chain'|'private_business'|'other'),
+     default_service_min INT NULL, learned_service_min FLOAT NULL,
+     learned_service_p80 FLOAT NULL, service_sample_count INT DEFAULT 0,
+     parking_lat FLOAT NULL, parking_lng FLOAT NULL, parking_sample_count INT DEFAULT 0,
+     geocode_confidence FLOAT NULL, notes, created_at
+     (persistent customer registry - the memory of the system. category powers
+      cold-start defaults; parking_lat/lng is the LEARNED real stopping point,
+      which beats Google's address pin; p80 powers risk-aware ETA for deadlines)
+   - routes: id, user_id FK, date, status ('planning'|'active'|'completed'),
+     departure_time, break_duration_min, break_window_start TIME, break_window_end TIME,
+     deadline_buffer_min INT DEFAULT 10, vip_weight FLOAT DEFAULT 1.0,
+     variance_mode BOOL, optimized_at TIMESTAMP NULL,
+     naive_duration_min INT NULL, optimized_duration_min INT NULL,
+     solver_explanation JSONB NULL, created_at
+     (naive vs optimized = the "time saved" sales metric; solver_explanation stores
+      why this order was chosen - which stops drove the structure)
+   - stops: id, route_id FK, customer_id FK NULL, customer_name, address, lat, lng,
+     sequence_order INT, locked BOOL, priority ('normal'|'vip'),
+     tw_type ('none'|'before'|'after'|'window'), tw_start TIME NULL, tw_end TIME NULL,
+     service_duration_min INT DEFAULT 10, service_estimate_source ('default'|'category'|'learned'),
+     notes TEXT, status ('pending'|'arrived'|'done'|'skipped'), eta TIMESTAMP NULL,
+     actual_arrival TIMESTAMP NULL, actual_departure TIMESTAMP NULL,
+     actual_park_lat FLOAT NULL, actual_park_lng FLOAT NULL,
+     exception_code ('none'|'not_ready'|'gate_wait'|'parking'|'closed'|'branch_busy'|'other'),
+     exception_note TEXT NULL
+   - service_samples: id, customer_id FK, stop_id FK, duration_min FLOAT,
+     day_bucket ('weekday'|'friday'|'holiday_eve'), hour_bucket INT (0-23),
+     exception_code, is_outlier BOOL DEFAULT false, recorded_at
+     (each geofence enter->exit measurement: the real time from stepping off the
+      truck to driving away. Samples flagged with an exception are excluded from
+      the learned median so one bad day never poisons the estimate)
+   - leg_samples: id, from_lat, from_lng, to_lat, to_lng, from_customer_id NULL,
+     to_customer_id NULL, hour_bucket INT (0-23),
+     day_bucket ('weekday'|'friday'|'holiday_eve'),
+     predicted_min FLOAT (Google), actual_min FLOAT, recorded_at
+     (real vs predicted travel time per leg per time-of-day - powers the learned
+      ETA correction factor)
+   - work_days: id, user_id FK, date UNIQUE(user_id,date), route_id FK NULL,
+     start_at TIMESTAMP NULL, end_at TIMESTAMP NULL, break_min INT DEFAULT 0,
+     driving_min INT DEFAULT 0, service_min INT DEFAULT 0, waiting_min INT DEFAULT 0,
+     total_min INT NULL, overtime_min INT DEFAULT 0,
+     manually_edited BOOL DEFAULT false, edit_note TEXT NULL, created_at
+     (the timesheet: auto-filled from depot geofence exit/entry in Phase 4.
+      Any manual correction sets manually_edited=true - the record stays auditable)
+   - user_settings: id, user_id FK UNIQUE, standard_day_min INT DEFAULT 516,
+     standard_week_min INT DEFAULT 2520, geofence_radius_m INT DEFAULT 150,
+     theme ('dark'|'light') DEFAULT 'dark'
+     (work-hour standards MUST be configurable - final values come from Brinks
+      payroll/collective agreement, not hardcoded)
+   - route_events: id, route_id FK, type, payload JSONB, created_at  (audit trail,
+     powers the future manager dashboard - design for it now)
+   Seed script: one team_leader user + user_settings row + one depot
+   ("סניף ברינקס", placeholder coords).
+
+3. Backend skeleton:
+   - FastAPI with CORS for the Vite dev origin
+   - /api/auth/login (JWT, bcrypt), /api/auth/me
+   - /api/health
+   - Config via pydantic-settings reading backend/.env:
+     DATABASE_URL, JWT_SECRET, GOOGLE_MAPS_SERVER_KEY, ANTHROPIC_API_KEY
+     (placeholders for now; server-side keys ONLY - never sent to the browser)
+   - frontend/.env.example holds VITE_GOOGLE_MAPS_BROWSER_KEY only. This is the single
+     sanctioned browser-exposed key, safe only because it is HTTP-referrer restricted
+     and limited to the Maps JS API. Both files committed as .env.example only.
+   - Structured logging (English), global exception handler returning
+     {error: {code, message_he}} so the frontend can show Hebrew messages
+
+4. Frontend skeleton + FULL "Vault" design system (this shell will be demoed to the
+   client - it must look like a flagship product, not a scaffold):
+   - tokens.css - the complete design language:
+     Colors: --navy-950:#060D1A; --navy-900:#0A1628; --navy-800:#112240;
+     --navy-700:#1A335C; --gold-600:#9C7A14; --gold-500:#C9A227; --gold-400:#DBB94A;
+     --gold-300:#E8CE7A; --steel-400:#8A97AB; --surface:#0E1B30;
+     --surface-raised:#15274A; --border:#1E3A66; --border-gold:rgba(201,162,39,.25);
+     --text-primary:#F4F6FB; --text-secondary:#9FB0CC; --text-muted:#5C6E8F;
+     --success:#2FBF71; --warning:#F5A623; --danger:#E5484D; --info:#4A90E8;
+     --gold-metallic: linear-gradient(135deg,#E8CE7A,#C9A227 55%,#9C7A14);
+     --glow-gold: 0 0 24px rgba(201,162,39,.35);
+     Spacing (4/8/12/16/24/32/48), radius (8/12/16/full),
+     shadows: --shadow-card (dual: ambient rgba(0,0,0,.35) 0 8px 24px + key 0 1px 2px),
+     transitions: --t-fast:160ms; --t-med:240ms; --ease:cubic-bezier(.2,.8,.2,1)
+   - global.css:
+     * Depth background: radial-gradient(ellipse at 50% 20%, navy-900, navy-950 75%)
+     * Guilloche texture: an inline SVG data-URI of fine interlaced curved lines
+       (banknote engraving style) as a fixed background layer at 3-4% opacity
+     * Fonts (Google Fonts, preload + font-display:swap): Suez One (display),
+       Heebo 400/500/700 (body), IBM Plex Mono 500/700 (all numeric/time data,
+       with font-variant-numeric: tabular-nums)
+     * html dir="rtl" lang="he"; utility class .num for LTR inline numbers
+     * @media (prefers-reduced-motion: reduce) - kill all animation
+   - Base UI components (CSS Modules, custom-built, no UI library, RTL):
+     * Button: primary = metallic gold gradient + top-edge highlight + gold glow on
+       hover + scale(0.97) on press; secondary = navy outline; ghost; danger;
+       sizes md/lg (lg >= 56px); built-in loading state
+     * Input + FloatingLabel: navy surface, gold focus ring, Hebrew error text
+     * Card "steel plate": surface-raised + subtle vertical top-light gradient
+       (1.5% lighter at top) + --shadow-card + 1px border; optional side status
+       bar variant (gold-metallic / info / success / danger)
+     * VaultDial component (THE signature): SVG circular progress ring styled as
+       a safe dial - fine tick marks around the circumference, metallic gold
+       needle, center shows "X/Y" in Plex Mono. Expose completeStep() that
+       rotates the dial one notch with a 240ms mechanical snap (and a subtle
+       tick sound-free haptic via navigator.vibrate(10) where supported).
+       Demo it on the /app shell with placeholder 0/0 state.
+     * Toast system (RTL, slide-in from top, Hebrew), content-shaped Skeleton,
+       TopBar (wordmark "RouteMaster" in Suez One + gold shield SVG icon, user menu)
+   - Pages:
+     * /login: centered steel-plate card over the guilloche depth background,
+       shield logo with a one-time subtle gold glow entrance animation (600ms),
+       Hebrew labels "שם משתמש","סיסמה","כניסה למערכת", error toast on failure
+     * /app: authenticated shell with TopBar + VaultDial (empty state) + Hebrew
+       placeholder "ברוך הבא! כאן ייבנה מסך תכנון הסבב", route guard
+   - api/client.ts: fetch wrapper with JWT header, 401 -> redirect to login
+   - Performance foundation: React.lazy route splitting from day one, font preload,
+     Lighthouse performance >= 90 on the login page
+   - PWA: vite-plugin-pwa with manifest (name "RouteMaster", Hebrew description,
+     theme_color #0A1628, standalone display) and generated placeholder icons
+
+───────────────────────────────────────────────────
+
+⚠️ [CONSTRAINTS]:
+1. UI: Hebrew only. Code/comments/logs: English only. RTL everywhere.
+2. Follow .cursorrules strictly (max 300 lines/file, tokens-only styling, no Tailwind).
+3. NO business logic yet - do not create stops/routes endpoints beyond the models.
+4. All secrets via .env; commit .env.example only.
+5. Design must look premium out of the box - this shell will be shown to the client.
+
+───────────────────────────────────────────────────
+
+✅ [COMPLETION CRITERIA]:
+- [ ] docker-compose up starts PostgreSQL; alembic upgrade head creates all 10 tables
+      (users, user_settings, depots, customers, routes, stops, service_samples,
+       leg_samples, work_days, route_events)
+- [ ] Seed script runs; login with seeded user returns JWT
+- [ ] Frontend: login page renders in Hebrew RTL - guilloche depth background,
+      steel-plate card, metallic gold button, Suez One heading visible
+- [ ] Successful login redirects to /app shell showing TopBar + VaultDial;
+      refresh keeps session; logout works
+- [ ] Wrong password shows Hebrew error toast
+- [ ] VaultDial renders and its notch-rotation animation can be triggered
+- [ ] prefers-reduced-motion disables animations (verify via DevTools emulation)
+- [ ] Lighthouse: PWA installable; Performance >= 90 on login; no console errors
+- [ ] project_plan.md created and filled per template
+
+───────────────────────────────────────────────────
+
+📝 [DOCUMENTATION MANDATE]:
+Create project_plan.md with: project overview, tech stack, phase table (1-5 with the
+roadmap), Current Status after this task, Completed Tasks, Next Steps (Phase 2: customer
+registry + stops CRUD + triple input methods + geocoding), Architecture Decisions
+(why FastAPI+OR-Tools, why VRPTW and not nearest-neighbor, why a time-dependent matrix,
+why PWA, why backend-proxied API keys, why learning tables exist from day one,
+why work-hour standards are configurable rather than hardcoded).
+
+───────────────────────────────────────────────────
+
+🧪 [TESTING]:
+1. Run: docker-compose up -d && cd backend && alembic upgrade head && python -m src.seed
+2. Run: uvicorn src.main:app --reload  |  Expected: /api/health returns {"status":"ok"}
+3. Run: cd frontend && npm run dev  |  Open browser, verify Hebrew RTL login page
+4. Login with seeded credentials -> lands on /app shell; check DevTools: no errors,
+   JWT present, RTL layout correct, Heebo font loaded.
+
+═══════════════════════════════════════════════════════════════════
+END OF PHASE 1 BRIEF
+
+Now produce the plan only. No code yet.

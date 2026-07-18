@@ -1,0 +1,42 @@
+# Environment
+.env
+backend/.env
+backend/.secrets.env
+frontend/.env
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+
+# Python
+backend/.venv/
+backend/venv/
+**/__pycache__/
+**/*.py[cod]
+**/*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/dev-dist/
+*.log
+npm-debug.log*
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local
+*.sqlite3
+.coverage
+htmlcov/
+tools/
+_claude_handoff/
+*.zip
+.cursor/
+

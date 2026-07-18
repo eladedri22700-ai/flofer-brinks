@@ -1,0 +1,14 @@
+.lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-10, 10px);
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
+.stacked {
+  flex-direction: column;
+  gap: var(--space-12);
+  text-align: center;
+}

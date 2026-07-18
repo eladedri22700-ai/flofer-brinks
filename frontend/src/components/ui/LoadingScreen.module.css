@@ -1,0 +1,129 @@
+.wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  min-height: 56dvh;
+  padding: var(--space-32) var(--space-24);
+  overflow: hidden;
+}
+
+.full {
+  min-height: 100dvh;
+}
+
+/* Ambient vault glow */
+.aurora {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 42% at 50% 38%, rgba(223, 192, 90, 0.16), transparent 70%),
+    radial-gradient(70% 50% at 15% 92%, rgba(91, 156, 245, 0.1), transparent 70%),
+    radial-gradient(60% 45% at 88% 80%, rgba(155, 140, 240, 0.08), transparent 70%);
+  animation: drift 12s var(--ease) infinite alternate;
+}
+
+.markWrap {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: min(280px, 90vw);
+  min-height: 140px;
+  margin-bottom: var(--space-8);
+  padding: var(--space-16);
+}
+
+/* Spinning conic ring around the brand */
+.ring {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(201, 162, 39, 0) 200deg,
+    var(--brass-400) 320deg,
+    var(--brass-300) 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  animation: spin 1.15s linear infinite;
+  opacity: 0.55;
+}
+
+.mark {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  animation: breathe 2.4s var(--ease) infinite;
+}
+
+.label {
+  z-index: 1;
+  margin: var(--space-4) 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-inline-start: 4px;
+  min-width: 1.2em;
+}
+
+.dots i {
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--brass-400);
+  opacity: 0.25;
+  animation: blink 1.2s var(--ease) infinite;
+}
+
+.dots i:nth-child(2) { animation-delay: 0.2s; }
+.dots i:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 6px 20px rgba(201, 162, 39, 0.2);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 10px 32px rgba(201, 162, 39, 0.42);
+  }
+}
+
+@keyframes drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, -3%, 0) scale(1.04); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.2; }
+  40% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring { animation: none; opacity: 0.75; }
+  .mark { animation: none; }
+  .aurora { animation: none; }
+  .dots i { animation: none; opacity: 0.7; }
+}

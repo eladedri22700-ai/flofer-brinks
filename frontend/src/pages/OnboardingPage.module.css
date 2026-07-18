@@ -1,0 +1,201 @@
+.page {
+  position: relative;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  display: flex;
+  flex-direction: column;
+  padding:
+    calc(env(safe-area-inset-top, 0px) + var(--space-20))
+    var(--space-20)
+    calc(env(safe-area-inset-bottom, 0px) + var(--space-20));
+  background: var(--app-bg-image);
+  overflow: auto;
+}
+
+.aurora {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 40% at 50% 0%, rgba(212, 175, 55, 0.18), transparent 70%),
+    radial-gradient(60% 45% at 100% 80%, rgba(15, 45, 82, 0.08), transparent 70%);
+}
+
+.inner {
+  position: relative;
+  z-index: 1;
+  width: min(440px, 100%);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  flex: 1;
+}
+
+.lead {
+  margin: 0;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  padding: var(--space-16);
+  border-radius: var(--radius-16);
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-card);
+}
+
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-12);
+}
+
+.num {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--on-primary);
+  background: var(--primary);
+}
+
+.numDone {
+  background: var(--success);
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.cardDesc {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.status {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.statusOk {
+  color: var(--success);
+}
+
+.statusWarn {
+  color: var(--warning);
+}
+
+.statusMuted {
+  color: var(--text-muted);
+}
+
+.footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding-top: var(--space-16);
+}
+
+.hint {
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* iOS install sheet */
+.sheetOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(11, 31, 58, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: var(--space-16);
+  padding-bottom: calc(var(--space-16) + env(safe-area-inset-bottom, 0px));
+  animation: fadeIn 200ms var(--ease);
+}
+
+.sheet {
+  width: min(440px, 100%);
+  border-radius: var(--radius-20) var(--radius-20) var(--radius-16) var(--radius-16);
+  background: var(--surface-1);
+  border: 1px solid var(--border-strong);
+  padding: var(--space-20);
+  box-shadow: var(--shadow-float);
+  animation: slideUp 260ms var(--ease);
+}
+
+.sheetTitle {
+  margin: 0 0 var(--space-12);
+  font-family: var(--font-display);
+  font-size: 22px;
+}
+
+.sheetList {
+  margin: 0 0 var(--space-16);
+  padding-inline-start: var(--space-20);
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.sheetList strong {
+  color: var(--text-primary);
+}
+
+.shareIcon {
+  display: inline-block;
+  padding: 0 4px;
+  color: var(--info);
+  font-weight: 700;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheetOverlay,
+  .sheet {
+    animation: none;
+  }
+}

@@ -1,0 +1,71 @@
+.wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.outer {
+  fill: var(--surface);
+  stroke: var(--border-gold);
+  stroke-width: 2;
+}
+
+.tick {
+  stroke: var(--steel-400);
+  stroke-width: 1.2;
+  opacity: 0.7;
+}
+
+.track {
+  fill: none;
+  stroke: var(--navy-700);
+  stroke-width: 6;
+}
+
+.progress {
+  fill: none;
+  stroke: url(#none);
+  stroke: var(--gold-500);
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dasharray var(--t-med) var(--ease);
+}
+
+.needle {
+  transform-origin: 70px 70px;
+  transition: transform var(--t-med) var(--ease);
+}
+
+.snap .needle {
+  transition-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1.15);
+}
+
+.needleLine {
+  stroke: url(#gold);
+  stroke: var(--gold-300);
+  stroke-width: 3;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px rgba(201, 162, 39, 0.55));
+}
+
+.hub {
+  fill: var(--gold-500);
+  stroke: var(--gold-300);
+  stroke-width: 1;
+}
+
+.center {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}

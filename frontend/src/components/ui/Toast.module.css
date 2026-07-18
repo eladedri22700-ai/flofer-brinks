@@ -1,0 +1,66 @@
+.stack {
+  position: fixed;
+  top: calc(var(--topbar-h) + var(--space-8));
+  inset-inline: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  z-index: 1000;
+  pointer-events: none;
+  padding: 0 var(--space-16);
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  min-width: min(420px, 100%);
+  min-height: 52px;
+  padding: var(--space-12) var(--space-16);
+  border-radius: var(--radius-12);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-float);
+  color: var(--text-primary);
+  font-weight: 600;
+  animation: slideIn var(--t-med) var(--ease);
+}
+
+.error {
+  border-color: rgba(239, 90, 90, 0.5);
+  background: linear-gradient(180deg, rgba(239, 90, 90, 0.18), var(--surface-2));
+}
+
+.success {
+  border-color: rgba(61, 203, 122, 0.45);
+  background: linear-gradient(180deg, rgba(61, 203, 122, 0.14), var(--surface-2));
+}
+
+.info {
+  border-color: var(--border-brass);
+}
+
+.close {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
