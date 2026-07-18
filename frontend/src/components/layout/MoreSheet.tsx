@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { BrandLockup } from "../ui/BrandLockup";
 import { copyrightLine, copyrightShort } from "../../lib/legal";
 import { clearSavedLogin } from "../../lib/savedLogin";
+import { markSandbox } from "../../lib/sandbox";
 import { useAuthStore } from "../../store/authStore";
 import styles from "./MoreSheet.module.css";
 
@@ -42,6 +43,7 @@ export function MoreSheet({ open, onClose, userName }: Props) {
 
   function logout() {
     clearSavedLogin();
+    markSandbox(false);
     clearSession();
     qc.clear();
     onClose();

@@ -7,6 +7,12 @@ import { GuidedTour } from "./components/tour/GuidedTour";
 import { LoadingScreen } from "./components/ui/LoadingScreen";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import { readOnboarding } from "./lib/onboarding";
+import {
+  isSandboxQuery,
+  isSandboxUser,
+  markSandbox,
+  SANDBOX_USERNAME,
+} from "./lib/sandbox";
 import { useAuthStore } from "./store/authStore";
 
 const PlanPage = lazy(() => import("./pages/PlanPage"));
@@ -32,15 +38,36 @@ const queryClient = new QueryClient({
 
 function AppRoutes() {
   const hydrate = useAuthStore((s) => s.hydrate);
+  const clearSession = useAuthStore((s) => s.clearSession);
   const token = useAuthStore((s) => s.token);
+  const user = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s.hydrated);
   const [onboarding, setOnboarding] = useState(() => readOnboarding());
+  const [sandboxReady, setSandboxReady] = useState(false);
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
 
-  if (!hydrated) {
+  // Opening ?sandbox=1 always switches into the isolated TEST account —
+  // never keep a FLOFER session from a previous visit on this phone.
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!isSandboxQuery()) {
+      setSandboxReady(true);
+      return;
+    }
+    markSandbox(true);
+    const onSandboxUser =
+      user &&
+      user.username.toLowerCase() === SANDBOX_USERNAME.toLowerCase();
+    if (token && !onSandboxUser) {
+      clearSession();
+    }
+    setSandboxReady(true);
+  }, [hydrated, token, user, clearSession]);
+
+  if (!hydrated || !sandboxReady) {
     return <LoadingScreen full label="טוען" />;
   }
 
@@ -50,6 +77,10 @@ function AppRoutes() {
         <LoginPage />
       </Suspense>
     );
+  }
+
+  if (isSandboxUser(user?.username)) {
+    markSandbox(true);
   }
 
   const showPermissions = !onboarding.done && !onboarding.permissionsDone;

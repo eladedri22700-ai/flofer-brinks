@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getPrefs } from "../../api/live";
+import { isSandboxUser } from "../../lib/sandbox";
 import { useAuthStore } from "../../store/authStore";
 import { BrandLockup } from "../ui/BrandLockup";
 import { BottomNav } from "./BottomNav";
@@ -15,6 +16,7 @@ export function AppLayout() {
   const prefsQ = useQuery({ queryKey: ["prefs"], queryFn: getPrefs });
   const userName = user?.full_name ?? "ראש צוות";
   const demoMode = Boolean(prefsQ.data?.demo_mode);
+  const sandbox = isSandboxUser(user?.username);
   const theme = prefsQ.data?.theme;
   const boardMode = location.pathname.startsWith("/app/board");
 
@@ -32,6 +34,11 @@ export function AppLayout() {
       <a href="#main" className={styles.skip}>
         דלג לתוכן
       </a>
+      {sandbox ? (
+        <div className={styles.sandboxBanner} role="status">
+          סביבת בדיקה · לא משפיע על דניאל (FLOFER)
+        </div>
+      ) : null}
       {demoMode && !boardMode ? (
         <div className={styles.demoBanner} role="status">
           מצב הדגמה פעיל

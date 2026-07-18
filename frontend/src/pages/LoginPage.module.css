@@ -56,6 +56,19 @@
   text-align: start;
 }
 
+.sandboxNote {
+  margin: 0 0 var(--space-24);
+  padding: var(--space-12);
+  border-radius: var(--radius-12);
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+  text-align: start;
+  font-weight: 600;
+}
+
 .form {
   display: flex;
   flex-direction: column;

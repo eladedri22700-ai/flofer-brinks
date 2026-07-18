@@ -18,9 +18,16 @@ PILOT_USERS = [
         "full_name": "דניאל",
         "role": "team_leader",
     },
+    # Isolated sandbox for Elad — never shares routes/prefs/demo with FLOFER.
+    {
+        "username": "TEST",
+        "password": "1234",
+        "full_name": "אלעד · בדיקות",
+        "role": "team_leader",
+    },
     {
         "username": "elad",
-        "password": "EladBrinks2026!",
+        "password": "1234",
         "full_name": "אלעד",
         "role": "team_leader",
     },

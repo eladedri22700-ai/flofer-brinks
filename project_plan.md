@@ -67,8 +67,8 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 
 ## Next steps
 
-1. **Daniel (isolated):** https://flofer-brinks.onrender.com — login `FLOFER` / `1234` (auto-saved on device; not synced with tester)
-2. **Tester (Elad):** same URL, login `elad` — separate account; use «התנתקות» before switching users on one phone
+1. **Daniel (isolated):** https://flofer-brinks.onrender.com — login `FLOFER` / `1234`
+2. **Tester sandbox (Elad):** https://flofer-brinks.onrender.com/?sandbox=1 — auto `TEST` / `1234`, blue banner, zero effect on Daniel
 3. **Before pilot:** set real Brinks depot in Settings (shared office coords; seed is temporary Tel Aviv)
 4. GCP Browser Key HTTP referrer: `https://flofer-brinks.onrender.com/*`
 5. Telegram bot + Chat ID per user; «שלח הודעת בדיקה»

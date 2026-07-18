@@ -6,6 +6,12 @@ import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { useToast } from "../components/ui/ToastProvider";
 import { readSavedLogin, writeSavedLogin } from "../lib/savedLogin";
+import {
+  isSandboxActive,
+  markSandbox,
+  SANDBOX_PASSWORD,
+  SANDBOX_USERNAME,
+} from "../lib/sandbox";
 import { useAuthStore } from "../store/authStore";
 import styles from "./LoginPage.module.css";
 
@@ -22,11 +28,18 @@ function usernameFromQuery(): string {
 export default function LoginPage() {
   const setSession = useAuthStore((s) => s.setSession);
   const { show } = useToast();
+  const sandbox = isSandboxActive();
   const saved = readSavedLogin();
-  const [username, setUsername] = useState(
-    () => usernameFromQuery() || saved?.username || "FLOFER",
-  );
-  const [password, setPassword] = useState(() => saved?.password || "");
+  const queryUser = usernameFromQuery();
+
+  const [username, setUsername] = useState(() => {
+    if (sandbox) return queryUser || SANDBOX_USERNAME;
+    return queryUser || saved?.username || "FLOFER";
+  });
+  const [password, setPassword] = useState(() => {
+    if (sandbox) return saved?.password || SANDBOX_PASSWORD;
+    return saved?.password || "";
+  });
   const [loading, setLoading] = useState(false);
   const autoTried = useRef(false);
 
@@ -34,6 +47,8 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await loginRequest(user.trim(), pass);
+      if (sandbox) markSandbox(true);
+      else markSandbox(false);
       writeSavedLogin(user.trim(), pass);
       setSession(res.access_token, res.user);
     } catch (err) {
@@ -46,9 +61,25 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (autoTried.current) return;
+    autoTried.current = true;
+
+    if (sandbox) {
+      markSandbox(true);
+      const remembered = readSavedLogin();
+      const user = remembered?.username || SANDBOX_USERNAME;
+      const pass = remembered?.password || SANDBOX_PASSWORD;
+      void doLogin(user, pass);
+      return;
+    }
+
     const remembered = readSavedLogin();
     if (!remembered) return;
-    autoTried.current = true;
+    if (
+      queryUser &&
+      remembered.username.toLowerCase() !== queryUser.toLowerCase()
+    ) {
+      return;
+    }
     void doLogin(remembered.username, remembered.password);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot auto login
   }, []);
@@ -66,10 +97,17 @@ export default function LoginPage() {
           <BrandLockup size="hero" stacked to={null} titleAs="h1" />
         </div>
         <p className={styles.subtitle}>ניהול סבב חכם לראשי צוות</p>
-        <p className={styles.isoNote}>
-          לכל ראש צוות חשבון נפרד. אחרי כניסה מוצלחת הפרטים נשמרים במכשיר — בפעם
-          הבאה תיכנסו אוטומטית.
-        </p>
+        {sandbox ? (
+          <p className={styles.sandboxNote}>
+            סביבת בדיקה נפרדת — הסבבים וההגדרות כאן לא נוגעים בחשבון של דניאל
+            (FLOFER).
+          </p>
+        ) : (
+          <p className={styles.isoNote}>
+            לכל ראש צוות חשבון נפרד. אחרי כניסה מוצלחת הפרטים נשמרים במכשיר — בפעם
+            הבאה תיכנסו אוטומטית.
+          </p>
+        )}
         <form className={styles.form} onSubmit={onSubmit}>
           <Input
             label="שם משתמש"
@@ -89,10 +127,14 @@ export default function LoginPage() {
             required
           />
           <Button type="submit" size="lg" loading={loading} className={styles.submit}>
-            כניסה למערכת
+            {sandbox ? "כניסה לבדיקות" : "כניסה למערכת"}
           </Button>
         </form>
-        <p className={styles.footnote}>שמירה אוטומטית במכשיר · חשבון אישי</p>
+        <p className={styles.footnote}>
+          {sandbox
+            ? "חשבון TEST · מבודד מ־FLOFER"
+            : "שמירה אוטומטית במכשיר · חשבון אישי"}
+        </p>
       </Card>
     </main>
   );

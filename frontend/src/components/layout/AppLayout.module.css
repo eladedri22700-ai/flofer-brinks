@@ -24,6 +24,24 @@
   top: var(--space-12);
 }
 
+.sandboxBanner {
+  position: sticky;
+  top: 0;
+  z-index: 41;
+  padding: 8px var(--space-20);
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e3a8a;
+  background: rgba(37, 99, 235, 0.14);
+  border-bottom: 1px solid rgba(37, 99, 235, 0.28);
+}
+
+:global([data-theme="dark"]) .sandboxBanner {
+  color: #93c5fd;
+  background: rgba(37, 99, 235, 0.22);
+}
+
 .demoBanner {
   position: sticky;
   top: 0;

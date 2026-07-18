@@ -1,15 +1,22 @@
-/** Device-local remembered login (pilot convenience). */
+/** Device-local remembered login. Sandbox uses a separate key from FLOFER. */
 
-const KEY = "rm_saved_login";
+import { isSandboxActive } from "./sandbox";
 
 export type SavedLogin = {
   username: string;
   password: string;
 };
 
+const KEY_PILOT = "rm_saved_login";
+const KEY_SANDBOX = "rm_saved_login_sandbox";
+
+function storageKey(): string {
+  return isSandboxActive() ? KEY_SANDBOX : KEY_PILOT;
+}
+
 export function readSavedLogin(): SavedLogin | null {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(storageKey());
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<SavedLogin>;
     if (
@@ -31,7 +38,7 @@ export function readSavedLogin(): SavedLogin | null {
 
 export function writeSavedLogin(username: string, password: string): void {
   localStorage.setItem(
-    KEY,
+    storageKey(),
     JSON.stringify({
       username: username.trim(),
       password,
@@ -40,5 +47,5 @@ export function writeSavedLogin(username: string, password: string): void {
 }
 
 export function clearSavedLogin(): void {
-  localStorage.removeItem(KEY);
+  localStorage.removeItem(storageKey());
 }
