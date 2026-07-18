@@ -1,5 +1,6 @@
 import {
   apiFetch,
+  type CustomerDto,
   type Depot,
   type DraftStop,
   type KeysStatus,
@@ -71,6 +72,20 @@ export const addStopsBulk = (routeId: number, stops: Record<string, unknown>[]) 
   apiFetch<StopDto[]>(`/api/routes/${routeId}/stops/bulk`, {
     method: "POST",
     body: JSON.stringify({ stops }),
+  });
+
+export const listCustomers = (q = "", limit = 80) => {
+  const params = new URLSearchParams();
+  if (q.trim()) params.set("q", q.trim());
+  params.set("limit", String(limit));
+  const qs = params.toString();
+  return apiFetch<CustomerDto[]>(`/api/customers${qs ? `?${qs}` : ""}`);
+};
+
+export const addStopsFromCustomers = (routeId: number, customerIds: number[]) =>
+  apiFetch<StopDto[]>(`/api/routes/${routeId}/stops/from-customers`, {
+    method: "POST",
+    body: JSON.stringify({ customer_ids: customerIds }),
   });
 
 export const patchStop = (stopId: number, body: Record<string, unknown>) =>

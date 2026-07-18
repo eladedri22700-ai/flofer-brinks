@@ -8,6 +8,7 @@ from src.core.exceptions import AppError
 from src.db.session import get_db
 from src.models.stop import Stop
 from src.models.user import User
+from src.schemas.customers import AddFromCustomersBody
 from src.schemas.routes import (
     DraftStop,
     OptimizeRequest,
@@ -27,6 +28,7 @@ from src.services.file_import import parse_stops_file
 from src.services.optimize_service import optimize_route, reorder_manual
 from src.services.routes import (
     add_stop,
+    add_stops_from_customers,
     create_route,
     delete_stop,
     get_route_for_user,
@@ -115,6 +117,18 @@ async def post_stop(
     route = get_route_for_user(db, route_id, user.id)
     stop = await add_stop(db, route, body)
     return stop_to_out(stop)
+
+
+@router.post("/routes/{route_id}/stops/from-customers", response_model=list[StopOut])
+def post_stops_from_customers(
+    route_id: int,
+    body: AddFromCustomersBody,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> list[StopOut]:
+    route = get_route_for_user(db, route_id, user.id)
+    stops = add_stops_from_customers(db, route, body.customer_ids)
+    return [stop_to_out(s) for s in stops]
 
 
 @router.post("/routes/{route_id}/stops/bulk", response_model=list[StopOut])

@@ -3,6 +3,7 @@ import { apiErrorMessage } from "../api/errors";
 import {
   addStop,
   addStopsBulk,
+  addStopsFromCustomers,
   createTodayRoute,
   deleteStop,
   extractFromImage,
@@ -19,6 +20,7 @@ import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { useToast } from "../components/ui/ToastProvider";
+import { CustomerPickerTab } from "../components/plan/CustomerPicker";
 import { FileInputTab } from "../components/plan/FileInput";
 import { ManualInput } from "../components/plan/ManualInput";
 import { ScreenshotInputTab } from "../components/plan/ScreenshotInput";
@@ -36,7 +38,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const OPT_STEPS = ["מחשב מרחקים…", "מסדר מסלול…", "בודק אילוצים…"] as const;
 
-type Tab = "manual" | "file" | "shot";
+type Tab = "manual" | "file" | "shot" | "library";
 
 function parseTimeNote(note: string | null | undefined): Partial<{
   tw_type: string;
@@ -69,11 +71,7 @@ export default function PlanPage() {
   const { show } = useToast();
   const nav = useNavigate();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>(() =>
-    typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches
-      ? "shot"
-      : "manual",
-  );
+  const [tab, setTab] = useState<Tab>("library");
   const [optStep, setOptStep] = useState<number | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [constraintsSavingId, setConstraintsSavingId] = useState<number | null>(
@@ -114,8 +112,23 @@ export default function PlanPage() {
       return addStop(route!.id, payload);
     },
     onSuccess: () => {
-      show("היעד נוסף", "success");
+      show("היעד נוסף ונשמר ללקוחות", "success");
       invalidate();
+      void qc.invalidateQueries({ queryKey: ["customers"] });
+    },
+    onError: (e) => show(apiErrorMessage(e), "error"),
+  });
+
+  const fromCustomersM = useMutation({
+    mutationFn: (customerIds: number[]) =>
+      addStopsFromCustomers(route!.id, customerIds),
+    onSuccess: (stops) => {
+      show(
+        stops.length === 1 ? "הלקוח נוסף לסבב" : `${stops.length} לקוחות נוספו לסבב`,
+        "success",
+      );
+      invalidate();
+      void qc.invalidateQueries({ queryKey: ["customers"] });
     },
     onError: (e) => show(apiErrorMessage(e), "error"),
   });
@@ -131,8 +144,9 @@ export default function PlanPage() {
       return addStopsBulk(route!.id, stops);
     },
     onSuccess: () => {
-      show("היעדים נוספו לסבב", "success");
+      show("היעדים נוספו ונשמרו ללקוחות", "success");
       invalidate();
+      void qc.invalidateQueries({ queryKey: ["customers"] });
     },
     onError: (e) => show(apiErrorMessage(e), "error"),
   });
@@ -420,6 +434,7 @@ export default function PlanPage() {
         <div className={styles.tabs} role="tablist" aria-label="אופן הזנה">
           {(
             [
+              ["library", "שמורים"],
               ["shot", "צילום"],
               ["manual", "ידני"],
               ["file", "קובץ"],
@@ -438,6 +453,15 @@ export default function PlanPage() {
           ))}
         </div>
         <Card className={styles.inputCard}>
+          {tab === "library" ? (
+            <CustomerPickerTab
+              excludeCustomerIds={route.stops
+                .map((s) => s.customer_id)
+                .filter((id): id is number => id != null)}
+              loading={fromCustomersM.isPending}
+              onAdd={(ids) => fromCustomersM.mutate(ids)}
+            />
+          ) : null}
           {tab === "manual" ? (
             <ManualInput
               loading={addM.isPending}
@@ -475,7 +499,7 @@ export default function PlanPage() {
         {stopCount === 0 ? (
           <EmptyState
             title="עדיין אין יעדים"
-            description="צלמו את הרשימה מ־Zebra, בחרו מהגלריה, או הזינו ידנית."
+            description="בחרו מלקוחות שמורים, צלמו רשימה מ־Zebra, או הזינו ידנית."
           />
         ) : (
           <StopsList

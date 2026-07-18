@@ -12,7 +12,12 @@ from src.models.customer import Customer
 from src.models.route import Route
 from src.models.stop import Stop
 from src.schemas.routes import RouteCreate, StopCreate, StopOut, StopUpdate
-from src.services.customers import find_or_create_customer, get_service_estimate
+from src.services.customers import (
+    display_address,
+    find_or_create_customer,
+    get_customers_by_ids,
+    get_service_estimate,
+)
 from src.services import maps
 from src.services.optimizer import MAX_STOPS
 
@@ -120,6 +125,76 @@ async def resolve_coords(body: StopCreate) -> tuple[float, float, str, float]:
         return body.lat, body.lng, body.address, conf
     geo = await maps.geocode(body.address)
     return geo["lat"], geo["lng"], geo["formatted_address"], float(geo["confidence"])
+
+
+def add_stops_from_customers(
+    db: Session, route: Route, customer_ids: list[int]
+) -> list[Stop]:
+    """Compose today's round from saved customers (no re-geocode)."""
+    customers = get_customers_by_ids(db, customer_ids)
+    if not customers:
+        raise AppError(
+            code="customers_not_found",
+            message_he="לא נמצאו לקוחות ברשימה השמורה.",
+            status_code=404,
+        )
+
+    existing_ids = {
+        s.customer_id for s in (route.stops or []) if s.customer_id is not None
+    }
+    next_order = 0
+    if route.stops:
+        next_order = max(s.sequence_order for s in route.stops) + 1
+
+    created: list[Stop] = []
+    for customer in customers:
+        if customer.id in existing_ids:
+            continue
+        current = len(route.stops or []) + len(created)
+        if current >= MAX_STOPS:
+            raise AppError(
+                code="too_many_stops",
+                message_he=(
+                    f"הגעתם למקסימום {MAX_STOPS} יעדים בסבב. "
+                    "פצלו לרשימה נוספת או הסירו יעדים."
+                ),
+                status_code=400,
+            )
+        minutes, source = get_service_estimate(customer)
+        address = display_address(db, customer)
+        stop = Stop(
+            route_id=route.id,
+            customer_id=customer.id,
+            customer_name=customer.name,
+            address=address,
+            lat=customer.lat,
+            lng=customer.lng,
+            sequence_order=next_order,
+            priority="normal",
+            tw_type="none",
+            service_duration_min=minutes,
+            service_estimate_source=source,
+            status="pending",
+        )
+        db.add(stop)
+        created.append(stop)
+        existing_ids.add(customer.id)
+        next_order += 1
+
+    if not created:
+        raise AppError(
+            code="already_on_route",
+            message_he="כל הלקוחות שנבחרו כבר נמצאים בסבב של היום.",
+            status_code=400,
+        )
+
+    db.commit()
+    for stop in created:
+        db.refresh(stop)
+        stop.customer = next(
+            (c for c in customers if c.id == stop.customer_id), None
+        )
+    return created
 
 
 async def add_stop(db: Session, route: Route, body: StopCreate) -> Stop:

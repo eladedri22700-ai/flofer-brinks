@@ -190,6 +190,19 @@ export type DraftStop = {
   category?: string;
 };
 
+export type CustomerDto = {
+  id: number;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  category: string;
+  service_duration_min: number;
+  service_estimate_source: string;
+  service_sample_count: number;
+  geocode_confidence: number | null;
+};
+
 export type PlaceSuggestion = { place_id: string; description: string };
 
 export type Depot = {
