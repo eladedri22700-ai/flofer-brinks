@@ -239,3 +239,42 @@ def disable_demo(db: Session, user_id: int) -> dict:
     settings.demo_mode = False
     db.commit()
     return {"ok": True, "demo_mode": False}
+
+
+def prepare_tour_practice(db: Session, user_id: int) -> dict:
+    """Seed demo customers/history, then clear TODAY's stops for hands-on practice."""
+    enable_demo(db, user_id)
+    today = today_local()
+    route = (
+        db.query(Route)
+        .filter(
+            Route.user_id == user_id,
+            Route.date == today,
+            Route.is_demo.is_(True),
+        )
+        .first()
+    )
+    cleared = 0
+    if route is not None:
+        stop_ids = [
+            s.id for s in db.query(Stop).filter(Stop.route_id == route.id).all()
+        ]
+        if stop_ids:
+            db.query(ServiceSample).filter(ServiceSample.stop_id.in_(stop_ids)).delete(
+                synchronize_session=False
+            )
+            cleared = (
+                db.query(Stop)
+                .filter(Stop.route_id == route.id)
+                .delete(synchronize_session=False)
+            )
+        route.status = "planning"
+        route.optimized_at = None
+        route.optimized_duration_min = None
+        db.commit()
+    return {
+        "ok": True,
+        "demo_mode": True,
+        "practice": True,
+        "cleared_stops": int(cleared or 0),
+    }

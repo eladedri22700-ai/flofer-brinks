@@ -2,9 +2,11 @@ import { useEffect, useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { disableDemo, enableDemo } from "../../api/phase5";
+import { disableDemo, enableDemoPractice } from "../../api/phase5";
 import { markOnboardingDone } from "../../lib/onboarding";
+import { onTourEvent } from "../../lib/tourEvents";
 import { TOUR_STEPS } from "../../lib/tourSteps";
+import { useTourStore } from "../../store/tourStore";
 import { Button } from "../ui/Button";
 import styles from "./GuidedTour.module.css";
 
@@ -33,31 +35,44 @@ function measureTarget(attr: string | undefined): Rect | null {
 export function GuidedTour({ active, onFinished }: Props) {
   const nav = useNavigate();
   const qc = useQueryClient();
+  const setTourActive = useTourStore((s) => s.setActive);
+  const setStepId = useTourStore((s) => s.setStepId);
+  const setPlanTab = useTourStore((s) => s.setPlanTab);
   const [index, setIndex] = useState(0);
   const [hole, setHole] = useState<Rect | null>(null);
   const [busy, setBusy] = useState(false);
   const [demoReady, setDemoReady] = useState(false);
-  const [demoError, setDemoError] = useState(false);
+  const [waitDone, setWaitDone] = useState(true);
 
   const step = TOUR_STEPS[index];
   const total = TOUR_STEPS.length;
+  const needsAction = Boolean(step?.waitFor) && !waitDone;
+
+  useEffect(() => {
+    setTourActive(active);
+    if (!active) {
+      setStepId(null);
+      setPlanTab(null);
+    }
+    return () => {
+      setTourActive(false);
+      setStepId(null);
+      setPlanTab(null);
+    };
+  }, [active, setTourActive, setStepId, setPlanTab]);
 
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
     setBusy(true);
-    setDemoError(false);
-    void enableDemo()
+    void enableDemoPractice()
       .then(() => {
         if (cancelled) return;
         setDemoReady(true);
         void qc.invalidateQueries();
       })
       .catch(() => {
-        if (cancelled) return;
-        // Continue tour even if demo seed fails — still explain screens.
-        setDemoError(true);
-        setDemoReady(true);
+        if (!cancelled) setDemoReady(true);
       })
       .finally(() => {
         if (!cancelled) setBusy(false);
@@ -69,14 +84,25 @@ export function GuidedTour({ active, onFinished }: Props) {
 
   useEffect(() => {
     if (!active || !step || !demoReady) return;
+    setStepId(step.id);
+    setPlanTab(step.planTab ?? null);
     nav(step.path, { replace: true });
-  }, [active, step, demoReady, nav]);
+  }, [active, step, demoReady, nav, setStepId, setPlanTab]);
+
+  useEffect(() => {
+    if (!active || !step) return;
+    if (!step.waitFor) {
+      setWaitDone(true);
+      return;
+    }
+    setWaitDone(false);
+    return onTourEvent(step.waitFor, () => setWaitDone(true));
+  }, [active, step, index]);
 
   useLayoutEffect(() => {
     if (!active || !step || !demoReady) return;
     let tries = 0;
     let timer: number | undefined;
-
     const tick = () => {
       const rect = measureTarget(step.target);
       setHole(rect);
@@ -85,23 +111,21 @@ export function GuidedTour({ active, onFinished }: Props) {
         timer = window.setTimeout(tick, 140);
       }
     };
-
-    timer = window.setTimeout(tick, 100);
+    timer = window.setTimeout(tick, 120);
     const onResize = () => setHole(measureTarget(step.target));
     window.addEventListener("resize", onResize);
     window.addEventListener("scroll", onResize, true);
-
     if (step.target) {
-      const el = document.querySelector(`[data-tour="${step.target}"]`);
-      el?.scrollIntoView({ block: "center", behavior: "smooth" });
+      document
+        .querySelector(`[data-tour="${step.target}"]`)
+        ?.scrollIntoView({ block: "center", behavior: "smooth" });
     }
-
     return () => {
       window.clearTimeout(timer);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onResize, true);
     };
-  }, [active, step, demoReady, index]);
+  }, [active, step, demoReady, index, waitDone]);
 
   async function finishTour() {
     setBusy(true);
@@ -109,6 +133,9 @@ export function GuidedTour({ active, onFinished }: Props) {
       await disableDemo().catch(() => undefined);
       void qc.invalidateQueries();
       markOnboardingDone();
+      setTourActive(false);
+      setStepId(null);
+      setPlanTab(null);
       onFinished();
       nav("/app/dashboard", { replace: true });
     } finally {
@@ -117,15 +144,12 @@ export function GuidedTour({ active, onFinished }: Props) {
   }
 
   function next() {
+    if (needsAction) return;
     if (index >= total - 1) {
       void finishTour();
       return;
     }
     setIndex((i) => i + 1);
-  }
-
-  function back() {
-    setIndex((i) => Math.max(0, i - 1));
   }
 
   if (!active) return null;
@@ -134,10 +158,10 @@ export function GuidedTour({ active, onFinished }: Props) {
     return createPortal(
       <div className={styles.boot} role="status" aria-live="polite">
         <div className={styles.bootCard}>
-          <p className={styles.bootTitle}>מפעילים יחד מצב הדגמה…</p>
+          <p className={styles.bootTitle}>מכינים תרגול מעשי…</p>
           <p className={styles.bootBody}>
-            טוענים מסלול לדוגמה כדי שתראו איך כל מסך עובד. זה רק אצלכם — לא
-            משפיע על נתונים אמיתיים.
+            טוענים נתוני דמו ומנקים את רשימת היום — כדי שתוסיפו כתובות וצילום
+            בעצמכם, צעד אחר צעד.
           </p>
         </div>
       </div>,
@@ -154,9 +178,9 @@ export function GuidedTour({ active, onFinished }: Props) {
   return createPortal(
     <>
       <div className={styles.demoBanner} role="status">
-        {demoError
-          ? "הדרכה חיה · הדמו לא נטען במלואו — ממשיכים להסביר את המסכים"
-          : "מצב הדגמה פעיל · הדרכה חיה ביחד"}
+        {needsAction
+          ? "תרגול פעיל · בצעו את הצעד המודגש"
+          : "מצב הדגמה · הדרכה חיה ביחד"}
       </div>
       <div className={styles.overlay} aria-live="polite">
         {hole ? (
@@ -184,10 +208,15 @@ export function GuidedTour({ active, onFinished }: Props) {
             שלב {index + 1}/{total}
           </span>
           <span className={styles.screen}>{step.screen}</span>
+          {step.waitFor ? (
+            <span className={needsAction ? styles.waitBadge : styles.doneBadge}>
+              {needsAction ? "ממתינים לפעולה שלכם" : "בוצע ✓"}
+            </span>
+          ) : null}
         </div>
         <h2 className={styles.title}>{step.title}</h2>
         <p className={styles.body}>{step.body}</p>
-        {step.bullets && step.bullets.length > 0 ? (
+        {step.bullets?.length ? (
           <ul className={styles.bullets}>
             {step.bullets.map((b) => (
               <li key={b}>{b}</li>
@@ -199,22 +228,47 @@ export function GuidedTour({ active, onFinished }: Props) {
         ) : null}
         <div className={styles.actions}>
           {index > 0 ? (
-            <Button variant="ghost" size="md" onClick={back} disabled={busy}>
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={() => setIndex((i) => Math.max(0, i - 1))}
+              disabled={busy}
+            >
               חזרה
             </Button>
           ) : null}
-          <Button size="lg" loading={busy} onClick={next}>
-            {index >= total - 1 ? "סיים · עבור למצב אמת" : "הבנתי · המשך"}
+          <Button
+            size="lg"
+            loading={busy}
+            disabled={needsAction}
+            onClick={next}
+          >
+            {index >= total - 1
+              ? "סיים · עבור למצב אמת"
+              : needsAction
+                ? "השלימו את הצעד…"
+                : "הבנתי · המשך"}
           </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="md"
-          disabled={busy}
-          onClick={() => void finishTour()}
-        >
-          דלג וסיים הדרכה
-        </Button>
+        {needsAction ? (
+          <Button
+            variant="ghost"
+            size="md"
+            disabled={busy}
+            onClick={() => setWaitDone(true)}
+          >
+            דלג על התרגיל הזה
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            size="md"
+            disabled={busy}
+            onClick={() => void finishTour()}
+          >
+            דלג וסיים הדרכה
+          </Button>
+        )}
       </div>
     </>,
     document.body,

@@ -3,6 +3,8 @@ import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { autocomplete, placeDetails } from "../../api/planning";
 import type { PlaceSuggestion } from "../../api/client";
+import { DEMO_MANUAL_ADDRESS } from "../../lib/demoAddresses";
+import { useTourStore } from "../../store/tourStore";
 import styles from "./ManualInput.module.css";
 
 type Props = {
@@ -19,6 +21,7 @@ const CATEGORIES = [
 ];
 
 export function ManualInput({ onSubmit, loading }: Props) {
+  const tourActive = useTourStore((s) => s.active);
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [placeId, setPlaceId] = useState<string | null>(null);
@@ -31,6 +34,14 @@ export function ManualInput({ onSubmit, loading }: Props) {
   const [serviceMin, setServiceMin] = useState("");
   const [notes, setNotes] = useState("");
   const [moreOpen, setMoreOpen] = useState(false);
+
+  function fillDemoAddress() {
+    setName(DEMO_MANUAL_ADDRESS.customer_name);
+    setAddress(DEMO_MANUAL_ADDRESS.address);
+    setPlaceId(DEMO_MANUAL_ADDRESS.place_id ?? null);
+    setCategory(DEMO_MANUAL_ADDRESS.category);
+    setSuggestions([]);
+  }
 
   useEffect(() => {
     if (address.trim().length < 2 || placeId) {
@@ -84,7 +95,18 @@ export function ManualInput({ onSubmit, loading }: Props) {
   }
 
   return (
-    <div className={styles.wrap}>
+    <div className={styles.wrap} data-tour="plan-manual">
+      {tourActive ? (
+        <Button
+          type="button"
+          variant="secondary"
+          size="lg"
+          onClick={fillDemoAddress}
+          data-tour="plan-fill-demo"
+        >
+          מלא כתובת דמה
+        </Button>
+      ) : null}
       <Input
         label="שם לקוח"
         value={name}
@@ -118,6 +140,7 @@ export function ManualInput({ onSubmit, loading }: Props) {
         loading={loading}
         disabled={!name.trim() || !address.trim()}
         onClick={submit}
+        data-tour="plan-add-stop"
       >
         הוסף יעד
       </Button>

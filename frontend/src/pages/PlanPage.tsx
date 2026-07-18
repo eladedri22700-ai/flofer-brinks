@@ -35,6 +35,8 @@ import styles from "./PlanPage.module.css";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { emitTourEvent } from "../lib/tourEvents";
+import { useTourStore } from "../store/tourStore";
 
 const OPT_STEPS = ["מחשב מרחקים…", "מסדר מסלול…", "בודק אילוצים…"] as const;
 
@@ -71,6 +73,7 @@ export default function PlanPage() {
   const { show } = useToast();
   const nav = useNavigate();
   const qc = useQueryClient();
+  const tourPlanTab = useTourStore((s) => s.planTab);
   const [tab, setTab] = useState<Tab>("library");
   const [optStep, setOptStep] = useState<number | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -81,6 +84,10 @@ export default function PlanPage() {
   const keysQ = useQuery({ queryKey: ["keys-status"], queryFn: getKeysStatus });
   const depotQ = useQuery({ queryKey: ["depot"], queryFn: getDepot });
   const routeQ = useQuery({ queryKey: ["route-today"], queryFn: getTodayRoute });
+
+  useEffect(() => {
+    if (tourPlanTab) setTab(tourPlanTab);
+  }, [tourPlanTab]);
 
   useEffect(() => {
     if (routeQ.isFetched && routeQ.data === null) {
@@ -113,6 +120,7 @@ export default function PlanPage() {
     },
     onSuccess: () => {
       show("היעד נוסף ונשמר ללקוחות", "success");
+      emitTourEvent("tour:stop-added");
       invalidate();
       void qc.invalidateQueries({ queryKey: ["customers"] });
     },
@@ -127,6 +135,7 @@ export default function PlanPage() {
         stops.length === 1 ? "הלקוח נוסף לסבב" : `${stops.length} לקוחות נוספו לסבב`,
         "success",
       );
+      emitTourEvent("tour:stop-added");
       invalidate();
       void qc.invalidateQueries({ queryKey: ["customers"] });
     },
@@ -145,6 +154,7 @@ export default function PlanPage() {
     },
     onSuccess: () => {
       show("היעדים נוספו ונשמרו ללקוחות", "success");
+      emitTourEvent("tour:ocr-committed");
       invalidate();
       void qc.invalidateQueries({ queryKey: ["customers"] });
     },
@@ -219,6 +229,7 @@ export default function PlanPage() {
     },
     onSuccess: ({ res, goToRoute }) => {
       void qc.invalidateQueries({ queryKey: ["route-today"] });
+      emitTourEvent("tour:optimized");
       if (!res.feasible) {
         show("נמצאו התנגשויות — בחרו אפשרות במסך המסלול", "error");
         nav("/app/route");
@@ -231,7 +242,10 @@ export default function PlanPage() {
           : `מסלול מוכן לפי זמן סיום סבב קצר ביותר${ret ? ` · חזרה ${ret}` : ""}`,
         "success",
       );
-      if (goToRoute) nav("/app/board");
+      if (goToRoute) {
+        // During tour stay on route order so the lock exercise can run.
+        nav(useTourStore.getState().active ? "/app/route" : "/app/board");
+      }
     },
     onError: (e) => show(apiErrorMessage(e), "error"),
     onSettled: (_d, _e, _v, ctx) => {

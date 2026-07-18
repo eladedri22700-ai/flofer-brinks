@@ -21,7 +21,7 @@ export function DraftTable({ drafts, onChange, onCommit, loading }: Props) {
   }
 
   return (
-    <div className={styles.wrap}>
+    <div className={styles.wrap} data-tour="plan-draft-commit">
       <h3 className={styles.title}>טיוטה לאישור</h3>
       <div className={styles.table}>
         {drafts.map((d, i) => (

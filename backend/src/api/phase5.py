@@ -135,6 +135,15 @@ def demo_enable(
     return demo_svc.enable_demo(db, user.id)
 
 
+@router.post("/settings/demo/practice")
+def demo_practice(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Hands-on guided tour: demo data + empty planning route for today."""
+    return demo_svc.prepare_tour_practice(db, user.id)
+
+
 @router.post("/settings/demo/disable")
 def demo_disable(
     db: Session = Depends(get_db),

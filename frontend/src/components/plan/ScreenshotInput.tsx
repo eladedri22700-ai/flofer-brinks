@@ -1,7 +1,11 @@
 import { useRef, useState } from "react";
 import { DraftTable } from "./DraftTable";
 import { Skeleton } from "../ui/Skeleton";
+import { Button } from "../ui/Button";
 import type { DraftStop } from "../../api/client";
+import { DEMO_PHOTO_PATH } from "../../lib/demoAddresses";
+import { emitTourEvent } from "../../lib/tourEvents";
+import { useTourStore } from "../../store/tourStore";
 import styles from "./ScreenshotInput.module.css";
 
 type Props = {
@@ -11,6 +15,7 @@ type Props = {
 };
 
 export function ScreenshotInputTab({ onExtract, onCommit, loading }: Props) {
+  const tourActive = useTourStore((s) => s.active);
   const [drafts, setDrafts] = useState<DraftStop[]>([]);
   const [busy, setBusy] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -27,6 +32,7 @@ export function ScreenshotInputTab({ onExtract, onCommit, loading }: Props) {
     try {
       const rows = await onExtract(file);
       setDrafts(rows);
+      if (rows.length > 0) emitTourEvent("tour:ocr-ready");
     } finally {
       setBusy(false);
       if (cameraRef.current) cameraRef.current.value = "";
@@ -34,12 +40,38 @@ export function ScreenshotInputTab({ onExtract, onCommit, loading }: Props) {
     }
   }
 
+  async function useDemoPhoto() {
+    setBusy(true);
+    try {
+      const res = await fetch(DEMO_PHOTO_PATH);
+      const blob = await res.blob();
+      const file = new File([blob], "zebra-demo.svg", {
+        type: blob.type || "image/svg+xml",
+      });
+      await handleFile(file);
+    } catch {
+      setBusy(false);
+    }
+  }
+
   return (
-    <div className={styles.wrap}>
+    <div className={styles.wrap} data-tour="plan-shot">
       <p className={styles.lead}>
         צלמו את רשימת היעדים מ־Zebra, או בחרו צילום מסך מהגלריה. כל כתובת
         שנזהתה נשמרת אוטומטית בספריית «שמורים» לפעמים הבאות.
       </p>
+      {tourActive ? (
+        <Button
+          type="button"
+          size="lg"
+          variant="secondary"
+          loading={busy}
+          onClick={() => void useDemoPhoto()}
+          data-tour="plan-demo-photo"
+        >
+          השתמש בצילום דמה
+        </Button>
+      ) : null}
 
       {/* Two inputs: capture forces camera; without capture opens gallery/photos */}
       <input

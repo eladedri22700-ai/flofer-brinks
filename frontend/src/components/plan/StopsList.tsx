@@ -17,6 +17,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import type { StopDto } from "../../api/client";
+import { emitTourEvent } from "../../lib/tourEvents";
 import styles from "./StopsList.module.css";
 
 export type StopConstraintsPatch = {
@@ -156,8 +157,10 @@ function SortableStop({
                         ? toTimeInput(stop.tw_end) || null
                         : null,
                   });
+                  if (next) emitTourEvent("tour:vip-set");
                 }}
                 aria-pressed={stop.priority === "vip"}
+                data-tour="plan-vip"
               >
                 VIP
               </button>
@@ -316,21 +319,23 @@ export function StopsList({
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-        <div className={styles.list}>
-          {stops.map((s) => (
-            <SortableStop
-              key={`${s.id}-${s.priority}-${s.tw_type}-${s.tw_start}-${s.tw_end}`}
-              stop={s}
-              onDelete={onDelete}
-              onFixCoords={onFixCoords}
-              onUpdateConstraints={onUpdateConstraints}
-              saving={constraintsSavingId === s.id}
-            />
-          ))}
-        </div>
-      </SortableContext>
-    </DndContext>
+    <div data-tour="plan-stops">
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+          <div className={styles.list}>
+            {stops.map((s) => (
+              <SortableStop
+                key={`${s.id}-${s.priority}-${s.tw_type}-${s.tw_start}-${s.tw_end}`}
+                stop={s}
+                onDelete={onDelete}
+                onFixCoords={onFixCoords}
+                onUpdateConstraints={onUpdateConstraints}
+                saving={constraintsSavingId === s.id}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+    </div>
   );
 }

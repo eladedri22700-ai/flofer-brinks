@@ -33,6 +33,7 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { PageHeader } from "../components/ui/PageHeader";
 import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { useToast } from "../components/ui/ToastProvider";
+import { emitTourEvent } from "../lib/tourEvents";
 import { isRoundLive } from "../lib/roundBrief";
 import styles from "./RoutePage.module.css";
 
@@ -64,6 +65,7 @@ function SortableRow({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={styles.row}
+      data-tour={stop.sequence_order === 0 ? "route-lock" : undefined}
     >
       <button
         type="button"
@@ -88,6 +90,7 @@ function SortableRow({
       <button
         type="button"
         className={styles.lockBtn}
+        data-tour="route-lock-btn"
         onClick={() => onToggleLock(stop.id, !stop.locked)}
         aria-label={stop.locked ? "שחרר נעילה" : "נעל יעד"}
       >
@@ -158,7 +161,10 @@ export default function RoutePage() {
   const lockM = useMutation({
     mutationFn: ({ id, locked }: { id: number; locked: boolean }) =>
       patchStop(id, { locked }),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["route-today"] }),
+    onSuccess: (_data, vars) => {
+      if (vars.locked) emitTourEvent("tour:locked");
+      void qc.invalidateQueries({ queryKey: ["route-today"] });
+    },
     onError: (e) => show(apiErrorMessage(e), "error"),
   });
 

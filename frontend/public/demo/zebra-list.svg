@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="960" viewBox="0 0 720 960">
+  <rect width="720" height="960" fill="#f4f1ea"/>
+  <rect x="40" y="40" width="640" height="880" rx="12" fill="#fff" stroke="#0f2d52" stroke-width="3"/>
+  <text x="360" y="100" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#0f2d52">шщйоъ йтгйн З Zebra (гое)</text>
+  <text x="360" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#666">цймен мгевод мдгшлд  ма аойъй</text>
+  <line x1="80" y1="170" x2="640" y2="170" stroke="#c9a227" stroke-width="2"/>
+  <text x="100" y="230" font-family="Arial, sans-serif" font-size="22" fill="#111">1. брч дфетмйн гйжрвеу</text>
+  <text x="100" y="262" font-family="Arial, sans-serif" font-size="18" fill="#444">гйжрвеу 50, ъм абйб З тг 10:00</text>
+  <text x="100" y="330" font-family="Arial, sans-serif" font-size="22" fill="#111">2. лсфеои шеищймг</text>
+  <text x="100" y="362" font-family="Arial, sans-serif" font-size="18" fill="#444">шеищймг 22, ъм абйб</text>
+  <text x="100" y="430" font-family="Arial, sans-serif" font-size="22" fill="#111">3. сефш фашн абп вбйшем</text>
+  <text x="100" y="462" font-family="Arial, sans-serif" font-size="18" fill="#444">абп вбйшем 71, ъм абйб З бйп 11:00 м-13:00</text>
+  <text x="100" y="530" font-family="Arial, sans-serif" font-size="22" fill="#111">4. срйу земеп</text>
+  <text x="100" y="562" font-family="Arial, sans-serif" font-size="18" fill="#444">ажеш дътщййд земеп З ощтд 14:00</text>
+  <rect x="80" y="620" width="560" height="220" rx="8" fill="#0f2d52" opacity="0.06"/>
+  <text x="360" y="720" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#0f2d52">бдгшлд: мзце Ћдщъощ бцймен годЛ</text>
+  <text x="360" y="760" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#555">дотшлъ ъзмх аъ длъебеъ лое оцймен аойъй</text>
+</svg>

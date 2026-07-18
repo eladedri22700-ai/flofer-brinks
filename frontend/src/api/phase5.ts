@@ -86,6 +86,12 @@ export const getAccuracy = () =>
 
 export const enableDemo = () =>
   apiFetch("/api/settings/demo/enable", { method: "POST", body: "{}" });
+/** Demo customers + empty today route — for interactive guided practice. */
+export const enableDemoPractice = () =>
+  apiFetch<{ ok: boolean; practice?: boolean }>("/api/settings/demo/practice", {
+    method: "POST",
+    body: "{}",
+  });
 export const disableDemo = () =>
   apiFetch("/api/settings/demo/disable", { method: "POST", body: "{}" });
 
