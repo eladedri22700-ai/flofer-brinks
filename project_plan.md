@@ -37,7 +37,7 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 | Offline | idb-keyval queue |
 | Backend | FastAPI + SQLAlchemy + Alembic + OR-Tools |
 | DB | PostgreSQL 16 |
-| Auth | JWT + demo Bearer `demo` |
+| Auth | JWT per user (no shared demo Bearer in production) |
 | Maps / OCR | Google / Anthropic or mock |
 | Alerts | Telegram Bot API |
 | Export | CSV + PDF (reportlab) |
@@ -67,11 +67,11 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 
 ## Next steps
 
-1. Field pilot on phone: https://flofer-brinks.onrender.com (`leader` / `Brinks2026!`) — keep GPS on during the round
-2. **Before pilot:** set real Brinks depot address/coords in Settings (seed depot is temporary Tel Aviv)
-3. GCP Browser Key HTTP referrer: `https://flofer-brinks.onrender.com/*`
-4. User configures Telegram bot + Chat ID and runs «שלח הודעת בדיקה»
-5. Production live on Render with commit `aa97d5b` (board UX + end-of-day + auto GPS) — https://flofer-brinks.onrender.com
+1. **Daniel (isolated):** https://flofer-brinks.onrender.com/?user=daniel — login `daniel` (own routes/prefs/demo; not synced with tester)
+2. **Tester (Elad):** same URL, login `elad` — separate account; use «התנתקות» before switching users on one phone
+3. **Before pilot:** set real Brinks depot in Settings (shared office coords; seed is temporary Tel Aviv)
+4. GCP Browser Key HTTP referrer: `https://flofer-brinks.onrender.com/*`
+5. Telegram bot + Chat ID per user; «שלח הודעת בדיקה»
 6. Free Render Postgres expires ~30 days; free web sleeps after ~15m idle (cold start 30–60s)
 
 **Pilot cleanliness (2026-07-18):** purged smoke-test stops from production; fresh `planning` route for today (empty).
@@ -98,6 +98,12 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 **Completed (2026-07-18 — Live first-run tour):**
 - Permissions → live coach-mark tour with demo on; finish disables demo for real shift tomorrow
 - Replay from Settings «הפעל הדרכה מחדש»
+
+**Completed (2026-07-18 — Tour settings + account isolation):**
+- Tour covers Settings: depot, day/night theme, drive/SOS prefs
+- Login gate (no shared `demo` session in prod); pilot users `daniel` / `elad` / `leader`
+- Demo seed/purge scoped per `user_id` so one phone cannot wipe another's demo
+- Logout in More sheet; deep-link `?user=daniel` prefills username
 
 ## Verify
 

@@ -35,7 +35,9 @@ export async function apiFetch<T>(
   if (!isForm && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  if (token) {
+  // Never send a stale JWT to login — each pilot account must authenticate cleanly.
+  const skipAuth = path.startsWith("/api/auth/login");
+  if (token && !skipAuth) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
@@ -51,7 +53,6 @@ export async function apiFetch<T>(
 
   if (res.status === 401) {
     useAuthStore.getState().clearSession();
-    useAuthStore.getState().hydrate();
     const err = await parseError(res);
     throw err;
   }

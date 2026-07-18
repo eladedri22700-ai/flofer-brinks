@@ -1,4 +1,4 @@
-"""Seed team_leader user, settings, and depot."""
+"""Seed pilot users (isolated accounts), settings, and depot."""
 
 import logging
 
@@ -10,28 +10,58 @@ from src.models.user_settings import UserSettings
 
 logger = logging.getLogger(__name__)
 
-SEED_USERNAME = "leader"
-SEED_PASSWORD = "Brinks2026!"
-SEED_FULL_NAME = "ראש צוות"
+# Each username is a fully isolated account (own routes, prefs, demo, work days).
+PILOT_USERS = [
+    {
+        "username": "daniel",
+        "password": "DanielBrinks2026!",
+        "full_name": "דניאל",
+        "role": "team_leader",
+    },
+    {
+        "username": "elad",
+        "password": "EladBrinks2026!",
+        "full_name": "אלעד",
+        "role": "team_leader",
+    },
+    # Legacy seed name — keep for older bookmarks; same isolation as elad if recreated empty
+    {
+        "username": "leader",
+        "password": "Brinks2026!",
+        "full_name": "ראש צוות (בדיקות)",
+        "role": "team_leader",
+    },
+]
+
+
+def _ensure_user(db, *, username: str, password: str, full_name: str, role: str) -> User:
+    user = db.query(User).filter(User.username == username).first()
+    if user is None:
+        user = User(
+            username=username,
+            password_hash=hash_password(password),
+            full_name=full_name,
+            role=role,
+        )
+        db.add(user)
+        db.flush()
+        db.add(UserSettings(user_id=user.id))
+        logger.info("Seeded user '%s'", username)
+    else:
+        # Keep password in sync for pilot so shared credentials stay known.
+        user.password_hash = hash_password(password)
+        user.full_name = full_name
+        if db.query(UserSettings).filter(UserSettings.user_id == user.id).first() is None:
+            db.add(UserSettings(user_id=user.id))
+        logger.info("Updated pilot user '%s'", username)
+    return user
 
 
 def seed() -> None:
     db = SessionLocal()
     try:
-        user = db.query(User).filter(User.username == SEED_USERNAME).first()
-        if user is None:
-            user = User(
-                username=SEED_USERNAME,
-                password_hash=hash_password(SEED_PASSWORD),
-                full_name=SEED_FULL_NAME,
-                role="team_leader",
-            )
-            db.add(user)
-            db.flush()
-            db.add(UserSettings(user_id=user.id))
-            logger.info("Seeded user '%s'", SEED_USERNAME)
-        else:
-            logger.info("User '%s' already exists — skipped", SEED_USERNAME)
+        for row in PILOT_USERS:
+            _ensure_user(db, **row)
 
         depot = db.query(Depot).filter(Depot.name == "סניף ברינקס").first()
         if depot is None:
@@ -48,7 +78,9 @@ def seed() -> None:
             logger.info("Depot already exists — skipped")
 
         db.commit()
-        print(f"Seed OK. Login with username={SEED_USERNAME} password={SEED_PASSWORD}")
+        print("Seed OK. Isolated pilot logins:")
+        for row in PILOT_USERS:
+            print(f"  {row['username']} / {row['password']}  ({row['full_name']})")
     except Exception:
         db.rollback()
         raise

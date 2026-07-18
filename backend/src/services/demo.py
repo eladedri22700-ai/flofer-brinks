@@ -18,7 +18,17 @@ from src.services.learning import recompute_customer_service_stats
 from src.services.routes import today_local
 
 JERUSALEM = ZoneInfo("Asia/Jerusalem")
-DEMO_PREFIX = "[דמו] "
+# Legacy shared prefix (pre user-isolation) — purged only for matching routes.
+DEMO_PREFIX_LEGACY = "[דמו] "
+
+
+def _demo_name(user_id: int, name: str) -> str:
+    return f"[דמו u{user_id}] {name}"
+
+
+def _demo_addr_key(user_id: int, addr: str) -> str:
+    return f"demo:{user_id}:{addr}"
+
 
 DEMO_STOPS = [
     ("בנק לאומי דיזנגוף", "דיזנגוף 50 תל אביב", 32.0765, 34.7745),
@@ -64,7 +74,12 @@ def purge_demo(db: Session, user_id: int) -> None:
         db.query(WorkDay).filter(WorkDay.route_id.in_(route_ids)).delete(synchronize_session=False)
         db.query(Route).filter(Route.id.in_(route_ids)).delete(synchronize_session=False)
 
-    demo_customers = db.query(Customer).filter(Customer.name.startswith(DEMO_PREFIX)).all()
+    # Only this user's demo customers — never wipe another pilot's demo seed.
+    demo_customers = (
+        db.query(Customer)
+        .filter(Customer.normalized_address.startswith(f"demo:{user_id}:"))
+        .all()
+    )
     cids = [c.id for c in demo_customers]
     if cids:
         db.query(ServiceSample).filter(ServiceSample.customer_id.in_(cids)).delete(
@@ -85,8 +100,8 @@ def enable_demo(db: Session, user_id: int) -> dict:
     customers: list[Customer] = []
     for name, addr, lat, lng in DEMO_STOPS:
         c = Customer(
-            name=DEMO_PREFIX + name,
-            normalized_address="demo:" + addr,
+            name=_demo_name(user_id, name),
+            normalized_address=_demo_addr_key(user_id, addr),
             lat=lat,
             lng=lng,
             category="retail_chain",
@@ -206,7 +221,16 @@ def enable_demo(db: Session, user_id: int) -> dict:
 
 
 def addr_for(c: Customer) -> str:
-    return c.normalized_address.replace("demo:", "", 1)
+    raw = c.normalized_address
+    if raw.startswith("demo:"):
+        # demo:{user_id}:{address} or legacy demo:{address}
+        parts = raw.split(":", 2)
+        if len(parts) == 3 and parts[1].isdigit():
+            return parts[2]
+        return raw.replace("demo:", "", 1)
+    if c.name.startswith(DEMO_PREFIX_LEGACY):
+        return raw
+    return raw
 
 
 def disable_demo(db: Session, user_id: int) -> dict:

@@ -15,6 +15,13 @@
   line-height: 1.6;
 }
 
+.themeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-12);
+  margin-top: var(--space-12);
+}
+
 .legalLink {
   display: inline-flex;
   align-items: center;

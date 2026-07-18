@@ -19,6 +19,7 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const BoardPage = lazy(() => import("./pages/BoardPage"));
 const LegalPage = lazy(() => import("./pages/LegalPage"));
 const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,14 +32,27 @@ const queryClient = new QueryClient({
 
 function AppRoutes() {
   const hydrate = useAuthStore((s) => s.hydrate);
+  const token = useAuthStore((s) => s.token);
+  const hydrated = useAuthStore((s) => s.hydrated);
   const [onboarding, setOnboarding] = useState(() => readOnboarding());
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
 
-  const showPermissions =
-    !onboarding.done && !onboarding.permissionsDone;
+  if (!hydrated) {
+    return <LoadingScreen full label="טוען" />;
+  }
+
+  if (!token) {
+    return (
+      <Suspense fallback={<LoadingScreen full label="טוען התחברות" />}>
+        <LoginPage />
+      </Suspense>
+    );
+  }
+
+  const showPermissions = !onboarding.done && !onboarding.permissionsDone;
   const showTour = !onboarding.done && onboarding.permissionsDone;
 
   if (showPermissions) {

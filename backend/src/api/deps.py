@@ -20,8 +20,9 @@ def get_current_user(
     settings = get_settings()
     token = credentials.credentials if credentials else None
 
-    # Phase 1/2 demo: Bearer demo (or missing token when DEMO_AUTH) -> seed user
-    if token == "demo" or (not token and settings.demo_auth):
+    # Legacy Bearer "demo" only when DEMO_AUTH=true (local). Never share one
+    # anonymous identity in production — each pilot must login for isolation.
+    if token == "demo" and settings.demo_auth:
         user = db.query(User).filter(User.username == SEED_USERNAME).first()
         if user is None:
             raise AppError(

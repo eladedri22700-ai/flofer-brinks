@@ -38,7 +38,7 @@ foreach ($k in $needed) {
   $payload += @{ key = $k; value = $vars[$k] }
 }
 
-$payload += @{ key = "DEMO_AUTH"; value = "true" }
+$payload += @{ key = "DEMO_AUTH"; value = "false" }
 $payload += @{ key = "SERVE_FRONTEND"; value = "true" }
 $payload += @{ key = "FRONTEND_DIST"; value = "/app/frontend/dist" }
 $payload += @{ key = "CORS_ORIGINS"; value = "*" }

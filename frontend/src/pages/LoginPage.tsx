@@ -1,5 +1,4 @@
-import { useState, type FormEvent } from "react";
-import { Navigate } from "react-router-dom";
+import { useMemo, useState, type FormEvent } from "react";
 import { loginRequest, type ApiError } from "../api/client";
 import { BrandLockup } from "../components/ui/BrandLockup";
 import { Button } from "../components/ui/Button";
@@ -9,17 +8,23 @@ import { useToast } from "../components/ui/ToastProvider";
 import { useAuthStore } from "../store/authStore";
 import styles from "./LoginPage.module.css";
 
+function prefillsUsername(): string {
+  try {
+    const u = new URLSearchParams(window.location.search).get("user");
+    if (u && /^[a-zA-Z0-9_]{2,32}$/.test(u)) return u;
+  } catch {
+    /* ignore */
+  }
+  return "";
+}
+
 export default function LoginPage() {
-  const token = useAuthStore((s) => s.token);
   const setSession = useAuthStore((s) => s.setSession);
   const { show } = useToast();
-  const [username, setUsername] = useState("");
+  const initialUser = useMemo(() => prefillsUsername(), []);
+  const [username, setUsername] = useState(initialUser);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
-  if (token) {
-    return <Navigate to="/app/dashboard" replace />;
-  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -43,6 +48,10 @@ export default function LoginPage() {
           <BrandLockup size="hero" stacked to={null} titleAs="h1" />
         </div>
         <p className={styles.subtitle}>ניהול סבב חכם לראשי צוות</p>
+        <p className={styles.isoNote}>
+          לכל ראש צוות חשבון נפרד — הסבבים, ההגדרות והדמו לא מסונכרנים עם טלפון
+          אחר. היכנסו עם הפרטים שקיבלתם בלבד.
+        </p>
         <form className={styles.form} onSubmit={onSubmit}>
           <Input
             label="שם משתמש"
@@ -65,7 +74,7 @@ export default function LoginPage() {
             כניסה למערכת
           </Button>
         </form>
-        <p className={styles.footnote}>גישה מאובטחת · הנתונים מוצפנים</p>
+        <p className={styles.footnote}>גישה מאובטחת · חשבון אישי לכל משתמש</p>
       </Card>
     </main>
   );

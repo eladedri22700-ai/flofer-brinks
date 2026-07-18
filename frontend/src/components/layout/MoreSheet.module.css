@@ -40,10 +40,32 @@
   font-size: 22px;
 }
 
+.account {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brass-600, #b8922a);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
 .hint {
   margin: 4px 0 var(--space-16);
   color: var(--text-muted);
   font-size: 13px;
+}
+
+.logout {
+  width: 100%;
+  margin-top: var(--space-12);
+  min-height: var(--touch);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-12);
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .list {

@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { BrandLockup } from "../ui/BrandLockup";
 import { copyrightLine, copyrightShort } from "../../lib/legal";
+import { useAuthStore } from "../../store/authStore";
 import styles from "./MoreSheet.module.css";
 
 type Props = {
@@ -31,7 +33,17 @@ const links = [
 ];
 
 export function MoreSheet({ open, onClose, userName }: Props) {
+  const clearSession = useAuthStore((s) => s.clearSession);
+  const username = useAuthStore((s) => s.user?.username);
+  const qc = useQueryClient();
+
   if (!open) return null;
+
+  function logout() {
+    clearSession();
+    qc.clear();
+    onClose();
+  }
 
   return (
     <div className={styles.overlay} role="presentation" onClick={onClose}>
@@ -47,6 +59,9 @@ export function MoreSheet({ open, onClose, userName }: Props) {
           <BrandLockup size="sm" markSize={28} to={null} />
         </div>
         <p className={styles.hello}>שלום, {userName}</p>
+        {username ? (
+          <p className={styles.account}>חשבון: {username}</p>
+        ) : null}
         <p className={styles.hint}>כלים שאינם בשימוש יומיומי בשטח</p>
         <ul className={styles.list}>
           {links.map((l) => (
@@ -61,6 +76,9 @@ export function MoreSheet({ open, onClose, userName }: Props) {
         <p className={styles.copyright} title={copyrightLine()}>
           {copyrightShort()}
         </p>
+        <button type="button" className={styles.logout} onClick={logout}>
+          התנתקות (חשבון אחר)
+        </button>
         <button type="button" className={styles.close} onClick={onClose}>
           סגור
         </button>

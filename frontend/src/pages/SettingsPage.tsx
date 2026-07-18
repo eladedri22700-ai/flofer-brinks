@@ -203,7 +203,7 @@ export default function SettingsPage() {
         נשמרים רק בשרת ולא מוצגים שוב אחרי השמירה.
       </p>
 
-      <Card>
+      <Card data-tour="settings-depot">
         <h2 className={styles.h2}>נקודת התחלה וסיום (משרדי ברינקס)</h2>
         <p className={styles.lead}>
           כל סבב יוצא מהנקודה הזו וחוזר אליה. המערכת מתכננת את הסדר היעיל ביותר
@@ -383,7 +383,7 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      <Card>
+      <Card data-tour="settings-drive">
         <h2 className={styles.h2}>נסיעה ו־SOS</h2>
         <p className={styles.lead}>
           מספר מוקד לבקרת SOS (חיוג בלבד) ורדיוס גיאופנס במטרים. שעון העבודה הוא
@@ -411,25 +411,25 @@ export default function SettingsPage() {
         </Button>
       </Card>
 
-      <Card>
-        <h2 className={styles.h2}>מראה התצוגה</h2>
+      <Card data-tour="settings-theme">
+        <h2 className={styles.h2}>מראה התצוגה · יום / לילה</h2>
         <p className={styles.lead}>
-          ברירת המחדל היא מצב בהיר ונעים לעין. אפשר לעבור למצב כהה לנהיגה בלילה.
+          ברירת המחדל בהירה. בחרו כהה לנסיעת לילה — נשמר בחשבון שלכם בלבד.
         </p>
-        <div style={{ display: "flex", gap: 12 }}>
+        <div className={styles.themeRow}>
           <Button
             onClick={() => themeM.mutate("light")}
             variant={theme === "light" ? "primary" : "secondary"}
             loading={themeM.isPending && themeM.variables === "light"}
           >
-            בהיר
+            יום · בהיר
           </Button>
           <Button
             onClick={() => themeM.mutate("dark")}
             variant={theme === "dark" ? "primary" : "secondary"}
             loading={themeM.isPending && themeM.variables === "dark"}
           >
-            כהה
+            לילה · כהה
           </Button>
         </div>
       </Card>
