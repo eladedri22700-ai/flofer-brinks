@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, time, timedelta
 from typing import Any
@@ -55,6 +56,45 @@ def _future_departure(departure: datetime) -> datetime:
     return dep if dep >= floor else floor
 
 
+async def _post_route_matrix(
+    client: httpx.AsyncClient,
+    *,
+    headers: dict[str, str],
+    body: dict[str, Any],
+) -> list[Any]:
+    """POST one matrix chunk with retries on 429 quota bursts."""
+    last_exc: Exception | None = None
+    for attempt in range(5):
+        try:
+            res = await client.post(
+                "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix",
+                headers=headers,
+                json=body,
+            )
+            if res.status_code == 429:
+                wait_s = 1.5 * (2**attempt)
+                logger.warning("Routes matrix 429 — retry in %.1fs (attempt %s)", wait_s, attempt + 1)
+                await asyncio.sleep(wait_s)
+                continue
+            if res.is_error:
+                logger.error("Routes matrix HTTP %s: %s", res.status_code, res.text[:500])
+            res.raise_for_status()
+            data = res.json()
+            if isinstance(data, dict):
+                rows = data.get("routes") or data
+                return rows if isinstance(rows, list) else []
+            return data if isinstance(data, list) else []
+        except httpx.HTTPError as exc:
+            last_exc = exc
+            logger.exception("Routes matrix failed: %s", exc)
+            break
+    raise AppError(
+        code="matrix_error",
+        message_he="שגיאה בחישוב מרחקים מגוגל. בדקו מפתח או נסו שוב.",
+        status_code=502,
+    ) from last_exc
+
+
 async def _google_matrix(
     coords: list[tuple[float, float]], departure: datetime
 ) -> list[list[int]]:
@@ -88,34 +128,7 @@ async def _google_matrix(
                     "departureTime": dep.isoformat(),
                     "languageCode": "he",
                 }
-                try:
-                    res = await client.post(
-                        "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix",
-                        headers=headers,
-                        json=body,
-                    )
-                    if res.is_error:
-                        logger.error(
-                            "Routes matrix HTTP %s: %s",
-                            res.status_code,
-                            res.text[:500],
-                        )
-                    res.raise_for_status()
-                    # API may return NDJSON array
-                    data = res.json()
-                    if isinstance(data, dict):
-                        rows = data.get("routes") or data
-                        if not isinstance(rows, list):
-                            rows = []
-                    else:
-                        rows = data
-                except httpx.HTTPError as exc:
-                    logger.exception("Routes matrix failed: %s", exc)
-                    raise AppError(
-                        code="matrix_error",
-                        message_he="שגיאה בחישוב מרחקים מגוגל. בדקו מפתח או נסו שוב.",
-                        status_code=502,
-                    ) from exc
+                rows = await _post_route_matrix(client, headers=headers, body=body)
                 for item in rows:
                     if not isinstance(item, dict):
                         continue
@@ -126,6 +139,8 @@ async def _google_matrix(
                     dur = item.get("duration") or "0s"
                     secs = int(str(dur).rstrip("s") or "0")
                     mat[o0 + oi][d0 + di] = max(0, secs // 60)
+                # Pace requests — free/low quotas burst easily on large rounds
+                await asyncio.sleep(0.35)
     return mat
 
 
@@ -149,9 +164,18 @@ async def build_matrices(
         matrices = matrix_mock.build_mock_matrices(coords, departure_time)
     else:
         buckets = _bucket_datetimes(departure_time, day)
-        matrices = {}
-        for name, dep in buckets.items():
-            matrices[name] = await _google_matrix(coords, dep)
+        # Large rounds: one live matrix + mild time-of-day factors (avoids 429 bursts)
+        if len(coords) >= 16:
+            primary = await _google_matrix(coords, buckets["morning"])
+            matrices = {
+                "morning": primary,
+                "midday": [[max(0, int(c * 1.05)) for c in row] for row in primary],
+                "afternoon": [[max(0, int(c * 1.12)) for c in row] for row in primary],
+            }
+        else:
+            matrices = {}
+            for name, dep in buckets.items():
+                matrices[name] = await _google_matrix(coords, dep)
 
     matrices = apply_learned_factors(db, matrices, coords)
     _MATRIX_CACHE[cache_key] = matrices
