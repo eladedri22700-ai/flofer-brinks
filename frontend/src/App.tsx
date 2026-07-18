@@ -6,7 +6,13 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { GuidedTour } from "./components/tour/GuidedTour";
 import { LoadingScreen } from "./components/ui/LoadingScreen";
 import { ToastProvider } from "./components/ui/ToastProvider";
-import { readOnboarding } from "./lib/onboarding";
+import {
+  applyFreshStart,
+  isFreshQuery,
+  killLegacySkipOnce,
+  stripFreshFromUrl,
+} from "./lib/freshStart";
+import { readOnboarding, setOnboardingUser } from "./lib/onboarding";
 import {
   isSandboxQuery,
   isSandboxUser,
@@ -43,20 +49,28 @@ function AppRoutes() {
   const user = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s.hydrated);
   const [onboarding, setOnboarding] = useState(() => readOnboarding());
-  const [sandboxReady, setSandboxReady] = useState(false);
+  const [bootReady, setBootReady] = useState(false);
 
   useEffect(() => {
-    hydrate();
-  }, [hydrate]);
-
-  // Opening ?sandbox=1 always switches into the isolated TEST account —
-  // never keep a FLOFER session from a previous visit on this phone.
-  useEffect(() => {
-    if (!hydrated) return;
+    // One-time device cleanup: old demo session / skipped tour.
     if (!isSandboxQuery()) {
-      setSandboxReady(true);
-      return;
+      killLegacySkipOnce();
     }
+    // Daniel's invite link: wipe leftover session + force login + tour.
+    if (isFreshQuery() && !isSandboxQuery()) {
+      applyFreshStart();
+      clearSession();
+      stripFreshFromUrl();
+      queryClient.clear();
+    }
+    hydrate();
+    setBootReady(true);
+  }, [hydrate, clearSession]);
+
+  // Opening ?sandbox=1 switches into TEST — never keep FLOFER on this tab.
+  useEffect(() => {
+    if (!hydrated || !bootReady) return;
+    if (!isSandboxQuery()) return;
     markSandbox(true);
     const onSandboxUser =
       user &&
@@ -64,10 +78,14 @@ function AppRoutes() {
     if (token && !onSandboxUser) {
       clearSession();
     }
-    setSandboxReady(true);
-  }, [hydrated, token, user, clearSession]);
+  }, [hydrated, bootReady, token, user, clearSession]);
 
-  if (!hydrated || !sandboxReady) {
+  useEffect(() => {
+    setOnboardingUser(user?.username);
+    setOnboarding(readOnboarding(user?.username));
+  }, [user?.username]);
+
+  if (!hydrated || !bootReady) {
     return <LoadingScreen full label="טוען" />;
   }
 
@@ -90,7 +108,9 @@ function AppRoutes() {
     return (
       <Suspense fallback={<LoadingScreen full label="טוען הדרכה" />}>
         <OnboardingPage
-          onStartTour={() => setOnboarding(readOnboarding())}
+          onStartTour={() =>
+            setOnboarding(readOnboarding(user?.username))
+          }
         />
       </Suspense>
     );
@@ -116,7 +136,7 @@ function AppRoutes() {
       {showTour ? (
         <GuidedTour
           active
-          onFinished={() => setOnboarding(readOnboarding())}
+          onFinished={() => setOnboarding(readOnboarding(user?.username))}
         />
       ) : null}
     </Suspense>

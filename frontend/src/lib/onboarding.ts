@@ -1,4 +1,4 @@
-export const ONBOARDING_KEY = "flofer_onboarding_v2";
+export const ONBOARDING_KEY_PREFIX = "flofer_onboarding_v3";
 
 export type OnboardingState = {
   /** Fully finished: permissions + live tour + switched to real mode */
@@ -19,51 +19,22 @@ const EMPTY: OnboardingState = {
   notifyOk: null,
 };
 
-function migrateLegacy(): OnboardingState | null {
-  try {
-    const legacy = localStorage.getItem("flofer_onboarding_v1");
-    if (!legacy) return null;
-    const old = JSON.parse(legacy) as {
-      done?: boolean;
-      installSeen?: boolean;
-      locationOk?: boolean | null;
-      notifyOk?: boolean | null;
-      completedAt?: string;
-    };
-    // Veterans who already finished v1 skip the new tour (field pilots).
-    if (old.done) {
-      return {
-        done: true,
-        permissionsDone: true,
-        installSeen: Boolean(old.installSeen),
-        locationOk: old.locationOk ?? null,
-        notifyOk: old.notifyOk ?? null,
-        completedAt: old.completedAt,
-      };
-    }
-    return {
-      done: false,
-      permissionsDone: false,
-      installSeen: Boolean(old.installSeen),
-      locationOk: old.locationOk ?? null,
-      notifyOk: old.notifyOk ?? null,
-    };
-  } catch {
-    return null;
-  }
+let activeUsername: string | null = null;
+
+export function setOnboardingUser(username: string | null | undefined): void {
+  activeUsername = username?.trim() ? username.trim().toLowerCase() : null;
 }
 
-export function readOnboarding(): OnboardingState {
+export function onboardingStorageKey(username?: string | null): string {
+  const u = (username ?? activeUsername ?? "_anon").toLowerCase();
+  return `${ONBOARDING_KEY_PREFIX}_${u}`;
+}
+
+export function readOnboarding(username?: string | null): OnboardingState {
   try {
-    const raw = localStorage.getItem(ONBOARDING_KEY);
-    if (!raw) {
-      const migrated = migrateLegacy();
-      if (migrated) {
-        localStorage.setItem(ONBOARDING_KEY, JSON.stringify(migrated));
-        return migrated;
-      }
-      return { ...EMPTY };
-    }
+    const key = onboardingStorageKey(username);
+    const raw = localStorage.getItem(key);
+    if (!raw) return { ...EMPTY };
     const parsed = JSON.parse(raw) as Partial<OnboardingState>;
     return {
       ...EMPTY,
@@ -76,9 +47,12 @@ export function readOnboarding(): OnboardingState {
   }
 }
 
-export function writeOnboarding(patch: Partial<OnboardingState>): OnboardingState {
-  const next = { ...readOnboarding(), ...patch };
-  localStorage.setItem(ONBOARDING_KEY, JSON.stringify(next));
+export function writeOnboarding(
+  patch: Partial<OnboardingState>,
+  username?: string | null,
+): OnboardingState {
+  const next = { ...readOnboarding(username), ...patch };
+  localStorage.setItem(onboardingStorageKey(username), JSON.stringify(next));
   return next;
 }
 
@@ -100,6 +74,24 @@ export function resetTourForReplay(): void {
     done: false,
     permissionsDone: true,
   });
+}
+
+/** Wipe onboarding for a user (and legacy global keys) — used by fresh pilot link. */
+export function clearOnboarding(username?: string | null): void {
+  try {
+    localStorage.removeItem(onboardingStorageKey(username));
+    localStorage.removeItem("flofer_onboarding_v2");
+    localStorage.removeItem("flofer_onboarding_v1");
+    if (username) {
+      localStorage.removeItem(onboardingStorageKey(username));
+    }
+    // Clear any v3 keys for known pilots so a shared phone cannot skip the tour.
+    for (const u of ["flofer", "test", "elad", "leader", "_anon"]) {
+      localStorage.removeItem(`${ONBOARDING_KEY_PREFIX}_${u}`);
+    }
+  } catch {
+    /* ignore */
+  }
 }
 
 export function isStandaloneDisplay(): boolean {

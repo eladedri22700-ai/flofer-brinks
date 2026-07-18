@@ -67,7 +67,7 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 
 ## Next steps
 
-1. **Daniel (isolated):** https://flofer-brinks.onrender.com — login `FLOFER` / `1234`
+1. **Daniel (fresh invite):** https://flofer-brinks.onrender.com/?user=FLOFER&fresh=1 — must type `FLOFER` / `1234`, then full onboarding + tour (resets leftover session)
 2. **Tester sandbox (Elad):** https://flofer-brinks.onrender.com/?sandbox=1 — auto `TEST` / `1234`, blue banner, zero effect on Daniel
 3. **Before pilot:** set real Brinks depot in Settings (shared office coords; seed is temporary Tel Aviv)
 4. GCP Browser Key HTTP referrer: `https://flofer-brinks.onrender.com/*`

@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { getPrefs, putPrefs } from "../api/live";
 import { disableDemo, enableDemo } from "../api/phase5";
-import { resetTourForReplay } from "../lib/onboarding";
+import { resetTourForReplay, setOnboardingUser } from "../lib/onboarding";
+import { useAuthStore } from "../store/authStore";
 import {
   getDepot,
   getKeysStatus,
@@ -468,6 +469,8 @@ export default function SettingsPage() {
         <Button
           variant="secondary"
           onClick={() => {
+            const u = useAuthStore.getState().user?.username;
+            if (u) setOnboardingUser(u);
             resetTourForReplay();
             window.location.assign("/app/dashboard");
           }}

@@ -5,6 +5,7 @@ import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { useToast } from "../components/ui/ToastProvider";
+import { readOnboarding, setOnboardingUser } from "../lib/onboarding";
 import { readSavedLogin, writeSavedLogin } from "../lib/savedLogin";
 import {
   isSandboxActive,
@@ -34,11 +35,12 @@ export default function LoginPage() {
 
   const [username, setUsername] = useState(() => {
     if (sandbox) return queryUser || SANDBOX_USERNAME;
-    return queryUser || saved?.username || "FLOFER";
+    return queryUser || "FLOFER";
   });
   const [password, setPassword] = useState(() => {
+    // Pilot must type the code at least for first guided run.
     if (sandbox) return saved?.password || SANDBOX_PASSWORD;
-    return saved?.password || "";
+    return "";
   });
   const [loading, setLoading] = useState(false);
   const autoTried = useRef(false);
@@ -49,6 +51,7 @@ export default function LoginPage() {
       const res = await loginRequest(user.trim(), pass);
       if (sandbox) markSandbox(true);
       else markSandbox(false);
+      setOnboardingUser(res.user.username);
       writeSavedLogin(user.trim(), pass);
       setSession(res.access_token, res.user);
     } catch (err) {
@@ -63,6 +66,8 @@ export default function LoginPage() {
     if (autoTried.current) return;
     autoTried.current = true;
 
+    // Sandbox only: skip typing. Pilot (Daniel) always types password once
+    // unless they already finished onboarding on this device.
     if (sandbox) {
       markSandbox(true);
       const remembered = readSavedLogin();
@@ -74,6 +79,10 @@ export default function LoginPage() {
 
     const remembered = readSavedLogin();
     if (!remembered) return;
+    setOnboardingUser(remembered.username);
+    const ob = readOnboarding(remembered.username);
+    // Auto-login only after the guided tour was completed once.
+    if (!ob.done) return;
     if (
       queryUser &&
       remembered.username.toLowerCase() !== queryUser.toLowerCase()
@@ -81,7 +90,7 @@ export default function LoginPage() {
       return;
     }
     void doLogin(remembered.username, remembered.password);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot auto login
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot
   }, []);
 
   async function onSubmit(e: FormEvent) {
@@ -104,8 +113,8 @@ export default function LoginPage() {
           </p>
         ) : (
           <p className={styles.isoNote}>
-            לכל ראש צוות חשבון נפרד. אחרי כניסה מוצלחת הפרטים נשמרים במכשיר — בפעם
-            הבאה תיכנסו אוטומטית.
+            הזינו שם משתמש וסיסמה. בפעם הראשונה תעברו הדרכה מלאה. אחרי סיום
+            ההדרכה הכניסה נשמרת במכשיר.
           </p>
         )}
         <form className={styles.form} onSubmit={onSubmit}>
@@ -133,7 +142,7 @@ export default function LoginPage() {
         <p className={styles.footnote}>
           {sandbox
             ? "חשבון TEST · מבודד מ־FLOFER"
-            : "שמירה אוטומטית במכשיר · חשבון אישי"}
+            : "כניסה אישית · הדרכה מלאה בפעם הראשונה"}
         </p>
       </Card>
     </main>
