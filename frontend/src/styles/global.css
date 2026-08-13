@@ -87,9 +87,23 @@ a {
 
 /* Standalone PWA (added to home screen) — hide browser chrome feel */
 @media (display-mode: standalone), (display-mode: fullscreen) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  #root {
+    height: 100%;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   body {
     user-select: none;
     -webkit-user-select: none;
+    -webkit-touch-callout: none;
   }
 
   input,
@@ -97,7 +111,12 @@ a {
   [contenteditable="true"] {
     user-select: text;
     -webkit-user-select: text;
+    -webkit-touch-callout: default;
   }
+}
+
+html.is-standalone {
+  background: var(--app-bg);
 }
 
 .num {
@@ -123,7 +142,10 @@ a {
   display: flex;
   flex-direction: column;
   gap: var(--space-16);
-  padding-bottom: calc(var(--bottomnav-h) + var(--space-32) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(
+    var(--bottomnav-h) + var(--hud-h, 0px) + var(--space-32) +
+      env(safe-area-inset-bottom, 0px)
+  );
   animation: pageIn var(--t-slow) var(--ease);
 }
 

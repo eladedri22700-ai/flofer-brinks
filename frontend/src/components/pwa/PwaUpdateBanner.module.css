@@ -1,0 +1,30 @@
+.bar {
+  z-index: 43;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 12px;
+  padding: 8px var(--space-16);
+  background: var(--primary-050);
+  border-bottom: 1px solid var(--border-brass);
+}
+
+.text {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.btn {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-12);
+  border: 1px solid var(--border-brass);
+  background: var(--gold-metallic);
+  color: var(--text-inverse);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}

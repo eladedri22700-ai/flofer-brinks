@@ -5,7 +5,12 @@ import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { useToast } from "../components/ui/ToastProvider";
-import { readOnboarding, setOnboardingUser } from "../lib/onboarding";
+import {
+  detectPlatform,
+  isStandaloneDisplay,
+  readOnboarding,
+  setOnboardingUser,
+} from "../lib/onboarding";
 import { readSavedLogin, writeSavedLogin } from "../lib/savedLogin";
 import {
   isSandboxActive,
@@ -113,8 +118,8 @@ export default function LoginPage() {
           </p>
         ) : (
           <p className={styles.isoNote}>
-            הזינו שם משתמש וסיסמה. בפעם הראשונה תעברו הדרכה מלאה. אחרי סיום
-            ההדרכה הכניסה נשמרת במכשיר.
+            הזינו שם משתמש וסיסמה. בפעם הראשונה תעברו הדרכה קצרה. אחרי הכניסה
+            תמצאו «איך עובדים היום» בתפריט עוד — והכניסה נשמרת במכשיר.
           </p>
         )}
         <form className={styles.form} onSubmit={onSubmit}>
@@ -144,6 +149,13 @@ export default function LoginPage() {
             ? "חשבון TEST · מבודד מ־FLOFER"
             : "כניסה אישית · הדרכה מלאה בפעם הראשונה"}
         </p>
+        {!isStandaloneDisplay() ? (
+          <p className={styles.installHint}>
+            {detectPlatform() === "ios"
+              ? "לשימוש יומיומי: Safari → שיתוף → «הוסף למסך הבית», ואז פתחו מהאייקון."
+              : "לשימוש יומיומי: הוסיפו למסך הבית (תפריט ⋮ → התקן אפליקציה) ופתחו מהאייקון."}
+          </p>
+        ) : null}
       </Card>
     </main>
   );

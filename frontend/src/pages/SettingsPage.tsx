@@ -15,7 +15,9 @@ import { apiErrorMessage } from "../api/errors";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
+import { HowItWorks } from "../components/ui/HowItWorks";
 import { PageHeader } from "../components/ui/PageHeader";
+import { HELP_SETTINGS } from "../lib/helpCopy";
 import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { useToast } from "../components/ui/ToastProvider";
 import { copyrightLine } from "../lib/legal";
@@ -196,8 +198,9 @@ export default function SettingsPage() {
       <PageHeader
         kicker="מערכת"
         title="הגדרות"
-        lead="מפתחות API, SOS, ומצב הדגמה — לא נדרש ביום-יום בשטח."
+        lead="סניף, התראות ו־SOS. מפתחות מפות — רק במעבר מהדגמה לעבודה אמיתית."
       />
+      <HowItWorks block={HELP_SETTINGS} />
       <p className={styles.lead}>
         בלי מפתחות האפליקציה רצה במצב הדגמה (כתובות מדומות וחילוץ OCR מדומה).
         כשתהיו מוכנים — הדביקו כאן מפתחות מ-Google Cloud ו-Anthropic. מפתחות השרת
@@ -350,6 +353,10 @@ export default function SettingsPage() {
 
       <Card>
         <h2 className={styles.h2}>התראות Telegram</h2>
+        <p className={styles.lead}>
+          מסך נעול: התראות המערכת (אחרי התקנה למסך הבית) מציגות את היעד הבא.
+          Telegram עובד גם כשהאפליקציה נסגרה לגמרי — מומלץ כגיבוי בשטח.
+        </p>
         <ol className={styles.steps}>
           <li>בטלגרם פתחו את @BotFather וצרו בוט חדש — העתיקו את הטוקן לשדה למעלה ושמרו מפתחות.</li>
           <li>פתחו את הבוט החדש ולחצו Start.</li>

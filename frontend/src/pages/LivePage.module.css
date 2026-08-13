@@ -300,6 +300,38 @@ button.waze:hover:not(:disabled) {
   font-size: 14px;
 }
 
+.manageCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  border-color: var(--border-brass);
+}
+
+.manageTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.manageLead {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.manageActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-8);
+}
+
+@media (max-width: 420px) {
+  .manageActions {
+    grid-template-columns: 1fr;
+  }
+}
+
 .tools {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -324,7 +356,9 @@ button.waze:hover:not(:disabled) {
 
 .morePanel {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-8);
 }
 
 .list {

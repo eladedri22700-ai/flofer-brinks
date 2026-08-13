@@ -122,15 +122,102 @@
   gap: var(--space-8);
 }
 
+.manageCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  border-color: var(--border-brass);
+}
+
+.manageTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.manageSteps {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.manageActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.listHint {
+  margin: 0 0 var(--space-12);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
 .row {
   display: grid;
-  grid-template-columns: 36px 36px 1fr auto 40px;
+  grid-template-columns: 36px 36px 1fr auto 40px minmax(64px, auto);
   gap: var(--space-8);
   align-items: center;
   padding: var(--space-12);
   border: 1px solid var(--border);
   border-radius: var(--radius-12);
   background: var(--surface-1);
+}
+
+.rowDone {
+  opacity: 0.72;
+}
+
+.statusBadge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: var(--radius-8);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.delCol {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 64px;
+}
+
+.removeBtn {
+  color: var(--danger, #c45c5c) !important;
+  font-weight: 700;
+  min-height: 40px;
+}
+
+.delDisabled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  min-height: 40px;
+}
+
+@media (max-width: 480px) {
+  .row {
+    grid-template-columns: 32px 28px 1fr auto;
+    grid-template-rows: auto auto;
+  }
+
+  .lockBtn,
+  .delCol {
+    grid-column: span 1;
+  }
+
+  .eta {
+    justify-self: end;
+  }
 }
 
 .grip {

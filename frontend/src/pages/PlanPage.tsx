@@ -14,6 +14,7 @@ import {
   optimizeRoute,
   patchRoute,
   patchStop,
+  reorderManual,
   reorderStops,
 } from "../api/planning";
 import { Button } from "../components/ui/Button";
@@ -29,14 +30,17 @@ import {
   type StopConstraintsPatch,
   type StopDetailsPatch,
 } from "../components/plan/StopsList";
+import { HowItWorks } from "../components/ui/HowItWorks";
 import { PageHeader } from "../components/ui/PageHeader";
+import { HELP_PLAN, HELP_PLAN_LIVE } from "../lib/helpCopy";
 import { StatusBanner } from "../components/ui/StatusBanner";
 import { EmptyState } from "../components/ui/EmptyState";
 import styles from "./PlanPage.module.css";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { emitTourEvent } from "../lib/tourEvents";
+import { isRoundLive } from "../lib/roundBrief";
 import { useTourStore } from "../store/tourStore";
 
 const OPT_STEPS = ["מחשב מרחקים…", "מסדר מסלול…", "בודק אילוצים…"] as const;
@@ -70,9 +74,19 @@ function formatDateHe(iso: string): string {
   }
 }
 
+function isPlanTab(value: string | null): value is Tab {
+  return (
+    value === "manual" ||
+    value === "file" ||
+    value === "shot" ||
+    value === "library"
+  );
+}
+
 export default function PlanPage() {
   const { show } = useToast();
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
   const qc = useQueryClient();
   const tourPlanTab = useTourStore((s) => s.planTab);
   const [tab, setTab] = useState<Tab>("library");
@@ -88,8 +102,19 @@ export default function PlanPage() {
   const routeQ = useQuery({ queryKey: ["route-today"], queryFn: getTodayRoute });
 
   useEffect(() => {
+    const fromUrl = searchParams.get("tab");
+    if (isPlanTab(fromUrl)) setTab(fromUrl);
+  }, [searchParams]);
+
+  useEffect(() => {
     if (tourPlanTab) setTab(tourPlanTab);
   }, [tourPlanTab]);
+
+  useEffect(() => {
+    if (searchParams.get("tab")) return;
+    if (tourPlanTab) return;
+    if (routeQ.data && isRoundLive(routeQ.data.status)) setTab("shot");
+  }, [routeQ.data, searchParams, tourPlanTab]);
 
   useEffect(() => {
     if (routeQ.isFetched && routeQ.data === null) {
@@ -165,7 +190,12 @@ export default function PlanPage() {
   });
 
   const reorderM = useMutation({
-    mutationFn: (ids: number[]) => reorderStops(route!.id, ids),
+    mutationFn: async (ids: number[]) => {
+      if (route!.status === "in_progress") {
+        return reorderManual(route!.id, ids);
+      }
+      return reorderStops(route!.id, ids);
+    },
     onMutate: async (ids) => {
       await qc.cancelQueries({ queryKey: ["route-today"] });
       const prev = qc.getQueryData(["route-today"]);
@@ -179,6 +209,19 @@ export default function PlanPage() {
       }
       return { prev };
     },
+    onSuccess: (res) => {
+      if (
+        res &&
+        typeof res === "object" &&
+        "warnings_he" in res &&
+        Array.isArray(res.warnings_he) &&
+        res.warnings_he.length
+      ) {
+        show(String(res.warnings_he[0]), "error");
+      } else if (route?.status === "in_progress") {
+        show("הסדר עודכן · ETA חושב מחדש", "success");
+      }
+    },
     onError: (e, _ids, ctx) => {
       if (ctx?.prev) qc.setQueryData(["route-today"], ctx.prev);
       show(apiErrorMessage(e, "סידור מחדש נכשל"), "error");
@@ -187,8 +230,27 @@ export default function PlanPage() {
   });
 
   const deleteM = useMutation({
-    mutationFn: (id: number) => deleteStop(id),
-    onSuccess: invalidate,
+    mutationFn: async (id: number) => {
+      await deleteStop(id);
+      if (route?.status === "in_progress") {
+        const remaining = [...route.stops]
+          .filter((s) => s.id !== id)
+          .sort((a, b) => a.sequence_order - b.sequence_order)
+          .map((s) => s.id);
+        if (remaining.length > 0) {
+          await reorderManual(route.id, remaining);
+        }
+      }
+    },
+    onSuccess: () => {
+      show(
+        route?.status === "in_progress"
+          ? "היעד הוסר · הזמנים עודכנו"
+          : "היעד הוסר מהרשימה",
+        "success",
+      );
+      invalidate();
+    },
     onError: (e) => show(apiErrorMessage(e), "error"),
   });
 
@@ -337,14 +399,38 @@ export default function PlanPage() {
     (s) => s.geocode_confidence != null && s.geocode_confidence < 0.7,
   );
   const step = stopCount === 0 ? 1 : canOptimize ? 2 : 1;
+  const live = isRoundLive(route.status);
+  const addTabs = (
+    live
+      ? ([
+          ["shot", "צילום מסך"],
+          ["library", "שמורים"],
+          ["manual", "ידני"],
+          ["file", "קובץ"],
+        ] as const)
+      : ([
+          ["library", "שמורים"],
+          ["shot", "צילום מסך"],
+          ["manual", "ידני"],
+          ["file", "קובץ"],
+        ] as const)
+  );
 
   return (
     <div className={`pageShell ${styles.page}`}>
       <header className={styles.hero}>
         <PageHeader
           kicker={`תכנון · ${formatDateHe(route.date)}`}
-          title="סבב חדש"
-          lead="הוסיפו יעדים, סמנו VIP או דרישת זמן ברשימה, וחשבו מסלול — המטרה היא חזרה מהירה לסניף ברינקס, לא רק המשלוח האחרון."
+          title={live ? "ניהול יעדים בזמן נסיעה" : "סבב חדש"}
+          lead={
+            live
+              ? "הוסיפו, שנו סדר או הסירו יעדים — בלי לעצור את הסבב."
+              : "הוסיפו כתובות, חשבו מסלול, ואז אשרו יציאה. המטרה: לחזור לברינקס הכי מהר."
+          }
+        />
+        <HowItWorks
+          block={live ? HELP_PLAN_LIVE : HELP_PLAN}
+          defaultOpen={!live && stopCount === 0}
         />
         <div className={styles.steps} aria-label={`שלב ${step} מתוך 3`}>
           <div className={styles.stepOn}>
@@ -391,11 +477,36 @@ export default function PlanPage() {
         </StatusBanner>
       ) : null}
 
+      {live ? (
+        <StatusBanner tone="brass" role="status">
+          הסבב פעיל.{" "}
+          <Link to="/app/route">שנה סדר / הסר יעד</Link>
+          {" · "}
+          <Link to="/app/live">חזרה לנסיעה</Link>
+        </StatusBanner>
+      ) : null}
+
       <Card className={styles.quickCard}>
         <p className={styles.planNote}>
-          אחרי «חשב מסלול» תאשרו את הסדר על המפה — ושם לוחצים{" "}
-          <strong>התחל סבב</strong>. שעת היציאה נקבעת בלחיצה, לא מראש.
+          {live
+            ? "בזמן נסיעה: הוסיפו מצילום מסך למטה, גררו ברשימה לשינוי סדר, או לחצו «הסר» ליעד לא רלוונטי. לניהול מהיר עם מפה — «סדר הנקודות»."
+            : (
+              <>
+                אחרי «חשב מסלול» תאשרו את הסדר על המפה — ושם לוחצים{" "}
+                <strong>התחל סבב</strong>. שעת היציאה נקבעת בלחיצה, לא מראש.
+              </>
+            )}
         </p>
+        {live ? (
+          <div className={styles.liveQuickLinks}>
+            <Link to="/app/route" className={styles.liveQuickPrimary}>
+              שנה סדר / הסר יעד
+            </Link>
+            <Link to="/app/live" className={styles.liveQuickGhost}>
+              חזרה לנסיעה
+            </Link>
+          </div>
+        ) : null}
         <div className={styles.settingsRow}>
           <span className={styles.settingsLabel}>הפסקת צהריים</span>
           <div className={styles.chips}>
@@ -469,18 +580,14 @@ export default function PlanPage() {
       >
         <div className={styles.sectionHead}>
           <h2 id="add-heading" className={styles.h2}>
-            הוספת יעד
+            {live ? "הוספת יעד עכשיו" : "הוספת יעד"}
           </h2>
+          {live ? (
+            <span className={styles.sectionMeta}>גם באמצע נסיעה</span>
+          ) : null}
         </div>
         <div className={styles.tabs} role="tablist" aria-label="אופן הזנה">
-          {(
-            [
-              ["library", "שמורים"],
-              ["shot", "צילום"],
-              ["manual", "ידני"],
-              ["file", "קובץ"],
-            ] as const
-          ).map(([id, label]) => (
+          {addTabs.map(([id, label]) => (
             <button
               key={id}
               type="button"
@@ -547,10 +654,16 @@ export default function PlanPage() {
             </span>
           ) : null}
         </div>
+        {stopCount > 0 ? (
+          <p className={styles.stopsHint}>
+            גררו ב־⋮⋮ לשינוי סדר בכל רגע · «הסר» ליעד לא רלוונטי · יעדים שבוצעו
+            נשארים ברשימה ולא נמחקים
+          </p>
+        ) : null}
         {stopCount === 0 ? (
           <EmptyState
             title="עדיין אין יעדים"
-            description="בחרו מלקוחות שמורים, צלמו רשימה מ־Zebra, או הזינו ידנית."
+            description="בחרו מלקוחות שמורים, צלמו צילום מסך של הרשימה, או הזינו ידנית."
           />
         ) : (
           <StopsList

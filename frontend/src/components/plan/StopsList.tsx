@@ -85,11 +85,14 @@ function SortableStop({
   savingConstraints: boolean;
   savingDetails: boolean;
 }) {
+  const isDone = stop.status === "done";
+  const canRemove = !isDone;
   const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: stop.id });
+    useSortable({ id: stop.id, disabled: isDone });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDone ? 0.72 : undefined,
   };
   const low = stop.geocode_confidence != null && stop.geocode_confidence < 0.7;
   const [panel, setPanel] = useState<"none" | "edit" | "tw">("none");
@@ -143,7 +146,8 @@ function SortableStop({
           <button
             type="button"
             className={styles.grip}
-            aria-label="גרור לסידור ידני"
+            aria-label={isDone ? "יעד שבוצע — לא ניתן לגרור" : "גרור לסידור ידני"}
+            disabled={isDone}
             {...attributes}
             {...listeners}
           >
@@ -155,6 +159,10 @@ function SortableStop({
               {stop.customer_name}
               {stop.priority === "vip" ? (
                 <span className={styles.vip}>VIP</span>
+              ) : null}
+              {isDone ? <span className={styles.statusDone}>בוצע</span> : null}
+              {stop.status === "skipped" ? (
+                <span className={styles.statusSkip}>דולג</span>
               ) : null}
               {constraintText ? (
                 <span className={`${styles.twBadge} num`}>{constraintText}</span>
@@ -382,14 +390,16 @@ function SortableStop({
             ) : null}
           </div>
           <div className={styles.delCol}>
-            {confirmDel ? (
+            {!canRemove ? (
+              <span className={styles.delHint}>לא ניתן להסיר</span>
+            ) : confirmDel ? (
               <>
                 <Button
                   variant="danger"
                   type="button"
                   onClick={() => onDelete(stop.id)}
                 >
-                  כן, מחק
+                  כן, הסר
                 </Button>
                 <Button
                   variant="ghost"
@@ -404,8 +414,9 @@ function SortableStop({
                 variant="danger"
                 type="button"
                 onClick={() => setConfirmDel(true)}
+                aria-label={`הסר את ${stop.customer_name}`}
               >
-                מחק
+                הסר
               </Button>
             )}
           </div>

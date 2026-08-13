@@ -11,6 +11,14 @@
   color: var(--text-secondary);
 }
 
+.groupLabel {
+  margin: var(--space-8) 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
 .addToggle {
   align-self: start;
   border: none;

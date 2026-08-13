@@ -19,6 +19,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { OptimizeResult, StopDto } from "../api/client";
 import { apiErrorMessage } from "../api/errors";
 import {
+  deleteStop,
   getDepot,
   getPublicConfig,
   getTodayRoute,
@@ -47,31 +48,47 @@ function formatEta(iso: string | null | undefined): string {
   });
 }
 
+function statusLabelHe(status: string): string | null {
+  if (status === "done") return "בוצע";
+  if (status === "skipped") return "דולג";
+  if (status === "arrived") return "בנקודה";
+  return null;
+}
+
 function SortableRow({
   stop,
   index,
   onToggleLock,
+  onRemove,
+  removing,
 }: {
   stop: StopDto;
   index: number;
   onToggleLock: (id: number, locked: boolean) => void;
+  onRemove: (id: number) => void;
+  removing: boolean;
 }) {
+  const isDone = stop.status === "done";
+  const dragDisabled = stop.locked || isDone;
+  const canRemove = !isDone;
+  const [confirmDel, setConfirmDel] = useState(false);
+  const statusHe = statusLabelHe(stop.status);
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: stop.id,
-    disabled: stop.locked,
+    disabled: dragDisabled,
   });
   return (
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={styles.row}
+      className={`${styles.row} ${isDone ? styles.rowDone : ""}`}
       data-tour={stop.sequence_order === 0 ? "route-lock" : undefined}
     >
       <button
         type="button"
         className={styles.grip}
-        aria-label="גרור"
-        disabled={stop.locked}
+        aria-label={dragDisabled ? "לא ניתן לגרור יעד זה" : "גרור לשינוי סדר"}
+        disabled={dragDisabled}
         {...attributes}
         {...listeners}
       >
@@ -83,6 +100,7 @@ function SortableRow({
           {stop.customer_name}
           {stop.priority === "vip" ? <span className={styles.vip}>VIP</span> : null}
           {stop.locked ? <span className={styles.lockBadge}>נעול</span> : null}
+          {statusHe ? <span className={styles.statusBadge}>{statusHe}</span> : null}
         </div>
         <div className={styles.addr}>{stop.address}</div>
       </div>
@@ -93,9 +111,43 @@ function SortableRow({
         data-tour="route-lock-btn"
         onClick={() => onToggleLock(stop.id, !stop.locked)}
         aria-label={stop.locked ? "שחרר נעילה" : "נעל יעד"}
+        disabled={isDone}
       >
         {stop.locked ? "🔓" : "🔒"}
       </button>
+      <div className={styles.delCol}>
+        {canRemove ? (
+          confirmDel ? (
+            <>
+              <Button
+                variant="danger"
+                type="button"
+                loading={removing}
+                onClick={() => onRemove(stop.id)}
+              >
+                הסר
+              </Button>
+              <Button variant="ghost" type="button" onClick={() => setConfirmDel(false)}>
+                ביטול
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="ghost"
+              type="button"
+              className={styles.removeBtn}
+              onClick={() => setConfirmDel(true)}
+              aria-label={`הסר את ${stop.customer_name}`}
+            >
+              הסר
+            </Button>
+          )
+        ) : (
+          <span className={styles.delDisabled} aria-hidden>
+            —
+          </span>
+        )}
+      </div>
     </li>
   );
 }
@@ -168,11 +220,32 @@ export default function RoutePage() {
     onError: (e) => show(apiErrorMessage(e), "error"),
   });
 
+  const deleteM = useMutation({
+    mutationFn: async (id: number) => {
+      await deleteStop(id);
+      const remaining = localStops.filter((s) => s.id !== id).map((s) => s.id);
+      if (remaining.length > 0 && route) {
+        await reorderManual(route.id, remaining);
+      }
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["route-today"] });
+      show("היעד הוסר · הסדר והזמנים עודכנו", "success");
+    },
+    onError: (e) => show(apiErrorMessage(e), "error"),
+  });
+
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   function onDragEnd(e: DragEndEvent) {
     const { active, over } = e;
     if (!over || active.id === over.id) return;
+    const activeStop = localStops.find((s) => s.id === active.id);
+    const overStop = localStops.find((s) => s.id === over.id);
+    if (activeStop?.status === "done" || overStop?.status === "done") {
+      show("לא ניתן לשנות סדר של יעד שכבר בוצע", "error");
+      return;
+    }
     const oldIndex = localStops.findIndex((s) => s.id === active.id);
     const newIndex = localStops.findIndex((s) => s.id === over.id);
     const next = arrayMove(localStops, oldIndex, newIndex);
@@ -214,10 +287,41 @@ export default function RoutePage() {
         title="סדר הנקודות"
         lead={
           live
-            ? "הסבב פעיל. אפשר לגרור כדי לשנות סדר ליעדים שטרם בוצעו — הזמנים יתעדכנו."
-            : "כאן רואים את כל הנקודות לפי הסדר. גררו לשינוי ידני, נעלו יעד חשוב, ואז אשרו יציאה במפה."
+            ? "גררו לשינוי סדר, הסירו מיותרים, או הוסיפו מצילום — גם באמצע נסיעה."
+            : "גררו לשינוי סדר, הסירו מיותרים, נעלו יעד חשוב — ואז אשרו יציאה במפה."
         }
       />
+
+      <Card className={styles.manageCard} aria-label="ניהול כתובות">
+        <h2 className={styles.manageTitle}>איך שולטים ברשימה</h2>
+        <ol className={styles.manageSteps}>
+          <li>
+            <strong>⋮⋮</strong> — גררו כדי לשנות סדר (בכל שלב, גם באמצע נסיעה)
+          </li>
+          <li>
+            <strong>הסר</strong> — מוחק יעד שלא רלוונטי (לא יעדים שכבר בוצעו)
+          </li>
+          <li>
+            <strong>צילום מסך</strong> — מוסיף כתובות מתמונה בלי לעצור את הסבב
+          </li>
+        </ol>
+        <div className={styles.manageActions}>
+          <Button
+            size="lg"
+            variant="secondary"
+            className={styles.fullBtn}
+            onClick={() => nav("/app/plan?tab=shot")}
+          >
+            הוסף מצילום מסך
+          </Button>
+          <Button variant="ghost" onClick={() => nav("/app/plan")}>
+            הוספה ידנית / שמורים
+          </Button>
+          <Button variant="ghost" onClick={() => nav("/app/help")}>
+            איך עובדים היום
+          </Button>
+        </div>
+      </Card>
 
       <div className={styles.ctaStack}>
         {live ? (
@@ -311,6 +415,10 @@ export default function RoutePage() {
 
       <Card data-tour="route-list">
         <h2 className={styles.h2}>סדר היעדים</h2>
+        <p className={styles.listHint}>
+          גררו ב־⋮⋮ לשינוי סדר · לחצו «הסר» ליעד לא רלוונטי · נעילה 🔒 שומרת מיקום
+          באופטימיזציה
+        </p>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext
             items={localStops.map((s) => s.id)}
@@ -323,6 +431,8 @@ export default function RoutePage() {
                   stop={s}
                   index={i}
                   onToggleLock={(id, locked) => lockM.mutate({ id, locked })}
+                  onRemove={(id) => deleteM.mutate(id)}
+                  removing={deleteM.isPending && deleteM.variables === s.id}
                 />
               ))}
             </ol>

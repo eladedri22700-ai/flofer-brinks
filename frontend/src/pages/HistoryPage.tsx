@@ -6,7 +6,9 @@ import { apiErrorMessage } from "../api/errors";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { EmptyState } from "../components/ui/EmptyState";
+import { HowItWorks } from "../components/ui/HowItWorks";
 import { PageHeader } from "../components/ui/PageHeader";
+import { HELP_HISTORY } from "../lib/helpCopy";
 import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { Skeleton } from "../components/ui/Skeleton";
 import { useToast } from "../components/ui/ToastProvider";
@@ -77,7 +79,11 @@ export default function HistoryPage() {
       <PageHeader
         kicker="ארכיון"
         title="היסטוריה"
-        lead="סבבים קודמים, השוואת תוכנית מול בפועל, ושכפול למחר."
+        lead="סבבים קודמים, דיוק שנלמד, ושכפול רשימה דומה למחר."
+      />
+      <HowItWorks
+        block={HELP_HISTORY}
+        defaultOpen={(histQ.data ?? []).length === 0}
       />
 
       {accQ.data?.improvement_he ? (
@@ -97,7 +103,7 @@ export default function HistoryPage() {
         {(histQ.data ?? []).length === 0 ? (
           <EmptyState
             title="אין היסטוריה עדיין"
-            description="אחרי סיום סבבים יופיעו כאן לסיכום ושכפול."
+            description="אחרי סיום יום עבודה יופיעו כאן הסבבים. אפשר להשוות תוכנית מול ביצוע ולשכפל רשימה דומה."
           />
         ) : null}
         {(histQ.data ?? []).map((r) => {

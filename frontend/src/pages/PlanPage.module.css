@@ -254,6 +254,45 @@
   color: var(--text-muted);
 }
 
+.stopsHint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.liveQuickLinks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-8);
+  margin-top: var(--space-12);
+}
+
+.liveQuickPrimary,
+.liveQuickGhost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: var(--radius-12);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  text-align: center;
+}
+
+.liveQuickPrimary {
+  background: var(--primary-050);
+  border: 1px solid var(--border-brass);
+  color: var(--brass-700);
+}
+
+.liveQuickGhost {
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
 .tabs {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

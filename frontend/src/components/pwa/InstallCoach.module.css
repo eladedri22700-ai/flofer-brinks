@@ -1,0 +1,95 @@
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+  padding: 10px var(--space-16);
+  background: color-mix(in srgb, var(--primary-050) 80%, var(--surface-1));
+  border-bottom: 1px solid var(--border-brass);
+}
+
+.bannerText {
+  margin: 0;
+  flex: 1 1 14rem;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.bannerActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.bannerCta,
+.bannerDismiss {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-12);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.bannerCta {
+  border: 1px solid var(--border-brass);
+  background: var(--gold-metallic);
+  color: var(--text-inverse);
+}
+
+.bannerDismiss {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(8, 18, 36, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sheet {
+  width: min(520px, 100%);
+  max-height: min(88dvh, 640px);
+  overflow: auto;
+  padding: var(--space-20) var(--space-20)
+    calc(var(--space-24) + env(safe-area-inset-bottom, 0px));
+  border-radius: var(--radius-16) var(--radius-16) 0 0;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+}
+
+.lead {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.steps {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-primary);
+}

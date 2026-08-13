@@ -44,6 +44,38 @@
   background: var(--primary-050);
 }
 
+.iconWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.liveHint {
+  color: var(--brass-600);
+}
+
+.liveDot {
+  position: absolute;
+  top: -2px;
+  inset-inline-end: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 2px var(--nav-bg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .liveDot {
+    animation: livePulse 1.8s var(--ease) infinite;
+  }
+}
+
+@keyframes livePulse {
+  0% { box-shadow: 0 0 0 2px var(--nav-bg), 0 0 0 0 color-mix(in srgb, var(--success) 55%, transparent); }
+  70% { box-shadow: 0 0 0 2px var(--nav-bg), 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 2px var(--nav-bg), 0 0 0 0 transparent; }
+}
+
 @media (min-width: 520px) {
   .nav {
     inset-inline: max(0px, calc(50% - 230px));

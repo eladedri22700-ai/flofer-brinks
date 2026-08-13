@@ -291,6 +291,12 @@ def update_stop(db: Session, stop: Stop, body: StopUpdate) -> Stop:
 
 
 def delete_stop(db: Session, stop: Stop) -> None:
+    if stop.status == "done":
+        raise AppError(
+            code="stop_already_done",
+            message_he="לא ניתן להסיר יעד שכבר בוצע. אפשר לדלג רק על יעדים שטרם הושלמו.",
+            status_code=400,
+        )
     route_id = stop.route_id
     db.delete(stop)
     db.flush()

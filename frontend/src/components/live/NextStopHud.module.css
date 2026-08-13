@@ -1,0 +1,77 @@
+.bar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: calc(var(--bottomnav-h) + env(safe-area-inset-bottom, 0px));
+  z-index: 48;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: stretch;
+  width: min(var(--content-max), 100%);
+  margin-inline: auto;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--surface-1) 92%, transparent);
+  backdrop-filter: blur(14px) saturate(1.1);
+  border-top: 1px solid var(--border-brass);
+  box-shadow: 0 -8px 24px rgba(8, 18, 36, 0.18);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 56px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--radius-12);
+  background: transparent;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--brass-500);
+}
+
+.name {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.waze {
+  align-self: center;
+  min-height: 48px;
+  min-width: 64px;
+  padding: 0 14px;
+  border-radius: var(--radius-12);
+  border: 1px solid var(--border-brass);
+  background: var(--gold-metallic);
+  color: var(--text-inverse);
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+@media (min-width: 520px) {
+  .bar {
+    inset-inline: max(0px, calc(50% - 230px));
+    width: auto;
+    border-inline: 1px solid var(--border);
+    border-radius: var(--radius-12) var(--radius-12) 0 0;
+  }
+}

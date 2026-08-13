@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       includeAssets: [
         "icons/icon-192.png",
         "icons/icon-512.png",
@@ -20,9 +20,14 @@ export default defineConfig({
         theme_color: "#0b1f3a",
         background_color: "#0b1f3a",
         display: "standalone",
+        display_override: ["standalone", "minimal-ui"],
+        orientation: "portrait",
         lang: "he",
         dir: "rtl",
         start_url: "/app/dashboard",
+        scope: "/",
+        id: "/app/dashboard",
+        categories: ["productivity", "navigation"],
         icons: [
           {
             src: "icons/icon-192.png",

@@ -54,20 +54,36 @@
   max-width: 42ch;
 }
 
-.reorderLink {
+.orderActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   flex-shrink: 0;
+}
+
+.reorderLink,
+.photoLink {
   min-height: 44px;
   padding: 0 14px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-12);
-  border: 1px solid var(--border-brass);
-  background: var(--primary-050);
-  color: var(--brass-700);
   font-weight: 700;
   font-size: 13px;
   text-decoration: none;
+}
+
+.reorderLink {
+  border: 1px solid var(--border-brass);
+  background: var(--primary-050);
+  color: var(--brass-700);
+}
+
+.photoLink {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
 }
 
 .list {

@@ -1,5 +1,24 @@
 .page { display: flex; flex-direction: column; gap: var(--space-24); }
 
+.reportsToggle {
+  width: 100%;
+  min-height: 48px;
+  border-radius: var(--radius-12);
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.reportsBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  margin-top: var(--space-12);
+}
+
 /* Personalized greeting hero */
 .greetHero {
   display: flex;

@@ -9,6 +9,7 @@ import {
   readOnboarding,
   writeOnboarding,
 } from "../lib/onboarding";
+import { markInstallSheetDay } from "../lib/installPrompt";
 import {
   notificationsSupported,
   requestLocationAccess,
@@ -93,6 +94,7 @@ export default function OnboardingPage({ onStartTour }: Props) {
         if (outcome === "accepted" || standalone) {
           setInstallSeen(true);
           writeOnboarding({ installSeen: true });
+          markInstallSheetDay();
           go("location");
           return;
         }
@@ -101,9 +103,11 @@ export default function OnboardingPage({ onStartTour }: Props) {
         setIosSheet(true);
         setInstallSeen(true);
         writeOnboarding({ installSeen: true });
+        markInstallSheetDay();
       } else {
         setInstallSeen(true);
         writeOnboarding({ installSeen: true });
+        markInstallSheetDay();
         go("location");
       }
     } finally {
@@ -176,11 +180,11 @@ export default function OnboardingPage({ onStartTour }: Props) {
         <div key={animKey} className={styles.panel}>
           {step === "install" ? (
             <>
-              <h2 className={styles.panelTitle}>שמירה במסך הבית</h2>
+              <h2 className={styles.panelTitle}>התקנה כמו אפליקציה</h2>
               <p className={styles.panelDesc}>
                 {platform === "ios"
-                  ? "באייפון זה חייב להיות מהמסך הבית (לא מטאב Safari) — אחרת מיקום ברקע והתראות מוגבלים."
-                  : "הוסיפו למסך הבית כאפליקציה — כך אפשר לאשר מיקום «תמיד» והתראות כמו באפליקציה רגילה."}
+                  ? "באייפון חייבים לפתוח ממסך הבית (לא מטאב Safari) — אחרת אין מסך מלא, מיקום ברקע והתראות מוגבלים."
+                  : "הוסיפו למסך הבית: בלי שורת כתובת, כמו אפליקציה מותקנת — מיקום «תמיד» והתראות עובדים כמו שצריך בשטח."}
               </p>
               {standalone || installSeen ? (
                 <p className={`${styles.status} ${styles.statusOk}`}>

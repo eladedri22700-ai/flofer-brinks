@@ -56,6 +56,18 @@
   font-size: 13px;
 }
 
+.install {
+  width: 100%;
+  margin-bottom: var(--space-12);
+  min-height: var(--touch);
+  border-radius: var(--radius-12);
+  border: 1px solid var(--border-brass);
+  background: var(--primary-050);
+  color: var(--brass-700);
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .logout {
   width: 100%;
   margin-top: var(--space-12);

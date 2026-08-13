@@ -7,6 +7,10 @@
   padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px);
 }
 
+.shellHud {
+  --hud-h: 72px;
+}
+
 .skip {
   position: absolute;
   inset-inline-start: var(--space-16);

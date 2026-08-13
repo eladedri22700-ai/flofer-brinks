@@ -13,15 +13,17 @@ import {
 import { getPrefs, putPrefs } from "../api/live";
 import { getTodayRoute } from "../api/planning";
 import { apiErrorMessage } from "../api/errors";
+import { DailyStartCard } from "../components/dashboard/DailyStartCard";
+import { HoursReportsCard } from "../components/dashboard/HoursReportsCard";
 import {
   TodayRoundPanel,
   dashboardPrimaryCta,
 } from "../components/dashboard/TodayRoundPanel";
-import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
-import { Input } from "../components/ui/Input";
+import { HowItWorks } from "../components/ui/HowItWorks";
 import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { useToast } from "../components/ui/ToastProvider";
+import { HELP_DAY } from "../lib/helpCopy";
 import styles from "./DashboardPage.module.css";
 
 function fmt(min: number | null | undefined): string {
@@ -132,9 +134,6 @@ export default function DashboardPage() {
   if (dashQ.isLoading) return <LoadingScreen label="טוען את הנתונים שלך" />;
   const d = dashQ.data!;
   const roundActive = !!d.today_start_at && !d.today_end_at;
-  const comp = d.composition;
-  const totalComp =
-    comp.driving_min + comp.service_min + comp.waiting_min + comp.break_min || 1;
 
   async function download(format: "csv" | "pdf") {
     const res = await fetch(exportHoursUrl(month, format), {
@@ -178,18 +177,29 @@ export default function DashboardPage() {
             </Link>
           )}
         </div>
+        <HowItWorks
+          block={HELP_DAY}
+          defaultOpen={(routeQ.data?.stops?.length ?? 0) === 0}
+        />
+        <Link to="/app/help" className={styles.homeSecondary}>
+          מדריך מלא · שאלות נפוצות
+        </Link>
       </header>
 
+      <DailyStartCard route={routeQ.data} />
       <TodayRoundPanel route={routeQ.data} depotName="ברינקס" />
 
-      <Card className={styles.tipsCard} statusBar="gold" aria-label="המלצות היום">
-        <h2 className={styles.h2}>המלצות היום</h2>
+      <Card className={styles.tipsCard} statusBar="gold" aria-label="תובנות ולמידה">
+        <h2 className={styles.h2}>המערכת לומדת כל יום</h2>
         <ul className={styles.tipsList}>
-          {comp.insight_he ? <li>{comp.insight_he}</li> : null}
+          {d.composition.insight_he ? <li>{d.composition.insight_he}</li> : null}
           {accuracyQ.data?.improvement_he ? (
             <li>{accuracyQ.data.improvement_he}</li>
           ) : (
-            <li>אחרי כמה סבבים המערכת לומדת זמני שירות ומשפרת את הצפי.</li>
+            <li>
+              אחרי כמה ביקורים באותה כתובת הזמן נלמד (חציון, לא ממוצע) — והמסלול
+              מתקרב לחזרה הכי מהירה לברינקס.
+            </li>
           )}
           {Array.isArray(historyQ.data) && historyQ.data[0] ? (
             <li>
@@ -199,9 +209,12 @@ export default function DashboardPage() {
                 : "בדקו היסטוריה להשוואת תוכנית מול ביצוע."}
             </li>
           ) : (
-            <li>חשבו מסלול בבוקר — המערכת ממזערת את שעת החזרה לברינקס, לא רק קילומטרים.</li>
+            <li>כל יום רשימה חדשה — כתובות חוזרות נשמרות בספרייה עם זמני שירות מדויקים יותר.</li>
           )}
         </ul>
+        <Link to="/app/history" className={styles.homeSecondary}>
+          היסטוריה, דיוק ושכפול סבב
+        </Link>
       </Card>
 
       <Card className={styles.clockCard} aria-label="שעון עבודה חי">
@@ -245,164 +258,21 @@ export default function DashboardPage() {
         )}
       </Card>
 
-      <div className={styles.grid}>
-        <Card className={`${styles.stat} ${styles.accentBrass}`}>
-          <div className={styles.statTop}>
-            <span className={styles.statDot} aria-hidden />
-            <h2 className={styles.h2}>השבוע</h2>
-          </div>
-          <div className={`${styles.big} num`}>
-            {fmt(d.week_min)} / {fmt(d.week_standard_min)}
-          </div>
-          <div className={styles.bar} aria-hidden>
-            <span style={{ width: `${weekPct}%` }} />
-          </div>
-          <p className={styles.meta}>{weekPct}% מהתקן השבועי</p>
-        </Card>
-        <Card className={`${styles.stat} ${styles.accentInfo}`}>
-          <div className={styles.statTop}>
-            <span className={styles.statDot} aria-hidden />
-            <h2 className={styles.h2}>החודש</h2>
-          </div>
-          <div className={`${styles.big} num`}>{fmt(d.month_min)}</div>
-          <p className={styles.meta}>נוספות: {fmt(d.month_overtime_min)}</p>
-        </Card>
-        <Card className={`${styles.stat} ${styles.accentSuccess}`}>
-          <div className={styles.statTop}>
-            <span className={styles.statDot} aria-hidden />
-            <h2 className={styles.h2}>מצטבר</h2>
-          </div>
-          <div className={`${styles.big} num`}>{fmt(d.cumulative_min)}</div>
-          <p className={styles.meta}>{d.work_days_count} ימי עבודה</p>
-        </Card>
-        <Card className={`${styles.stat} ${styles.accentViolet}`}>
-          <div className={styles.statTop}>
-            <span className={styles.statDot} aria-hidden />
-            <h2 className={styles.h2}>ממוצע יומי</h2>
-          </div>
-          <div className={`${styles.big} num`}>{fmt(d.daily_avg_min)}</div>
-          <p className={styles.meta}>
-            מגמה מול חודש קודם: {d.daily_avg_trend_min >= 0 ? "+" : ""}
-            {fmt(Math.abs(d.daily_avg_trend_min))}
-          </p>
-        </Card>
-      </div>
-
-      <Card>
-        <h2 className={styles.h2}>פילוח היום</h2>
-        <div className={styles.donutWrap}>
-          <div
-            className={styles.donut}
-            style={{
-              background: `conic-gradient(
-                #c9a84c 0 ${ (comp.driving_min / totalComp) * 100 }%,
-                #4a7ab0 0 ${ ((comp.driving_min + comp.service_min) / totalComp) * 100 }%,
-                #8a6a4a 0 ${ ((comp.driving_min + comp.service_min + comp.waiting_min) / totalComp) * 100 }%,
-                #3a4a5a 0 100%)`,
-            }}
-            role="img"
-            aria-label={comp.insight_he}
-          />
-          <p>{comp.insight_he}</p>
-        </div>
-      </Card>
-
-      <Card>
-        <div className={styles.tableHead}>
-          <h2 className={styles.h2}>טבלה יומית</h2>
-          <Input
-            label="חודש"
-            type="month"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-          />
-          <Button variant="secondary" onClick={() => void download("csv")}>
-            CSV
-          </Button>
-          <Button variant="secondary" onClick={() => void download("pdf")}>
-            PDF
-          </Button>
-        </div>
-        <div className={styles.table}>
-          <div className={styles.trHead}>
-            <span>תאריך</span>
-            <span>יציאה</span>
-            <span>חזרה</span>
-            <span>הפסקה</span>
-            <span>סה״כ</span>
-            <span>נוספות</span>
-            <span>יעדים</span>
-          </div>
-          {(daysQ.data ?? []).map((row) => (
-            <div key={row.id} className={styles.tr}>
-              <span>
-                {row.date}
-                {row.manually_edited ? (
-                  <span className={styles.edited}> נערך</span>
-                ) : null}
-              </span>
-              <span className="num">
-                {row.start_at
-                  ? new Date(row.start_at).toLocaleTimeString("he-IL", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : "—"}
-              </span>
-              <span className="num">
-                {row.end_at
-                  ? new Date(row.end_at).toLocaleTimeString("he-IL", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  : "—"}
-              </span>
-              <span className="num">{row.break_min}</span>
-              <span className="num">{fmt(row.total_min)}</span>
-              <span className="num">{fmt(row.overtime_min)}</span>
-              <span className="num">{row.stops_done}</span>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  const s = window.prompt("שעת יציאה (ISO או YYYY-MM-DDTHH:MM)", row.start_at ?? "");
-                  const e = window.prompt("שעת חזרה", row.end_at ?? "");
-                  if (s && e) editM.mutate({ id: row.id, start: s, end: e });
-                }}
-              >
-                ערוך
-              </Button>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      <Card>
-        <h2 className={styles.h2}>תקני שעות (מהגדרות)</h2>
-        <p className={styles.meta}>נקבעים מול ברינקס — לא ערכים קשיחים בקוד.</p>
-        <div className={styles.stdRow}>
-          <Input
-            label="יום תקן (דק')"
-            type="number"
-            defaultValue={String(prefsQ.data?.standard_day_min ?? d.standard_day_min)}
-            id="std-day"
-          />
-          <Input
-            label="שבוע תקן (דק')"
-            type="number"
-            defaultValue={String(prefsQ.data?.standard_week_min ?? d.week_standard_min)}
-            id="std-week"
-          />
-          <Button
-            onClick={() => {
-              const day = Number((document.getElementById("std-day") as HTMLInputElement)?.value);
-              const week = Number((document.getElementById("std-week") as HTMLInputElement)?.value);
-              prefsM.mutate({ standard_day_min: day, standard_week_min: week });
-            }}
-          >
-            שמור תקנים
-          </Button>
-        </div>
-      </Card>
+      <HoursReportsCard
+        dash={d}
+        month={month}
+        onMonth={setMonth}
+        days={daysQ.data ?? []}
+        weekPct={weekPct}
+        stdDay={prefsQ.data?.standard_day_min ?? d.standard_day_min}
+        stdWeek={prefsQ.data?.standard_week_min ?? d.week_standard_min}
+        onSaveStd={(day, week) =>
+          prefsM.mutate({ standard_day_min: day, standard_week_min: week })
+        }
+        onDownload={(format) => void download(format)}
+        onEditDay={(id, start, end) => editM.mutate({ id, start, end })}
+        savingStd={prefsM.isPending}
+      />
     </div>
   );
 }

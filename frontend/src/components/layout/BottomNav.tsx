@@ -4,6 +4,7 @@ import styles from "./BottomNav.module.css";
 type Props = {
   onMore: () => void;
   moreOpen?: boolean;
+  live?: boolean;
 };
 
 const primary = [
@@ -50,7 +51,7 @@ function Icon({ name, active }: { name: string; active: boolean }) {
   );
 }
 
-export function BottomNav({ onMore, moreOpen }: Props) {
+export function BottomNav({ onMore, moreOpen, live }: Props) {
   return (
     <nav className={styles.nav} aria-label="ניווט ראשי">
       {primary.map((item) => (
@@ -60,13 +61,24 @@ export function BottomNav({ onMore, moreOpen }: Props) {
           end={item.to === "/app/dashboard"}
           data-tour={item.tour}
           className={({ isActive }) =>
-            isActive ? `${styles.item} ${styles.active}` : styles.item
+            [
+              styles.item,
+              isActive ? styles.active : "",
+              live && item.to === "/app/live" ? styles.liveHint : "",
+            ]
+              .filter(Boolean)
+              .join(" ")
           }
         >
           {({ isActive }) => (
             <>
-              <Icon name={item.icon} active={isActive} />
-              <span>{item.label}</span>
+              <span className={styles.iconWrap}>
+                <Icon name={item.icon} active={isActive || Boolean(live && item.to === "/app/live")} />
+                {live && item.to === "/app/live" ? (
+                  <span className={styles.liveDot} aria-hidden />
+                ) : null}
+              </span>
+              <span>{live && item.to === "/app/live" ? "בנסיעה" : item.label}</span>
             </>
           )}
         </NavLink>

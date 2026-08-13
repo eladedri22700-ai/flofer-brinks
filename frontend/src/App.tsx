@@ -30,6 +30,7 @@ const SummaryPage = lazy(() => import("./pages/SummaryPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const BoardPage = lazy(() => import("./pages/BoardPage"));
 const LegalPage = lazy(() => import("./pages/LegalPage"));
+const HelpPage = lazy(() => import("./pages/HelpPage"));
 const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 
@@ -128,6 +129,7 @@ function AppRoutes() {
           <Route path="/app/summary/:routeId?" element={<SummaryPage />} />
           <Route path="/app/settings" element={<SettingsPage />} />
           <Route path="/app/legal" element={<LegalPage />} />
+          <Route path="/app/help" element={<HelpPage />} />
           <Route path="/app/board" element={<BoardPage />} />
         </Route>
         <Route path="/app" element={<Navigate to="/app/dashboard" replace />} />

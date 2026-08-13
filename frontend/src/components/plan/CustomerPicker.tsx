@@ -40,7 +40,16 @@ export function CustomerPickerTab({
   });
 
   const excluded = useMemo(() => new Set(excludeCustomerIds), [excludeCustomerIds]);
-  const rows = (customersQ.data ?? []).filter((c) => !excluded.has(c.id));
+  const rows = useMemo(() => {
+    const list = (customersQ.data ?? []).filter((c) => !excluded.has(c.id));
+    return [...list].sort((a, b) => {
+      const byVisits = b.service_sample_count - a.service_sample_count;
+      if (byVisits !== 0) return byVisits;
+      return a.name.localeCompare(b.name, "he");
+    });
+  }, [customersQ.data, excluded]);
+  const frequent = rows.filter((c) => c.service_sample_count >= 1);
+  const rest = rows.filter((c) => c.service_sample_count < 1);
 
   useEffect(() => {
     if (address.trim().length < 2 || placeId) {
@@ -105,8 +114,8 @@ export function CustomerPickerTab({
   return (
     <div className={styles.wrap}>
       <p className={styles.lead}>
-        כל כתובת מצילום / קובץ / הזנה נשמרת כאן אוטומטית. אפשר גם להוסיף לקוח
-        ידנית לספרייה, ואז לבחור לסבב.
+        כל יום רשימה חדשה — כתובות שחוזרות נשמרות כאן עם זמני שירות שנלמדו.
+        בחרו כמה, או הוסיפו לקוח חדש.
       </p>
 
       <button
@@ -211,16 +220,39 @@ export function CustomerPickerTab({
         </p>
       ) : null}
 
-      <ul className={styles.list}>
-        {rows.map((c) => (
-          <CustomerRow
-            key={c.id}
-            customer={c}
-            checked={selected.has(c.id)}
-            onToggle={() => toggle(c.id)}
-          />
-        ))}
-      </ul>
+      {frequent.length > 0 ? (
+        <>
+          <p className={styles.groupLabel}>כתובות חוזרות (נלמדות)</p>
+          <ul className={styles.list}>
+            {frequent.map((c) => (
+              <CustomerRow
+                key={c.id}
+                customer={c}
+                checked={selected.has(c.id)}
+                onToggle={() => toggle(c.id)}
+              />
+            ))}
+          </ul>
+        </>
+      ) : null}
+
+      {rest.length > 0 ? (
+        <>
+          <p className={styles.groupLabel}>
+            {frequent.length > 0 ? "שאר הספרייה" : "ספרייה"}
+          </p>
+          <ul className={styles.list}>
+            {rest.map((c) => (
+              <CustomerRow
+                key={c.id}
+                customer={c}
+                checked={selected.has(c.id)}
+                onToggle={() => toggle(c.id)}
+              />
+            ))}
+          </ul>
+        </>
+      ) : null}
 
       <div className={styles.footer}>
         <Button

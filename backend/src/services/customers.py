@@ -252,7 +252,22 @@ def list_customers(
                 Customer.normalized_address.ilike(like),
             )
         )
-    rows = q.order_by(Customer.name.asc(), Customer.id.asc()).limit(max(1, min(limit, 200))).all()
+    if text:
+        rows = (
+            q.order_by(Customer.name.asc(), Customer.id.asc())
+            .limit(max(1, min(limit, 200)))
+            .all()
+        )
+    else:
+        rows = (
+            q.order_by(
+                Customer.service_sample_count.desc(),
+                Customer.name.asc(),
+                Customer.id.asc(),
+            )
+            .limit(max(1, min(limit, 200)))
+            .all()
+        )
     out: list[dict] = []
     for c in rows:
         minutes, source = get_service_estimate(c)

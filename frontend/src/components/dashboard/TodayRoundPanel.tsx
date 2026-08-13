@@ -67,13 +67,20 @@ export function TodayRoundPanel({ route, depotName = "ברינקס" }: Props) {
             <h2 className={styles.h2}>סדר הנקודות</h2>
             <p className={styles.orderLead}>
               {live
-                ? "הסבב פעיל — אפשר לראות את כל הכתובות ולשנות סדר של יעדים שטרם בוצעו."
-                : "אחרי החישוב רואים כאן את כל הנקודות. אפשר לשנות סדר ידנית לפני היציאה."}
+                ? "הסבב פעיל — שנו סדר, הסירו כתובות לא רלוונטיות, או הוסיפו מצילום מסך בזמן אמת."
+                : "אחרי החישוב רואים כאן את כל הנקודות. אפשר לשנות סדר ולהסיר יעדים לפני היציאה — וגם אחריה."}
             </p>
           </div>
-          <Link to="/app/route" className={styles.reorderLink}>
-            שנה סדר ידנית
-          </Link>
+          <div className={styles.orderActions}>
+            <Link to="/app/route" className={styles.reorderLink}>
+              {live ? "שנה סדר / הסר" : "שנה סדר ידנית"}
+            </Link>
+            {live ? (
+              <Link to="/app/plan?tab=shot" className={styles.photoLink}>
+                הוסף מצילום
+              </Link>
+            ) : null}
+          </div>
         </div>
 
         <ol className={styles.list}>
@@ -112,9 +119,11 @@ export function TodayRoundPanel({ route, depotName = "ברינקס" }: Props) {
 
         <div className={styles.footerLinks}>
           <Link to="/app/board">מפת הסבב</Link>
-          <Link to="/app/route">סדר מלא וגרירה</Link>
+          <Link to="/app/route">סדר מלא · הסרה · גרירה</Link>
           {live ? <Link to="/app/live">מסך נסיעה</Link> : null}
-          {!live ? <Link to="/app/plan">הוספת יעדים</Link> : null}
+          <Link to={live ? "/app/plan?tab=shot" : "/app/plan"}>
+            {live ? "הוספה מצילום מסך" : "הוספת יעדים"}
+          </Link>
         </div>
       </Card>
     </div>
@@ -132,26 +141,26 @@ export function dashboardPrimaryCta(route: RouteDto | null | undefined): {
     return {
       href: "/app/live",
       label: "המשך לנסיעה",
-      lead: "הסבב כבר רץ — חזרו למסך הנסיעה או בדקו את סדר הכתובות למטה.",
+      lead: "הסבב רץ — הכתובת הבאה מופיעה גם בבאנר למטה. המטרה: לסיים ולחזור לברינקס.",
     };
   }
   if (isRoundReady(status) && hasStops) {
     return {
       href: "/app/board",
       label: "צפה בסדר ואשר יציאה",
-      lead: "המסלול מוכן. בדקו את כל הנקודות, שנו סדר אם צריך — ואז התחילו.",
+      lead: "המסלול מוכן לחזרה הכי מהירה לסניף. בדקו סדר — ואז התחילו.",
     };
   }
   if (hasStops) {
     return {
       href: "/app/plan",
       label: "המשך תכנון · חשב מסלול",
-      lead: "יש יעדים ברשימה — חשבו מסלול כדי לקבל סדר וזמני הגעה.",
+      lead: "יש יעדים ברשימה — חשבו מסלול לפי חזרה לברינקס, לא לפי המשלוח האחרון.",
     };
   }
   return {
     href: "/app/plan",
     label: "תכנון סבב להיום",
-    lead: "לוח הבקרה שלך — תכננו סבב, אשרו סדר, וצאו לדרך.",
+    lead: "יום חדש, כתובות אחרות. צלמו רשימה או בחרו כתובות חוזרות — ואז חשבו מסלול.",
   };
 }

@@ -86,9 +86,15 @@ export function ScreenshotInputTab({ onExtract, onCommit, loading }: Props) {
   return (
     <div className={styles.wrap} data-tour="plan-shot">
       <p className={styles.lead}>
-        אפשר לצלם או לבחור כמה תמונות מהגלריה — כל צילום נוסף מצטרף לטיוטה (לא
-        מוחק את הקודם). כתובות שנזהו נשמרות גם ב«שמורים».
+        צלמו צילום מסך של רשימת הכתובות (למשל מ־Zebra) או בחרו כמה תמונות מהגלריה.
+        כל תמונה נוספת מצטרפת לטיוטה — לא מוחקת את הקודמת. אחרי בדיקה לחצו «הוסף
+        הכל» / «הוסף נבחרים». עובד גם באמצע נסיעה.
       </p>
+      <ol className={styles.howTo} aria-label="איך מוסיפים מצילום">
+        <li>צלמו או בחרו תמונה מהגלריה</li>
+        <li>בדקו את הכתובות שזוהו (אפשר לבחור חלק / VIP)</li>
+        <li>לחצו «הוסף» — והן נכנסות לרשימת היום מיד</li>
+      </ol>
       {tourActive ? (
         <Button
           type="button"
@@ -140,7 +146,7 @@ export function ScreenshotInputTab({ onExtract, onCommit, loading }: Props) {
               <circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.6" />
             </svg>
           </span>
-          <span className={styles.actionTitle}>צלם עכשיו</span>
+          <span className={styles.actionTitle}>צלם צילום מסך</span>
           <span className={styles.actionHint}>מצלמה · תמונה אחת</span>
         </button>
 

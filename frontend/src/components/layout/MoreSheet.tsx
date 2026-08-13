@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { BrandLockup } from "../ui/BrandLockup";
 import { copyrightLine, copyrightShort } from "../../lib/legal";
+import { usePwaInstall } from "../../hooks/usePwaInstall";
+import { isStandaloneDisplay } from "../../lib/onboarding";
 import { clearSavedLogin } from "../../lib/savedLogin";
 import { markSandbox } from "../../lib/sandbox";
 import { useAuthStore } from "../../store/authStore";
@@ -15,6 +17,11 @@ type Props = {
 
 const links = [
   {
+    to: "/app/help",
+    title: "איך עובדים היום",
+    desc: "הסבר קצר · 4 צעדים · שאלות נפוצות",
+  },
+  {
     to: "/app/route",
     title: "סדר הנקודות",
     desc: "כל הכתובות · גרירה לשינוי ידני",
@@ -24,7 +31,7 @@ const links = [
     title: "מפת הסבב",
     desc: "מפה · אישור יציאה · התחל סבב",
   },
-  { to: "/app/history", title: "היסטוריה", desc: "סבבים קודמים ודיוק" },
+  { to: "/app/history", title: "היסטוריה ותובנות", desc: "סבבים קודמים · דיוק ETA · שכפול" },
   { to: "/app/summary", title: "סיכום אחרון", desc: "סיכום סבב שהסתיים" },
   { to: "/app/settings", title: "הגדרות", desc: "מפתחות, Telegram, SOS והדגמה" },
   {
@@ -38,6 +45,8 @@ export function MoreSheet({ open, onClose, userName }: Props) {
   const clearSession = useAuthStore((s) => s.clearSession);
   const username = useAuthStore((s) => s.user?.username);
   const qc = useQueryClient();
+  const { canPrompt, promptInstall } = usePwaInstall();
+  const standalone = isStandaloneDisplay();
 
   if (!open) return null;
 
@@ -67,6 +76,18 @@ export function MoreSheet({ open, onClose, userName }: Props) {
           <p className={styles.account}>חשבון: {username}</p>
         ) : null}
         <p className={styles.hint}>כלים שאינם בשימוש יומיומי בשטח</p>
+        {!standalone ? (
+          <button
+            type="button"
+            className={styles.install}
+            onClick={() => {
+              void promptInstall();
+              onClose();
+            }}
+          >
+            {canPrompt ? "הוסף למסך הבית" : "איך מתקינים למסך הבית"}
+          </button>
+        ) : null}
         <ul className={styles.list}>
           {links.map((l) => (
             <li key={l.to}>

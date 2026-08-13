@@ -122,6 +122,34 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 - Multi-photo gallery (append drafts), client image prep, HEIC/gif/svg MIME
 - Draft cards: select subset, VIP, time presets; stop edit (name/address/notes/service) + delete confirm
 
+**Completed (2026-08-13 — Live address control):**
+- Full reorder + remove pending stops anytime (plan/route/live), including `in_progress`
+- Backend blocks deleting `done` stops; delete refreshes ETAs via `reorder-manual`
+- Clear entry points: Live manage card, Home «שנה סדר / הסר» + «הוסף מצילום», `/app/plan?tab=shot`
+- Screenshot tab: 3-step how-to + clearer Hebrew labels
+
+**Completed (2026-08-13 — Daily app UX / production, not pilot):**
+- Standalone PWA feel: `display_override`, portrait, `is-standalone` chrome, no overscroll
+- Install coach on every browser open until home-screen install (iOS/Android how-to + native prompt)
+- Next-stop HUD above bottom nav (name + ETA + return to Brinks + Waze) on all screens except Live/Board
+- Home: daily start (photo / library / duplicate last) + recurring addresses + learning insights; hours/reports collapsed
+- Customer library sorted by visits (learned first); list_customers orders by sample_count
+
+**Completed (2026-08-13 — Daily ops polish):**
+- Home: one-tap add recurring addresses (+ «הוסף את כולן») to today's round
+- Global offline banner; PWA update prompt (no silent reload mid-round)
+- Live tab pulse «בנסיעה»; hide brand bar in standalone; theme-color sync
+- Login + More sheet: install-to-home-screen reminder
+
+**Completed (2026-08-13 — Lock-screen alerts):**
+- Live round pins next stop on lock screen (SW notification); buzz on lock / stop change / approach / arrive
+- Telegram remains backup when the PWA is fully killed; Live + Settings hint to enable both
+
+**Completed (2026-08-13 — In-app help):**
+- `/app/help` — 4 daily steps + FAQ; first item in More sheet
+- `HowItWorks` collapsible hints on Home / Plan / Live / History / Settings
+- Shorter page leads; empty/history copy in plain Hebrew
+
 ## Verify
 
 ```bash

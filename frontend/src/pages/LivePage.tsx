@@ -20,14 +20,21 @@ import type { StopDto } from "../api/client";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { EmptyState } from "../components/ui/EmptyState";
+import { HowItWorks } from "../components/ui/HowItWorks";
 import { PageHeader } from "../components/ui/PageHeader";
+import { HELP_LIVE } from "../lib/helpCopy";
 import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { StatusBanner } from "../components/ui/StatusBanner";
 import { useToast } from "../components/ui/ToastProvider";
+import { LockScreenHint } from "../components/live/LockScreenHint";
 import { useGeofence } from "../hooks/useGeofence";
+import { useLiveLockNotifications } from "../hooks/useLiveLockNotifications";
 import { useNextStopAdvance } from "../hooks/useNextStopAdvance";
 import { useWakeLock } from "../hooks/useWakeLock";
 import { cacheActiveRoute, queueLength } from "../lib/offlineQueue";
+import { alertApproach, alertArrive } from "../lib/liveNotifications";
+import { returnTimeLabel } from "../lib/roundBrief";
+import { openWaze } from "../lib/waze";
 import styles from "./LivePage.module.css";
 
 const EXCEPTIONS = [
@@ -47,15 +54,6 @@ function formatEta(iso: string | null | undefined): string {
     minute: "2-digit",
     timeZone: "Asia/Jerusalem",
   });
-}
-
-function openWaze(lat: number, lng: number) {
-  const app = `waze://?ll=${lat},${lng}&navigate=yes`;
-  const web = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
-  window.location.href = app;
-  window.setTimeout(() => {
-    window.open(web, "_blank");
-  }, 800);
 }
 
 export default function LivePage() {
@@ -135,6 +133,16 @@ export default function LivePage() {
         )
       : null) ?? null;
   const doneCount = sorted.filter((s) => s.status === "done" || s.status === "skipped").length;
+  const pendingLeft = sorted.filter(
+    (s) => s.status !== "done" && s.status !== "skipped",
+  ).length;
+
+  useLiveLockNotifications({
+    live: route?.status === "in_progress",
+    current,
+    returnHm: returnTimeLabel(route),
+    leftCount: pendingLeft,
+  });
 
   const target = current
     ? {
@@ -154,6 +162,7 @@ export default function LivePage() {
         .then(() => {
           setApproachBanner(false);
           show(`זוהתה הגעה ל«${current.customer_name}»`, "success");
+          void alertArrive(current.customer_name);
           invalidate();
         })
         .catch(() => undefined)
@@ -169,6 +178,7 @@ export default function LivePage() {
       if (!route || !current) return;
       setApproachBanner(true);
       show(`מתקרבים ל«${current.customer_name}»`, "success");
+      void alertApproach(current.customer_name, distanceM);
       void notifyApproach(route.id, {
         stop_id: current.id,
         distance_m: distanceM,
@@ -361,8 +371,9 @@ export default function LivePage() {
         <PageHeader
           kicker="נסיעה"
           title="אשרו את הסדר לפני יציאה"
-          lead={`${sorted.length} יעדים מחכים. במסך האישור תראו את כל הכתובות על המפה ואת מיקומכם — ואז «התחל סבב».`}
+          lead={`${sorted.length} יעדים מוכנים. אשרו על המפה ואז «התחל סבב».`}
         />
+        <HowItWorks block={HELP_LIVE} defaultOpen />
         <Card className={styles.startCard} data-tour="live-primary">
           <div className={styles.startStats}>
             <div>
@@ -431,6 +442,9 @@ export default function LivePage() {
           {offlineN > 0 ? ` · ${offlineN}` : ""}
         </StatusBanner>
       ) : null}
+
+      <LockScreenHint telegramOn={Boolean(prefsQ.data?.telegram_enabled)} />
+      <HowItWorks block={HELP_LIVE} />
 
       {geo.denied ? (
         <StatusBanner tone="warning">
@@ -524,6 +538,22 @@ export default function LivePage() {
         </Button>
       </div>
 
+      <Card className={styles.manageCard} aria-label="ניהול כתובות בזמן אמת">
+        <h2 className={styles.manageTitle}>ניהול כתובות בזמן אמת</h2>
+        <p className={styles.manageLead}>
+          שנו סדר, הסירו כתובות לא רלוונטיות, או הוסיפו מצילום מסך — בלי לעצור את
+          הסבב.
+        </p>
+        <div className={styles.manageActions}>
+          <Button size="lg" variant="secondary" onClick={() => nav("/app/route")}>
+            שנה סדר / הסר יעד
+          </Button>
+          <Button size="lg" variant="ghost" onClick={() => nav("/app/plan?tab=shot")}>
+            הוסף מצילום מסך
+          </Button>
+        </div>
+      </Card>
+
       {promptArrive ? (
         <Card className={styles.arrivePrompt} statusBar="success">
           <p className={styles.promptText}>סיימתם ב«{current.customer_name}»?</p>
@@ -581,6 +611,12 @@ export default function LivePage() {
         <div className={styles.morePanel}>
           <Button variant="ghost" size="lg" onClick={() => skipM.mutate()}>
             דלג על יעד זה
+          </Button>
+          <Button variant="ghost" size="lg" onClick={() => nav("/app/plan")}>
+            הוספת יעד (ידני / שמורים)
+          </Button>
+          <Button variant="ghost" size="lg" onClick={() => nav("/app/route")}>
+            סדר מלא עם גרירה
           </Button>
         </div>
       ) : null}
