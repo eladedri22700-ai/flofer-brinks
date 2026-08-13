@@ -214,3 +214,29 @@
   padding: var(--space-48) var(--space-16);
   color: var(--text-secondary);
 }
+
+.fieldLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.fieldInput {
+  min-height: 48px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-8);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  padding: 0 12px;
+  font-size: 15px;
+}
+
+.delCol {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+}

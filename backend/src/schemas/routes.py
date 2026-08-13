@@ -159,6 +159,7 @@ class DraftStop(BaseModel):
     lng: float | None = None
     geocode_confidence: float | None = None
     category: str = "other"
+    priority: str = "normal"
 
 
 class AutocompleteRequest(BaseModel):

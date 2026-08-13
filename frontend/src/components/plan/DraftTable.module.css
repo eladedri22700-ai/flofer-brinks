@@ -5,23 +5,71 @@
   margin-top: var(--space-16);
 }
 
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+
 .title {
   margin: 0;
   font-size: 16px;
   font-weight: 700;
 }
 
-.table {
+.headActions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: var(--space-8);
 }
 
-.row {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr 0.8fr auto;
-  gap: var(--space-8);
+.linkBtn {
+  min-height: 40px;
+  border: none;
+  background: transparent;
+  color: var(--brass-600);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0 var(--space-4);
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+.card,
+.cardOn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-10);
+  padding: var(--space-14, 14px);
+  border-radius: var(--radius-12);
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+}
+
+.cardOn {
+  border-color: var(--border-brass);
+  background: rgba(201, 162, 39, 0.06);
+}
+
+.checkRow {
+  display: flex;
   align-items: center;
+  gap: var(--space-8);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.checkRow input {
+  width: 20px;
+  height: 20px;
 }
 
 .input {
@@ -31,20 +79,43 @@
   background: var(--surface);
   color: var(--text-primary);
   padding: 0 var(--space-12);
+  font-size: 15px;
+}
+
+.chips,
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.chip,
+.chipOn {
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.chipOn {
+  border-color: var(--border-brass);
+  background: rgba(201, 162, 39, 0.16);
+  color: var(--brass-600);
 }
 
 .remove {
-  min-height: 48px;
-  min-width: 56px;
+  min-height: 40px;
+  min-width: 64px;
+  margin-inline-start: auto;
   border: 1px solid var(--danger);
   border-radius: var(--radius-8);
   background: transparent;
   color: var(--danger);
+  font-weight: 600;
   cursor: pointer;
-}
-
-@media (max-width: 720px) {
-  .row {
-    grid-template-columns: 1fr;
-  }
 }

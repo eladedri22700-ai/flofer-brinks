@@ -41,8 +41,27 @@ from src.services.routes import (
 
 router = APIRouter(tags=["routes"])
 
-ALLOWED_IMAGE = {"image/jpeg", "image/png", "image/webp", "image/jpg"}
-MAX_IMAGE = 10 * 1024 * 1024
+ALLOWED_IMAGE = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/jpg",
+    "image/gif",
+    "image/heic",
+    "image/heif",
+    "image/svg+xml",
+}
+ALLOWED_IMAGE_EXT = (
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".webp",
+    ".gif",
+    ".heic",
+    ".heif",
+    ".svg",
+)
+MAX_IMAGE = 12 * 1024 * 1024
 
 
 def _route_out(route) -> RouteOut:
@@ -279,19 +298,18 @@ async def extract_image(
     _user: User = Depends(get_current_user),
 ) -> list[DraftStop]:
     content_type = (file.content_type or "").lower()
-    if content_type not in ALLOWED_IMAGE and not (file.filename or "").lower().endswith(
-        (".jpg", ".jpeg", ".png", ".webp")
-    ):
+    fname = (file.filename or "").lower()
+    if content_type not in ALLOWED_IMAGE and not fname.endswith(ALLOWED_IMAGE_EXT):
         raise AppError(
             code="invalid_image_type",
-            message_he="נתמכים רק קבצי תמונה jpeg, png או webp.",
+            message_he="נתמכים jpeg, png, webp, gif ו־HEIC. נסו לצלם מחדש כ־JPG.",
             status_code=400,
         )
     raw = await file.read()
     if len(raw) > MAX_IMAGE:
         raise AppError(
             code="image_too_large",
-            message_he="התמונה גדולה מדי (מקסימום 10MB).",
+            message_he="התמונה גדולה מדי (מקסימום 12MB).",
             status_code=400,
         )
     drafts = await ocr.extract_from_image(raw, content_type or "image/jpeg")

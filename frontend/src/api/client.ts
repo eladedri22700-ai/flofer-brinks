@@ -189,6 +189,10 @@ export type DraftStop = {
   lng?: number | null;
   geocode_confidence?: number | null;
   category?: string;
+  /** Frontend-only: VIP before commit */
+  priority?: "normal" | "vip";
+  /** Frontend-only stable key for list editing */
+  draft_key?: string;
 };
 
 export type CustomerDto = {

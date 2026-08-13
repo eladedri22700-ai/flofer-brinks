@@ -118,6 +118,10 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 - Location (precise + short watch), background/screen-off OS checklist + Wake Lock sample, push notification test
 - Platform tips (iOS Always / Android Allow all the time + battery) before live tour
 
+**Completed (2026-08-13 — Photo queue + editing):**
+- Multi-photo gallery (append drafts), client image prep, HEIC/gif/svg MIME
+- Draft cards: select subset, VIP, time presets; stop edit (name/address/notes/service) + delete confirm
+
 ## Verify
 
 ```bash

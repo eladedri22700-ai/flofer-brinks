@@ -27,6 +27,7 @@ import { ScreenshotInputTab } from "../components/plan/ScreenshotInput";
 import {
   StopsList,
   type StopConstraintsPatch,
+  type StopDetailsPatch,
 } from "../components/plan/StopsList";
 import { PageHeader } from "../components/ui/PageHeader";
 import { StatusBanner } from "../components/ui/StatusBanner";
@@ -80,6 +81,7 @@ export default function PlanPage() {
   const [constraintsSavingId, setConstraintsSavingId] = useState<number | null>(
     null,
   );
+  const [detailsSavingId, setDetailsSavingId] = useState<number | null>(null);
 
   const keysQ = useQuery({ queryKey: ["keys-status"], queryFn: getKeysStatus });
   const depotQ = useQuery({ queryKey: ["depot"], queryFn: getDepot });
@@ -148,6 +150,7 @@ export default function PlanPage() {
         customer_name: d.customer_name,
         address: d.address,
         category: d.category ?? "other",
+        priority: d.priority ?? "normal",
         ...parseTimeNote(d.time_note),
       }));
       return addStopsBulk(route!.id, stops);
@@ -197,6 +200,26 @@ export default function PlanPage() {
       invalidate();
     },
     onError: (e) => show(apiErrorMessage(e), "error"),
+  });
+
+  const detailsM = useMutation({
+    mutationFn: async ({
+      id,
+      body,
+    }: {
+      id: number;
+      body: StopDetailsPatch;
+    }) => {
+      setDetailsSavingId(id);
+      await patchStop(id, body);
+      return id;
+    },
+    onSuccess: () => {
+      show("פרטי היעד עודכנו", "success");
+      invalidate();
+    },
+    onError: (e) => show(apiErrorMessage(e), "error"),
+    onSettled: () => setDetailsSavingId(null),
   });
 
   const patchRouteM = useMutation({
@@ -536,7 +559,9 @@ export default function PlanPage() {
             onDelete={(id) => deleteM.mutate(id)}
             onFixCoords={(id, lat, lng) => patchStopM.mutate({ id, lat, lng })}
             onUpdateConstraints={(id, body) => constraintsM.mutate({ id, body })}
+            onUpdateDetails={(id, body) => detailsM.mutate({ id, body })}
             constraintsSavingId={constraintsSavingId}
+            detailsSavingId={detailsSavingId}
           />
         )}
       </section>

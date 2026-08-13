@@ -4,6 +4,7 @@ import { Skeleton } from "../ui/Skeleton";
 import { Button } from "../ui/Button";
 import type { DraftStop } from "../../api/client";
 import { DEMO_PHOTO_PATH } from "../../lib/demoAddresses";
+import { IMAGE_ACCEPT, newDraftKey, prepareImageForUpload } from "../../lib/imagePrep";
 import { emitTourEvent } from "../../lib/tourEvents";
 import { useTourStore } from "../../store/tourStore";
 import styles from "./ScreenshotInput.module.css";
@@ -14,27 +15,54 @@ type Props = {
   loading?: boolean;
 };
 
+type PreviewItem = { url: string; name: string };
+
+function withKeys(rows: DraftStop[]): DraftStop[] {
+  return rows.map((r) => ({
+    ...r,
+    draft_key: r.draft_key ?? newDraftKey(),
+    priority: r.priority ?? "normal",
+  }));
+}
+
 export function ScreenshotInputTab({ onExtract, onCommit, loading }: Props) {
   const tourActive = useTourStore((s) => s.active);
   const [drafts, setDrafts] = useState<DraftStop[]>([]);
   const [busy, setBusy] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [previews, setPreviews] = useState<PreviewItem[]>([]);
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
 
-  async function handleFile(file: File | null) {
-    if (!file) return;
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(URL.createObjectURL(file));
-    setFileName(file.name || "תמונה");
+  async function handleFiles(list: FileList | File[] | null) {
+    const files = list ? Array.from(list) : [];
+    if (files.length === 0) return;
     setBusy(true);
+    let added = 0;
     try {
-      const rows = await onExtract(file);
-      setDrafts(rows);
-      if (rows.length > 0) emitTourEvent("tour:ocr-ready");
+      for (let i = 0; i < files.length; i += 1) {
+        const raw = files[i];
+        setProgress(
+          files.length > 1
+            ? `סורק תמונה ${i + 1} מתוך ${files.length}…`
+            : "מזהה כתובות מהצילום…",
+        );
+        const prepared = await prepareImageForUpload(raw);
+        const url = URL.createObjectURL(prepared);
+        setPreviews((prev) => [
+          ...prev.slice(-5),
+          { url, name: prepared.name || raw.name || "תמונה" },
+        ]);
+        const rows = withKeys(await onExtract(prepared));
+        if (rows.length > 0) {
+          added += rows.length;
+          setDrafts((prev) => [...prev, ...rows]);
+        }
+      }
+      if (added > 0) emitTourEvent("tour:ocr-ready");
     } finally {
       setBusy(false);
+      setProgress(null);
       if (cameraRef.current) cameraRef.current.value = "";
       if (galleryRef.current) galleryRef.current.value = "";
     }
@@ -48,17 +76,18 @@ export function ScreenshotInputTab({ onExtract, onCommit, loading }: Props) {
       const file = new File([blob], "zebra-demo.svg", {
         type: blob.type || "image/svg+xml",
       });
-      await handleFile(file);
+      await handleFiles([file]);
     } catch {
       setBusy(false);
+      setProgress(null);
     }
   }
 
   return (
     <div className={styles.wrap} data-tour="plan-shot">
       <p className={styles.lead}>
-        צלמו את רשימת היעדים מ־Zebra, או בחרו צילום מסך מהגלריה. כל כתובת
-        שנזהתה נשמרת אוטומטית בספריית «שמורים» לפעמים הבאות.
+        אפשר לצלם או לבחור כמה תמונות מהגלריה — כל צילום נוסף מצטרף לטיוטה (לא
+        מוחק את הקודם). כתובות שנזהו נשמרות גם ב«שמורים».
       </p>
       {tourActive ? (
         <Button
@@ -73,25 +102,25 @@ export function ScreenshotInputTab({ onExtract, onCommit, loading }: Props) {
         </Button>
       ) : null}
 
-      {/* Two inputs: capture forces camera; without capture opens gallery/photos */}
       <input
         ref={cameraRef}
         type="file"
-        accept="image/*"
+        accept={IMAGE_ACCEPT}
         capture="environment"
         className={styles.hiddenInput}
         aria-hidden
         tabIndex={-1}
-        onChange={(e) => void handleFile(e.target.files?.[0] ?? null)}
+        onChange={(e) => void handleFiles(e.target.files)}
       />
       <input
         ref={galleryRef}
         type="file"
-        accept="image/*"
+        accept={IMAGE_ACCEPT}
+        multiple
         className={styles.hiddenInput}
         aria-hidden
         tabIndex={-1}
-        onChange={(e) => void handleFile(e.target.files?.[0] ?? null)}
+        onChange={(e) => void handleFiles(e.target.files)}
       />
 
       <div className={styles.actions} role="group" aria-label="בחירת תמונה">
@@ -112,7 +141,7 @@ export function ScreenshotInputTab({ onExtract, onCommit, loading }: Props) {
             </svg>
           </span>
           <span className={styles.actionTitle}>צלם עכשיו</span>
-          <span className={styles.actionHint}>פותח מצלמה</span>
+          <span className={styles.actionHint}>מצלמה · תמונה אחת</span>
         </button>
 
         <button
@@ -123,15 +152,7 @@ export function ScreenshotInputTab({ onExtract, onCommit, loading }: Props) {
         >
           <span className={styles.actionIcon} aria-hidden>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-              <rect
-                x="3.5"
-                y="5"
-                width="17"
-                height="14"
-                rx="2.5"
-                stroke="currentColor"
-                strokeWidth="1.6"
-              />
+              <rect x="3.5" y="5" width="17" height="14" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
               <circle cx="9" cy="10.5" r="1.6" fill="currentColor" />
               <path
                 d="M3.5 16.5 8.5 12l3.2 3.2L15 12.5l5.5 4"
@@ -142,32 +163,43 @@ export function ScreenshotInputTab({ onExtract, onCommit, loading }: Props) {
             </svg>
           </span>
           <span className={styles.actionTitle}>מהגלריה</span>
-          <span className={styles.actionHint}>תמונות / צילומי מסך</span>
+          <span className={styles.actionHint}>בחירה מרובה · מוסיף לטיוטה</span>
         </button>
       </div>
 
-      {previewUrl ? (
-        <div className={styles.preview}>
-          <img src={previewUrl} alt="תצוגה מקדימה של הצילום" className={styles.previewImg} />
-          <div className={styles.previewMeta}>
-            <span className={styles.previewName}>{fileName}</span>
-            {busy ? <span className={styles.previewBusy}>סורק…</span> : null}
-          </div>
-        </div>
+      {previews.length > 0 ? (
+        <ul className={styles.previewStrip} aria-label="תמונות שנסרקו">
+          {previews.map((p) => (
+            <li key={p.url} className={styles.preview}>
+              <img src={p.url} alt="" className={styles.previewImg} />
+              <span className={styles.previewName}>{p.name}</span>
+            </li>
+          ))}
+        </ul>
       ) : null}
 
       {busy ? (
         <div>
-          <p className={styles.scan}>מזהה כתובות מהצילום…</p>
+          <p className={styles.scan}>{progress ?? "מזהה כתובות…"}</p>
           <Skeleton height={72} />
         </div>
+      ) : null}
+
+      {drafts.length > 0 && !busy ? (
+        <p className={styles.moreHint}>
+          אפשר להוסיף עוד צילומים — הם יצטרפו לטיוטה למטה.
+        </p>
       ) : null}
 
       <DraftTable
         drafts={drafts}
         onChange={setDrafts}
         loading={loading || busy}
-        onCommit={() => onCommit(drafts)}
+        onCommit={(rows) => {
+          onCommit(rows);
+          const keep = new Set(rows.map((r) => r.draft_key));
+          setDrafts((prev) => prev.filter((d) => !keep.has(d.draft_key)));
+        }}
       />
     </div>
   );

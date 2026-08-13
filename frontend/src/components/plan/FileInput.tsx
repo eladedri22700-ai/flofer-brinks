@@ -10,6 +10,14 @@ type Props = {
   loading?: boolean;
 };
 
+function withKeys(rows: DraftStop[]): DraftStop[] {
+  return rows.map((r, i) => ({
+    ...r,
+    draft_key: r.draft_key ?? `f_${Date.now()}_${i}`,
+    priority: r.priority ?? "normal",
+  }));
+}
+
 export function FileInputTab({ onImport, onCommit, loading }: Props) {
   const [drafts, setDrafts] = useState<DraftStop[]>([]);
   const [busy, setBusy] = useState(false);
@@ -18,7 +26,7 @@ export function FileInputTab({ onImport, onCommit, loading }: Props) {
     if (!file) return;
     setBusy(true);
     try {
-      const rows = await onImport(file);
+      const rows = withKeys(await onImport(file));
       setDrafts(rows);
     } finally {
       setBusy(false);
@@ -40,7 +48,10 @@ export function FileInputTab({ onImport, onCommit, loading }: Props) {
         drafts={drafts}
         onChange={setDrafts}
         loading={loading || busy}
-        onCommit={() => onCommit(drafts)}
+        onCommit={(rows) => {
+          onCommit(rows);
+          setDrafts([]);
+        }}
       />
       {drafts.length === 0 && !busy ? (
         <p className={styles.hint}>הקובץ יוצג כטיוטה לפני הוספה לסבב.</p>
