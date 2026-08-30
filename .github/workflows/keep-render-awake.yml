@@ -1,0 +1,28 @@
+# Keep FLOFER BRINKS free web service awake (Render spins down after ~15m idle).
+name: keep-render-awake
+
+on:
+  schedule:
+    # Every 10 minutes
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake production
+        run: |
+          set -e
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -sS -o /tmp/health.json -w "%{http_code}" --max-time 90 \
+              "https://flofer-brinks.onrender.com/api/health" || true)
+            echo "attempt=$i http=$code"
+            if [ "$code" = "200" ]; then
+              cat /tmp/health.json || true
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "Health check failed after retries"
+          exit 1

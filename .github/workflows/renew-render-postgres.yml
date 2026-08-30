@@ -1,0 +1,127 @@
+# Monthly check: free Render Postgres expires after 30 days.
+# Requires repo secret RENDER_API_KEY (Account Settings → API Keys).
+name: renew-render-postgres
+
+on:
+  schedule:
+    - cron: "0 9 1 * *"
+  workflow_dispatch:
+
+jobs:
+  renew-if-needed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure free Postgres is available
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          OWNER_ID: tea-d9drfhb7uimc73c3c1u0
+          SERVICE_ID: srv-d9drht3rjlhs73b7or80
+        run: |
+          set -euo pipefail
+          if [ -z "${RENDER_API_KEY:-}" ]; then
+            echo "Missing secrets.RENDER_API_KEY — skip (add once in GitHub repo settings)."
+            exit 0
+          fi
+          AUTH="Authorization: Bearer $RENDER_API_KEY"
+          echo "Listing Postgres..."
+          curl -fsS -H "$AUTH" -H "Accept: application/json" \
+            "https://api.render.com/v1/postgres?limit=20&ownerId=$OWNER_ID" \
+            -o /tmp/pg.json
+          python3 - <<'PY'
+          import json, os, sys, urllib.request, datetime
+          key = os.environ["RENDER_API_KEY"]
+          owner = os.environ["OWNER_ID"]
+          svc = os.environ["SERVICE_ID"]
+          rows = json.load(open("/tmp/pg.json"))
+          now = datetime.datetime.now(datetime.timezone.utc)
+
+          def api(method, path, body=None):
+              data = None if body is None else json.dumps(body).encode()
+              req = urllib.request.Request(
+                  "https://api.render.com/v1" + path,
+                  data=data,
+                  method=method,
+                  headers={
+                      "Authorization": f"Bearer {key}",
+                      "Accept": "application/json",
+                      "Content-Type": "application/json",
+                  },
+              )
+              with urllib.request.urlopen(req) as resp:
+                  raw = resp.read().decode() or "{}"
+                  return json.loads(raw) if raw.strip() else {}
+
+          healthy = None
+          for row in rows:
+              db = row.get("postgres") or row
+              status = db.get("status")
+              exp = db.get("expiresAt")
+              print(f"db={db.get('id')} name={db.get('name')} status={status} expires={exp}")
+              days_left = None
+              if exp:
+                  exp_dt = datetime.datetime.fromisoformat(exp.replace("Z", "+00:00"))
+                  days_left = (exp_dt - now).days
+              if status == "available" and (days_left is None or days_left > 7):
+                  healthy = db
+                  break
+              if status in ("suspended", "unavailable", "expired") or (days_left is not None and days_left <= 0):
+                  try:
+                      api("DELETE", f"/postgres/{db['id']}")
+                      print("deleted", db["id"])
+                  except Exception as e:
+                      print("delete failed", e)
+
+          if healthy:
+              print("OK existing DB", healthy.get("id"))
+              sys.exit(0)
+
+          print("Creating new free Postgres...")
+          created = api("POST", "/postgres", {
+              "name": f"flofer-brinks-db-{now.strftime('%Y%m%d')}",
+              "ownerId": owner,
+              "plan": "free",
+              "region": "frankfurt",
+              "version": "16",
+              "databaseName": "flofer_brinks",
+              "databaseUser": "flofer",
+          })
+          db = created.get("postgres") or created
+          db_id = db["id"]
+          print("created", db_id)
+          for _ in range(60):
+              info = api("GET", f"/postgres/{db_id}")
+              db = info.get("postgres") or info
+              if db.get("status") == "available":
+                  break
+              import time; time.sleep(5)
+          else:
+              raise SystemExit("DB not available")
+
+          ci = api("GET", f"/postgres/{db_id}/connection-info")
+          url = ci.get("internalConnectionString") or ci.get("connectionString")
+          if not url:
+              raise SystemExit("No connection string")
+
+          existing = api("GET", f"/services/{svc}/env-vars")
+          payload = []
+          seen = False
+          for row in existing:
+              ev = row.get("envVar") or row
+              if ev.get("key") == "DATABASE_URL":
+                  payload.append({"key": "DATABASE_URL", "value": url})
+                  seen = True
+              else:
+                  item = {"key": ev["key"]}
+                  if ev.get("value") is not None:
+                      item["value"] = ev["value"]
+                  elif ev.get("generateValue"):
+                      item["generateValue"] = True
+                  else:
+                      item["value"] = ""
+                  payload.append(item)
+          if not seen:
+              payload.append({"key": "DATABASE_URL", "value": url})
+          api("PUT", f"/services/{svc}/env-vars", payload)
+          dep = api("POST", f"/services/{svc}/deploys", {"clearCache": "clear"})
+          print("deploy", (dep.get("deploy") or dep).get("id"))
+          PY
