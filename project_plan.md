@@ -73,6 +73,7 @@ FLOFER BRINKS is a premium Hebrew-RTL PWA for Brinks team leaders. It plans and 
 4. GCP Browser Key HTTP referrer: `https://flofer-brinks.onrender.com/*`
 5. Telegram bot + Chat ID per user; «שלח הודעת בדיקה»
 6. Free Render Postgres expires ~30 days; free web sleeps after ~15m idle (cold start 30–60s)
+7. **If Render hangs on wake (2026-08-30):** free DB likely expired — run `.\scripts\fix-render.ps1` with `RENDER_API_KEY`, or Blueprint apply `flofer-brinks-db-v2` + Manual Deploy. Boot now fails fast (`scripts/boot.sh` + `connect_timeout=10`) instead of spinning forever.
 
 **Pilot cleanliness (2026-07-18):** purged smoke-test stops from production; fresh `planning` route for today (empty).
 
