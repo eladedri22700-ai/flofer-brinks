@@ -20,13 +20,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/alembic.ini .
 COPY backend/alembic ./alembic
 COPY backend/src ./src
+COPY backend/scripts/boot.sh ./scripts/boot.sh
 COPY --from=frontend /fe/dist ./frontend/dist
+
+RUN sed -i 's/\r$//' ./scripts/boot.sh && chmod +x ./scripts/boot.sh
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 ENV SERVE_FRONTEND=true
 ENV FRONTEND_DIST=/app/frontend/dist
+ENV PGCONNECT_TIMEOUT=10
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "alembic upgrade head && python -m src.seed && uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["./scripts/boot.sh"]

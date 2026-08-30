@@ -10,6 +10,8 @@ settings = get_settings()
 engine = create_engine(
     settings.sqlalchemy_database_url,
     pool_pre_ping=True,
+    # Free Render Postgres can expire; fail fast instead of hanging cold starts.
+    connect_args={"connect_timeout": 10},
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
