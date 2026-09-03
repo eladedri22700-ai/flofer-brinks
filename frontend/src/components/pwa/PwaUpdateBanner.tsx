@@ -17,7 +17,18 @@ export function PwaUpdateBanner() {
     const u = registerSW({
       immediate: true,
       onNeedRefresh() {
-        setNeedRefresh(true);
+        // Auto-update when not mid-round so phones leave stale builds behind.
+        void getTodayRoute()
+          .then((route) => {
+            if (!isRoundLive(route?.status)) {
+              void u(true);
+              return;
+            }
+            setNeedRefresh(true);
+          })
+          .catch(() => {
+            setNeedRefresh(true);
+          });
       },
     });
     setUpdate(() => u);

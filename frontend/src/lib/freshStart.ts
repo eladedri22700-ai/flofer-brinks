@@ -16,6 +16,24 @@ export function isFreshQuery(): boolean {
   }
 }
 
+const CACHE_BUST_FLAG = "flofer_cache_bust_reload";
+
+/** Unregister SW + wipe Cache Storage so a phone cannot keep an old PWA build. */
+export async function purgeAppCaches(): Promise<void> {
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * Hard reset for Daniel's pilot link: no leftover session, no skipped tour,
  * no auto-login from a previous demo on this phone.
@@ -28,6 +46,28 @@ export function applyFreshStart(): void {
     clearSavedLogin();
     clearOnboarding("FLOFER");
     markSandbox(false);
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * One-shot: fresh/reset link also clears the installed PWA cache, then reloads
+ * once so the browser fetches the current production bundle.
+ */
+export async function applyFreshStartWithCacheBust(): Promise<void> {
+  applyFreshStart();
+  try {
+    if (sessionStorage.getItem(CACHE_BUST_FLAG) === "1") {
+      sessionStorage.removeItem(CACHE_BUST_FLAG);
+      return;
+    }
+    sessionStorage.setItem(CACHE_BUST_FLAG, "1");
+    await purgeAppCaches();
+    const url = new URL(window.location.href);
+    url.searchParams.set("fresh", "1");
+    url.searchParams.set("v", String(Date.now()));
+    window.location.replace(url.pathname + url.search + url.hash);
   } catch {
     /* ignore */
   }
@@ -64,9 +104,16 @@ export function killLegacySkipOnce(): boolean {
 export function stripFreshFromUrl(): void {
   try {
     const url = new URL(window.location.href);
-    if (!url.searchParams.has("fresh") && !url.searchParams.has("reset")) return;
+    if (
+      !url.searchParams.has("fresh") &&
+      !url.searchParams.has("reset") &&
+      !url.searchParams.has("v")
+    ) {
+      return;
+    }
     url.searchParams.delete("fresh");
     url.searchParams.delete("reset");
+    url.searchParams.delete("v");
     // Keep user=FLOFER if present for login prefill.
     window.history.replaceState({}, "", url.pathname + url.search + url.hash);
   } catch {

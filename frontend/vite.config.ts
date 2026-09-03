@@ -6,7 +6,8 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "prompt",
+      // Auto-activate new SW so phones leave the previous field build behind.
+      registerType: "autoUpdate",
       includeAssets: [
         "icons/icon-192.png",
         "icons/icon-512.png",

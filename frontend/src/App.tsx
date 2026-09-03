@@ -7,7 +7,7 @@ import { GuidedTour } from "./components/tour/GuidedTour";
 import { LoadingScreen } from "./components/ui/LoadingScreen";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import {
-  applyFreshStart,
+  applyFreshStartWithCacheBust,
   isFreshQuery,
   killLegacySkipOnce,
   stripFreshFromUrl,
@@ -56,19 +56,28 @@ function AppRoutes() {
   const [bootReady, setBootReady] = useState(false);
 
   useEffect(() => {
-    // One-time device cleanup: old demo session / skipped tour.
-    if (!isSandboxQuery()) {
-      killLegacySkipOnce();
-    }
-    // Daniel's invite link: wipe leftover session + force login + tour.
-    if (isFreshQuery() && !isSandboxQuery()) {
-      applyFreshStart();
-      clearSession();
-      stripFreshFromUrl();
-      queryClient.clear();
-    }
-    hydrate();
-    setBootReady(true);
+    let cancelled = false;
+    void (async () => {
+      // One-time device cleanup: old demo session / skipped tour.
+      if (!isSandboxQuery()) {
+        killLegacySkipOnce();
+      }
+      // Daniel's invite link: wipe leftover session + force login + tour,
+      // and clear any stale PWA cache that still served the previous UI.
+      if (isFreshQuery() && !isSandboxQuery()) {
+        await applyFreshStartWithCacheBust();
+        if (cancelled) return;
+        clearSession();
+        stripFreshFromUrl();
+        queryClient.clear();
+      }
+      if (cancelled) return;
+      hydrate();
+      setBootReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [hydrate, clearSession]);
 
   // Opening ?sandbox=1 switches into TEST — never keep FLOFER on this tab.
