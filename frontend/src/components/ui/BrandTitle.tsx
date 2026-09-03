@@ -6,14 +6,11 @@ type Props = {
   className?: string;
 };
 
-/** FLOFER BRINKS — metallic 3D gold wordmark. */
+/** FLOFER BRINKS — clean brass wordmark. */
 export function BrandTitle({ size = "md", as: Tag = "p", className }: Props) {
   return (
     <Tag className={`${styles.title} ${styles[size]} ${className ?? ""}`}>
-      <span className={styles.depth} aria-hidden>
-        FLOFER BRINKS
-      </span>
-      <span className={styles.face}>FLOFER BRINKS</span>
+      FLOFER <span className={styles.sub}>BRINKS</span>
     </Tag>
   );
 }

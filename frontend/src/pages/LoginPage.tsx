@@ -38,6 +38,13 @@ export default function LoginPage() {
   const saved = readSavedLogin();
   const queryUser = usernameFromQuery();
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = "dark";
+    return () => {
+      delete document.documentElement.dataset.theme;
+    };
+  }, []);
+
   const [username, setUsername] = useState(() => {
     if (sandbox) return queryUser || SANDBOX_USERNAME;
     return queryUser || "FLOFER";
@@ -118,8 +125,8 @@ export default function LoginPage() {
           </p>
         ) : (
           <p className={styles.isoNote}>
-            הזינו שם משתמש וסיסמה. בפעם הראשונה תעברו הדרכה קצרה. אחרי הכניסה
-            תמצאו «איך עובדים היום» בתפריט עוד — והכניסה נשמרת במכשיר.
+            בפעם הראשונה תעברו הדרכה קצרה. הכניסה נשמרת במכשיר — לא תצטרכו
+            להקליד שוב.
           </p>
         )}
         <form className={styles.form} onSubmit={onSubmit}>
