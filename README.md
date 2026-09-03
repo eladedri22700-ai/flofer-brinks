@@ -4,6 +4,11 @@ PWA בעברית לניהול סבבי ברינקס — תכנון VRPTW, Live M
 
 **סטטוס:** FIELD PILOT HARDENING (Phases 1–5 + UX פרימיום + Telegram + התקרבות ליעד)
 
+**עיצוב מחדש של זרימת השטח (field-flow):** ראו
+[`docs/field-flow-redesign/IMPLEMENTATION.md`](docs/field-flow-redesign/IMPLEMENTATION.md) —
+מיפוי מלא בין מסכי העיצוב המקורי של Claude Design לקבצים האמיתיים שמימשו אותם,
+כולל מה במכוון לא שונה ולמה.
+
 ## Stack
 
 - Frontend: React 18 + TypeScript + Vite PWA
