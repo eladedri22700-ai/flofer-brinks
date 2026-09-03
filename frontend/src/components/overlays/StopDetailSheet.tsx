@@ -114,9 +114,10 @@ export function StopDetailSheet({ route, onSetAsNext }: Props) {
             <div>
               <div className={styles.infoTitle}>זמן שירות</div>
               <div className={styles.infoBody}>
-                {stop.service_duration_min} דק׳
-                {stop.service_estimate_source === "learned" ? " · נלמד מהיסטוריית ביקורים" : " · ברירת מחדל"}
-                {stop.learned_badge ? ` · ${stop.learned_badge}` : ""}
+                {stop.learned_badge ||
+                  `${stop.service_duration_min} דק׳ · ${
+                    stop.service_estimate_source === "learned" ? "נלמד מהיסטוריית ביקורים" : "ברירת מחדל"
+                  }`}
               </div>
             </div>
           </div>

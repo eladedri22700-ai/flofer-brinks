@@ -826,8 +826,8 @@ export default function LivePage() {
               </div>
               <div className={styles.vipTile} style={{ background: "rgba(31,170,99,.1)" }}>
                 <div className={styles.vipTileLabel}>אם נקדים אותו</div>
-                <div className={`${styles.vipTileVal} num`} style={{ color: "var(--field-done)" }}>
-                  לפני התור הנוכחי
+                <div className={styles.vipTileVal} style={{ color: "var(--field-done)", fontSize: 17 }}>
+                  מוקדם יותר
                 </div>
               </div>
             </div>

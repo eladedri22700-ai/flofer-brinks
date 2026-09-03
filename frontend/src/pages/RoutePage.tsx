@@ -71,8 +71,8 @@ function SortableRow({
           {stop.priority === "vip" ? <span className={styles.vip}> ★ VIP</span> : null}
         </span>
         <br />
-        <span className={`${styles.sub} num`}>
-          {formatTimeHe(stop.eta)} · {stop.address}
+        <span className={styles.sub}>
+          <span className="num">{formatTimeHe(stop.eta)}</span> · {stop.address}
         </span>
       </span>
       <button

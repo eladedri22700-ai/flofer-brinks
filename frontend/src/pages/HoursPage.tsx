@@ -112,14 +112,24 @@ export default function HoursPage() {
           {weekRows.map(({ key, dow, row, isToday }) => (
             <div key={key} className={`${styles.row} ${isToday ? styles.rowToday : ""}`}>
               <span className={styles.dayLetter}>{DAY_LETTERS[dow]}</span>
-              <span className={`${styles.range} num`}>
-                {row?.start_at
-                  ? `${new Date(row.start_at).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jerusalem" })} – ${
-                      row.end_at
-                        ? new Date(row.end_at).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jerusalem" })
-                        : "בנסיעה"
-                    }`
-                  : "—"}
+              <span className={styles.range}>
+                {row?.start_at ? (
+                  <>
+                    <span className="num">
+                      {new Date(row.start_at).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jerusalem" })}
+                    </span>{" "}
+                    –{" "}
+                    {row.end_at ? (
+                      <span className="num">
+                        {new Date(row.end_at).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jerusalem" })}
+                      </span>
+                    ) : (
+                      "בנסיעה"
+                    )}
+                  </>
+                ) : (
+                  "—"
+                )}
               </span>
               <span className={`${styles.total} num`}>{fmtHm(row?.total_min ?? 0)}</span>
             </div>
