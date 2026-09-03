@@ -1,0 +1,90 @@
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.stat {
+  padding: 13px 14px;
+  border-radius: 16px;
+  background: var(--field-day-bg);
+}
+
+.statLabel {
+  font-size: 11.5px;
+  color: var(--field-body-text);
+}
+
+.statValue {
+  font-size: 19px;
+  font-weight: 700;
+  margin-top: 2px;
+  color: var(--field-ink);
+}
+
+.infoRow {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.infoIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: rgba(201, 162, 39, 0.14);
+  color: var(--field-brass-text);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.infoTitle {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--field-ink);
+}
+
+.infoBody {
+  font-size: 13.5px;
+  color: var(--field-body-text);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+.infoBody a {
+  color: var(--field-brass-text);
+}
+
+.footerBtns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.footerOutline,
+.footerDark {
+  min-height: 54px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  border: none;
+}
+
+.footerOutline {
+  background: var(--field-surface);
+  border: 1.5px solid var(--field-ink);
+  color: var(--field-ink);
+}
+
+.footerDark {
+  background: var(--field-ink);
+  color: #fff;
+  font-weight: 800;
+  font-size: 16px;
+}

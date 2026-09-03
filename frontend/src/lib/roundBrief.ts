@@ -86,6 +86,34 @@ export function stopWindowHe(
   return null;
 }
 
+/** Time-of-day (Asia/Jerusalem) an ISO datetime falls on, as "HH:MM". */
+function timeOfDayHe(iso: string): string {
+  return new Date(iso).toLocaleTimeString("he-IL", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Jerusalem",
+    hour12: false,
+  });
+}
+
+/**
+ * A VIP stop is "at risk" when its computed ETA falls on or after the end
+ * of its time window. Only meaningful for priority "vip" stops that carry
+ * a tw_end and haven't been completed/skipped yet.
+ */
+export function isVipAtRisk(stop: StopDto): boolean {
+  if (stop.priority !== "vip" || stop.status === "done" || stop.status === "skipped") {
+    return false;
+  }
+  if (!stop.tw_end || !stop.eta) return false;
+  const etaHm = timeOfDayHe(stop.eta);
+  return etaHm >= stop.tw_end.slice(0, 5);
+}
+
+export function firstVipAtRisk(stops: StopDto[]): StopDto | null {
+  return stops.find(isVipAtRisk) ?? null;
+}
+
 export function buildRoundBrief(route: RouteDto | null | undefined): RoundBrief | null {
   if (!route || !route.stops?.length) return null;
   const stops = sortedStops(route);

@@ -84,7 +84,7 @@ export default function SummaryPage() {
 
   return (
     <div className={`pageShell ${styles.page}`}>
-      <PageHeader kicker="סיום יום" title="סיכום סבב" lead={s.message_he} />
+      <PageHeader kicker="סבב נסגר" title="סיכום סבב" lead={s.message_he} />
 
       <Card className={styles.blessing} statusBar="gold">
         <p className={styles.blessingText}>{blessing}</p>

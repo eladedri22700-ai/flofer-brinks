@@ -99,6 +99,10 @@
   background: rgba(255, 255, 255, 0.02);
   text-decoration: none;
   color: inherit;
+  width: 100%;
+  text-align: inherit;
+  font: inherit;
+  cursor: pointer;
   transition:
     border-color var(--t-fast) var(--ease),
     background var(--t-fast) var(--ease);

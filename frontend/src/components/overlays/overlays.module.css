@@ -1,0 +1,66 @@
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 10, 20, 0.6);
+  z-index: 75;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.sheet {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 76;
+  background: var(--field-surface);
+  border-radius: var(--field-radius-sheet) var(--field-radius-sheet) 0 0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--field-shadow-sheet);
+  color: var(--field-ink);
+}
+
+.sheetHead {
+  flex: none;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--field-hairline-light);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sheetTitleName {
+  font-family: var(--field-font-display);
+  font-size: 24px;
+  color: var(--field-ink);
+}
+
+.sheetTitleSub {
+  font-size: 13.5px;
+  color: var(--field-body-text);
+  margin-top: 4px;
+}
+
+.closeBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--field-surface-alt);
+  border: none;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--field-ink);
+}
+
+.sheetBody {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+}
