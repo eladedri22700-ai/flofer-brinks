@@ -21,11 +21,14 @@ import {
 } from "./lib/sandbox";
 import { useAuthStore } from "./store/authStore";
 
+const StartPage = lazy(() => import("./pages/StartPage"));
 const PlanPage = lazy(() => import("./pages/PlanPage"));
 const RoutePage = lazy(() => import("./pages/RoutePage"));
 const LivePage = lazy(() => import("./pages/LivePage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const HistoryPage = lazy(() => import("./pages/HistoryPage"));
+const HoursPage = lazy(() => import("./pages/HoursPage"));
+const AddStopPage = lazy(() => import("./pages/AddStopPage"));
 const SummaryPage = lazy(() => import("./pages/SummaryPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const BoardPage = lazy(() => import("./pages/BoardPage"));
@@ -121,11 +124,14 @@ function AppRoutes() {
     <Suspense fallback={<LoadingScreen full label="טוען את FLOFER BRINKS" />}>
       <Routes>
         <Route element={<AppLayout />}>
+          <Route path="/app/start" element={<StartPage />} />
           <Route path="/app/plan" element={<PlanPage />} />
           <Route path="/app/route" element={<RoutePage />} />
           <Route path="/app/live" element={<LivePage />} />
           <Route path="/app/dashboard" element={<DashboardPage />} />
           <Route path="/app/history" element={<HistoryPage />} />
+          <Route path="/app/hours" element={<HoursPage />} />
+          <Route path="/app/add-stop" element={<AddStopPage />} />
           <Route path="/app/summary/:routeId?" element={<SummaryPage />} />
           <Route path="/app/settings" element={<SettingsPage />} />
           <Route path="/app/legal" element={<LegalPage />} />

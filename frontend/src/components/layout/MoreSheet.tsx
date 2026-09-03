@@ -7,6 +7,7 @@ import { isStandaloneDisplay } from "../../lib/onboarding";
 import { clearSavedLogin } from "../../lib/savedLogin";
 import { markSandbox } from "../../lib/sandbox";
 import { useAuthStore } from "../../store/authStore";
+import { useOverlayStore } from "../../store/overlayStore";
 import styles from "./MoreSheet.module.css";
 
 type Props = {
@@ -22,14 +23,24 @@ const links = [
     desc: "הסבר קצר · 4 צעדים · שאלות נפוצות",
   },
   {
-    to: "/app/route",
-    title: "סדר הנקודות",
-    desc: "כל הכתובות · גרירה לשינוי ידני",
-  },
-  {
     to: "/app/board",
     title: "מפת הסבב",
-    desc: "מפה · אישור יציאה · התחל סבב",
+    desc: "כל הנקודות והמסלול",
+  },
+  {
+    to: "/app/route",
+    title: "סדר הנקודות",
+    desc: "שינוי ידני וחישוב מחדש",
+  },
+  {
+    to: "/app/add-stop",
+    title: "הוספת עצירה",
+    desc: "בדיקת השפעה לפני אישור",
+  },
+  {
+    to: "/app/hours",
+    title: "שעות עבודה",
+    desc: "דיווח שבועי",
   },
   { to: "/app/history", title: "היסטוריה ותובנות", desc: "סבבים קודמים · דיוק ETA · שכפול" },
   { to: "/app/summary", title: "סיכום אחרון", desc: "סיכום סבב שהסתיים" },
@@ -44,6 +55,7 @@ const links = [
 export function MoreSheet({ open, onClose, userName }: Props) {
   const clearSession = useAuthStore((s) => s.clearSession);
   const username = useAuthStore((s) => s.user?.username);
+  const openFullList = useOverlayStore((s) => s.openFullList);
   const qc = useQueryClient();
   const { canPrompt, promptInstall } = usePwaInstall();
   const standalone = isStandaloneDisplay();
@@ -97,6 +109,19 @@ export function MoreSheet({ open, onClose, userName }: Props) {
               </Link>
             </li>
           ))}
+          <li>
+            <button
+              type="button"
+              className={styles.link}
+              onClick={() => {
+                openFullList();
+                onClose();
+              }}
+            >
+              <span className={styles.linkTitle}>כל הסבב</span>
+              <span className={styles.linkDesc}>רשימת כל העצירות והזמנים</span>
+            </button>
+          </li>
         </ul>
         <p className={styles.copyright} title={copyrightLine()}>
           {copyrightShort()}

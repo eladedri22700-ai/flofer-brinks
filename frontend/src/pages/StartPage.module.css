@@ -1,0 +1,145 @@
+.screen {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(120% 55% at 50% 0%, var(--field-ink-2) 0%, transparent 60%),
+    var(--field-ink);
+  color: #fff;
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 24px calc(26px + env(safe-area-inset-bottom, 0px));
+}
+
+.eyebrow {
+  font: 800 12px var(--field-font-body);
+  letter-spacing: 0.2em;
+  color: var(--field-brass-light);
+}
+
+.title {
+  font-family: var(--field-font-display);
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1.15;
+  margin: 10px 0 0;
+}
+
+.lead {
+  font-size: 14.5px;
+  color: var(--field-muted-dark);
+  margin: 6px 0 0;
+  line-height: 1.5;
+}
+
+.checks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.check {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  text-align: start;
+  color: inherit;
+  font: inherit;
+}
+
+.checkOn {
+  background: rgba(31, 170, 99, 0.12);
+  border-color: rgba(31, 170, 99, 0.4);
+}
+
+.checkDot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.12);
+  flex: none;
+}
+
+.checkOn .checkDot {
+  background: var(--field-done);
+}
+
+.checkTitle {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.checkSub {
+  font-size: 13px;
+  color: var(--field-muted-dark);
+}
+
+.strip {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stripLabel {
+  font-size: 12.5px;
+  color: var(--field-muted-dark);
+}
+
+.stripValue {
+  font-weight: 700;
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.stripRight {
+  text-align: end;
+}
+
+.stripTime {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--field-brass-light);
+  margin-top: 2px;
+}
+
+.ctaWrap {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cta {
+  min-height: 70px;
+  border: none;
+  border-radius: 22px;
+  background: var(--field-brass-gradient);
+  color: var(--field-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 800 20px var(--field-font-body);
+  box-shadow: var(--field-shadow-cta-brass);
+}
+
+.note {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--field-muted-dark-quiet);
+}

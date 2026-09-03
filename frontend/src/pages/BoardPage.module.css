@@ -170,7 +170,7 @@
 
 .progressFill {
   height: 100%;
-  background: var(--gold-metallic);
+  background: linear-gradient(90deg, var(--field-brass), var(--field-brass-light));
   transition: width 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 

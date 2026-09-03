@@ -126,6 +126,30 @@ html.is-standalone {
   font-variant-numeric: tabular-nums;
 }
 
+/* Field-flow tap feedback (binding rule: the only motion in the design). */
+.tap {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: var(--field-tap-transition);
+}
+
+.tap:active {
+  transform: var(--field-tap-scale);
+  filter: var(--field-tap-brightness);
+}
+
+.tap:disabled,
+.tap[aria-disabled="true"] {
+  cursor: default;
+}
+
+.tap:disabled:active,
+.tap[aria-disabled="true"]:active {
+  transform: none;
+  filter: none;
+}
+
 a {
   color: var(--brass-400);
   text-decoration-thickness: 1px;
