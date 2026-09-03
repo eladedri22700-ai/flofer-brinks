@@ -110,12 +110,9 @@
   --type-body: 16px;
   --type-meta: 13px;
 
-  --app-bg: #e8eef6;
-  --app-bg-image:
-    radial-gradient(110% 80% at 50% -10%, #ffffff 0%, transparent 55%),
-    radial-gradient(90% 60% at 100% 0%, rgba(201, 162, 39, 0.08) 0%, transparent 50%),
-    radial-gradient(80% 50% at 0% 100%, rgba(15, 45, 82, 0.06) 0%, transparent 55%),
-    linear-gradient(180deg, #f4f7fb 0%, #e4ebf5 100%);
+  --app-bg: #eef1f6;
+  --app-bg-image: radial-gradient(140% 60% at 50% -20%, #ffffff 0%, transparent 60%),
+    linear-gradient(180deg, #f2f4f8 0%, #e9edf3 100%);
   --nav-bg: rgba(255, 255, 255, 0.92);
 
   --topbar-h: 0px;

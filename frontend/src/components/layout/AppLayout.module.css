@@ -68,10 +68,9 @@
   justify-content: center;
   min-height: 52px;
   padding: var(--space-8) var(--space-16);
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(212, 175, 55, 0.12), transparent 70%),
-    color-mix(in srgb, var(--surface-1) 92%, transparent);
-  backdrop-filter: blur(10px);
+  background: color-mix(in srgb, var(--surface-1) 90%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
 }
 
