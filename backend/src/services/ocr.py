@@ -57,16 +57,35 @@ def _parse_json_array(raw: str) -> list[ExtractedStop]:
     return out
 
 
+def sniff_image_type(content: bytes) -> str | None:
+    """Real format from the file bytes — the browser's content-type is often wrong."""
+    head = content[:16]
+    if head.startswith(bytes([0xFF, 0xD8, 0xFF])):
+        return "image/jpeg"
+    if head.startswith(bytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])):
+        return "image/png"
+    if head[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif"
+    if head[:4] == b"RIFF" and content[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
 async def extract_from_image(content: bytes, content_type: str) -> list[dict]:
     settings = get_settings()
     if not settings.ocr_live:
         return ocr_mock.extract_drafts()
 
-    media = "image/jpeg"
-    if "png" in content_type:
-        media = "image/png"
-    elif "webp" in content_type:
-        media = "image/webp"
+    media = sniff_image_type(content)
+    if media is None:
+        raise AppError(
+            code="unsupported_image",
+            message_he=(
+                "פורמט התמונה לא נתמך לזיהוי (למשל HEIC או SVG). "
+                "צלמו צילום מסך רגיל או שמרו כ־JPG/PNG ונסו שוב."
+            ),
+            status_code=400,
+        )
 
     b64 = base64.standard_b64encode(content).decode("ascii")
     payload = {
@@ -105,6 +124,8 @@ async def extract_from_image(content: bytes, content_type: str) -> list[dict]:
                 headers=headers,
                 json=payload,
             )
+            if res.is_error:
+                logger.error("Anthropic OCR HTTP %s: %s", res.status_code, res.text[:400])
             res.raise_for_status()
             data = res.json()
     except httpx.HTTPError as exc:

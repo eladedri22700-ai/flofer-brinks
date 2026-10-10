@@ -6,7 +6,7 @@ import styles from "./FileInput.module.css";
 
 type Props = {
   onImport: (file: File) => Promise<DraftStop[]>;
-  onCommit: (drafts: DraftStop[]) => void;
+  onCommit: (drafts: DraftStop[]) => Promise<DraftStop[]>;
   loading?: boolean;
 };
 
@@ -48,9 +48,12 @@ export function FileInputTab({ onImport, onCommit, loading }: Props) {
         drafts={drafts}
         onChange={setDrafts}
         loading={loading || busy}
-        onCommit={(rows) => {
-          onCommit(rows);
-          setDrafts([]);
+        onCommit={async (rows) => {
+          const notSaved = await onCommit(rows);
+          const sent = new Set(rows);
+          const keep = new Set(notSaved);
+          setDrafts((prev) => prev.filter((d) => !sent.has(d) || keep.has(d)));
+          return notSaved;
         }}
       />
       {drafts.length === 0 && !busy ? (

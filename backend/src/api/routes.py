@@ -151,13 +151,13 @@ def post_stops_from_customers(
     return [stop_to_out(s) for s in stops]
 
 
-@router.post("/routes/{route_id}/stops/bulk", response_model=list[StopOut])
+@router.post("/routes/{route_id}/stops/bulk")
 async def post_stops_bulk(
     route_id: int,
     body: StopBulkCreate,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
-) -> list[StopOut]:
+) -> dict:
     from src.services.optimizer import MAX_STOPS
 
     route = get_route_for_user(db, route_id, user.id)
@@ -172,12 +172,26 @@ async def post_stops_bulk(
             ),
             status_code=400,
         )
+    # One unresolvable address must not sink the whole list: add what we can,
+    # report the rest so the crew can fix just those.
     created: list[StopOut] = []
+    failed: list[dict] = []
+    first_error: AppError | None = None
     for item in body.stops:
-        stop = await add_stop(db, route, item)
+        try:
+            stop = await add_stop(db, route, item)
+        except AppError as exc:
+            db.rollback()
+            first_error = first_error or exc
+            failed.append(
+                {"customer_name": item.customer_name, "address": item.address, "message_he": exc.message_he}
+            )
+            continue
         created.append(stop_to_out(stop))
         route = get_route_for_user(db, route_id, user.id)
-    return created
+    if not created and first_error is not None:
+        raise first_error
+    return {"created": [c.model_dump(mode="json") for c in created], "failed": failed}
 
 
 @router.patch("/stops/{stop_id}", response_model=StopOut)

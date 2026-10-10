@@ -1,18 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="960" viewBox="0 0 720 960">
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="960" viewBox="0 0 720 960" direction="rtl">
   <rect width="720" height="960" fill="#f4f1ea"/>
-  <rect x="40" y="40" width="640" height="880" rx="12" fill="#fff" stroke="#0f2d52" stroke-width="3"/>
-  <text x="360" y="100" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#0f2d52">ийЩЮк ЩвУЩЭ · Zebra (УЮХ)</text>
-  <text x="360" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#666">жЩЬХЭ ЬУХТЮФ ЬФУиЫФ  ЬР РЮЩкЩ</text>
-  <line x1="80" y1="170" x2="640" y2="170" stroke="#c9a227" stroke-width="2"/>
-  <text x="100" y="230" font-family="Arial, sans-serif" font-size="22" fill="#111">1. Саз ФдХвЬЩЭ УЩЦаТХг</text>
-  <text x="100" y="262" font-family="Arial, sans-serif" font-size="18" fill="#444">УЩЦаТХг 50, кЬ РСЩС · вУ 10:00</text>
-  <text x="100" y="330" font-family="Arial, sans-serif" font-size="22" fill="#111">2. ЫбдХЮШ иХШйЩЬУ</text>
-  <text x="100" y="362" font-family="Arial, sans-serif" font-size="18" fill="#444">иХШйЩЬУ 22, кЬ РСЩС</text>
-  <text x="100" y="430" font-family="Arial, sans-serif" font-size="22" fill="#111">3. бХди дРиЭ РСЯ ТСЩиХЬ</text>
-  <text x="100" y="462" font-family="Arial, sans-serif" font-size="18" fill="#444">РСЯ ТСЩиХЬ 71, кЬ РСЩС · СЩЯ 11:00 Ь-13:00</text>
-  <text x="100" y="530" font-family="Arial, sans-serif" font-size="22" fill="#111">4. баЩг ЧХЬХЯ</text>
-  <text x="100" y="562" font-family="Arial, sans-serif" font-size="18" fill="#444">РЦХи ФквйЩЩФ ЧХЬХЯ · ЮйвФ 14:00</text>
-  <rect x="80" y="620" width="560" height="220" rx="8" fill="#0f2d52" opacity="0.06"/>
-  <text x="360" y="720" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#0f2d52">СФУиЫФ: ЬЧжХ «ФйкЮй СжЩЬХЭ УЮФ»</text>
-  <text x="360" y="760" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#555">ФЮвиЫк кЧЬе Рк ФЫкХСХк ЫЮХ ЮжЩЬХЭ РЮЩкЩ</text>
+  <rect x="40" y="40" width="640" height="880" rx="12" fill="#ffffff" stroke="#d9d4c7"/>
+  <g font-family="Arial, Helvetica, sans-serif" text-anchor="start" fill="#1a2433">
+    <text x="660" y="110" font-size="34" font-weight="700">ЧЁЧ©Ч™ЧћЧЄ ЧўЧ¦Ч™ЧЁЧ•ЧЄ ЧњЧ”Ч™Ч•Чќ</text>
+    <text x="660" y="150" font-size="22" fill="#6b7280">ЧЎЧ‘Ч‘ Ч‘Ч•Ч§ЧЁ - 4 Ч™ЧўЧ“Ч™Чќ</text>
+
+    <text x="660" y="240" font-size="28" font-weight="700">1. Ч‘Ч Ч§ Ч”Ч¤Ч•ЧўЧњЧ™Чќ Ч“Ч™Ч–Ч Ч’Ч•ЧЈ</text>
+    <text x="660" y="280" font-size="24">Ч“Ч™Ч–Ч Ч’Ч•ЧЈ 50, ЧЄЧњ ЧђЧ‘Ч™Ч‘-Ч™Ч¤Ч•</text>
+    <text x="660" y="316" font-size="22" fill="#9a3412">ЧўЧ“ 10:00</text>
+
+    <text x="660" y="400" font-size="28" font-weight="700">2. Ч›ЧЎЧ¤Ч•ЧћЧ ЧЁЧ•ЧЧ©Ч™ЧњЧ“</text>
+    <text x="660" y="440" font-size="24">ЧЁЧ•ЧЧ©Ч™ЧњЧ“ 22, ЧЄЧњ ЧђЧ‘Ч™Ч‘-Ч™Ч¤Ч•</text>
+
+    <text x="660" y="530" font-size="28" font-weight="700">3. ЧЎЧ•Ч¤ЧЁ Ч¤ЧђЧЁЧќ ЧђЧ‘Чџ Ч’Ч‘Ч™ЧЁЧ•Чњ</text>
+    <text x="660" y="570" font-size="24">ЧђЧ‘Чџ Ч’Ч‘Ч™ЧЁЧ•Чњ 71, ЧЄЧњ ЧђЧ‘Ч™Ч‘-Ч™Ч¤Ч•</text>
+    <text x="660" y="606" font-size="22" fill="#9a3412">Ч‘Ч™Чџ 11:00 Чњ-13:00</text>
+
+    <text x="660" y="690" font-size="28" font-weight="700">4. ЧЎЧ Ч™ЧЈ Ч—Ч•ЧњЧ•Чџ</text>
+    <text x="660" y="730" font-size="24">ЧђЧ–Ч•ЧЁ Ч”ЧЄЧўЧ©Ч™Ч™Ч”, Ч—Ч•ЧњЧ•Чџ</text>
+    <text x="660" y="766" font-size="22" fill="#9a3412">ЧћЧ©ЧўЧ” 14:00</text>
+  </g>
 </svg>

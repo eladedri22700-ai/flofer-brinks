@@ -6,7 +6,8 @@ import styles from "./DraftTable.module.css";
 type Props = {
   drafts: DraftStop[];
   onChange: (next: DraftStop[]) => void;
-  onCommit: (selected: DraftStop[]) => void;
+  /** Resolves with the drafts that were NOT saved (kept for fixing). */
+  onCommit: (selected: DraftStop[]) => Promise<DraftStop[]>;
   loading?: boolean;
 };
 
@@ -163,8 +164,7 @@ export function DraftTable({ drafts, onChange, onCommit, loading }: Props) {
         disabled={commitCount === 0}
         onClick={() => {
           const rows = drafts.filter((_, i) => effective.has(keys[i]));
-          onCommit(rows);
-          setSelected(null);
+          void onCommit(rows).then(() => setSelected(null));
         }}
       >
         {commitCount === drafts.length

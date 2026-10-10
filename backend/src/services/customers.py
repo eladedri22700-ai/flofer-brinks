@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 import re
 
 from sqlalchemy import or_
@@ -25,6 +27,8 @@ _STREET_ALIASES = (
     (r"\bשד['׳]?\b", "שדרות"),
     (r"\bבנ['׳]?\b", "בני"),
 )
+
+logger = logging.getLogger(__name__)
 
 
 def normalize_address(raw: str) -> str:
@@ -159,7 +163,11 @@ async def remember_drafts(db: Session, drafts: list[dict]) -> tuple[int, list[in
             if not customer.notes:
                 customer.notes = address
             ids.append(customer.id)
+            # Hand the resolved location back to the draft so «הוסף» never re-geocodes
+            raw["lat"], raw["lng"], raw["address"] = lat, lng, address
+            raw["geocode_confidence"] = float(conf) if conf is not None else None
         except Exception:
+            logger.warning("Could not locate drafted address %r", address, exc_info=True)
             continue
     db.commit()
     # unique preserve order

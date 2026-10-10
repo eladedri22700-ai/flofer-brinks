@@ -176,18 +176,40 @@ export default function PlanPage() {
         address: d.address,
         category: d.category ?? "other",
         priority: d.priority ?? "normal",
+        // Location already resolved when the photo/file was read — don't geocode again
+        ...(d.lat != null && d.lng != null
+          ? { lat: d.lat, lng: d.lng, geocode_confidence: d.geocode_confidence ?? undefined }
+          : {}),
         ...parseTimeNote(d.time_note),
       }));
       return addStopsBulk(route!.id, stops);
     },
-    onSuccess: () => {
-      show("היעדים נוספו ונשמרו ללקוחות", "success");
+    onSuccess: (res) => {
+      if (res.failed.length > 0) {
+        show(
+          `נוספו ${res.created.length} יעדים · ${res.failed.length} לא אותרו ונשארו בטיוטה לתיקון`,
+          "error",
+        );
+      } else {
+        show(`${res.created.length} יעדים נוספו לרשימת היום`, "success");
+      }
       emitTourEvent("tour:ocr-committed");
       invalidate();
       void qc.invalidateQueries({ queryKey: ["customers"] });
     },
     onError: (e) => show(apiErrorMessage(e), "error"),
   });
+
+  /** Save drafts; resolves with the ones the server could not add (kept on screen). */
+  async function commitDrafts(drafts: DraftStop[]): Promise<DraftStop[]> {
+    try {
+      const res = await bulkM.mutateAsync(drafts);
+      const failed = new Set(res.failed.map((f) => `${f.customer_name}|${f.address}`));
+      return drafts.filter((d) => failed.has(`${d.customer_name}|${d.address}`));
+    } catch {
+      return drafts;
+    }
+  }
 
   const reorderM = useMutation({
     mutationFn: async (ids: number[]) => {
@@ -541,7 +563,7 @@ export default function PlanPage() {
                 show("הכתובות נשמרו בספריית הלקוחות", "success");
                 return drafts;
               }}
-              onCommit={(drafts) => bulkM.mutate(drafts)}
+              onCommit={commitDrafts}
             />
           ) : null}
           {tab === "shot" ? (
@@ -553,7 +575,7 @@ export default function PlanPage() {
                 show("הכתובות מהצילום נשמרו לספרייה", "success");
                 return drafts;
               }}
-              onCommit={(drafts) => bulkM.mutate(drafts)}
+              onCommit={commitDrafts}
             />
           ) : null}
         </Card>

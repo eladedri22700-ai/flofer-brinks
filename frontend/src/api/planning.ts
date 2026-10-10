@@ -68,8 +68,13 @@ export const addStop = (routeId: number, body: Record<string, unknown>) =>
     body: JSON.stringify(body),
   });
 
+export type BulkAddResult = {
+  created: StopDto[];
+  failed: { customer_name: string; address: string; message_he: string }[];
+};
+
 export const addStopsBulk = (routeId: number, stops: Record<string, unknown>[]) =>
-  apiFetch<StopDto[]>(`/api/routes/${routeId}/stops/bulk`, {
+  apiFetch<BulkAddResult>(`/api/routes/${routeId}/stops/bulk`, {
     method: "POST",
     body: JSON.stringify({ stops }),
   });

@@ -7,11 +7,13 @@ import { DEMO_PHOTO_PATH } from "../../lib/demoAddresses";
 import { IMAGE_ACCEPT, newDraftKey, prepareImageForUpload } from "../../lib/imagePrep";
 import { emitTourEvent } from "../../lib/tourEvents";
 import { useTourStore } from "../../store/tourStore";
+import { apiErrorMessage } from "../../api/errors";
+import { useToast } from "../ui/ToastProvider";
 import styles from "./ScreenshotInput.module.css";
 
 type Props = {
   onExtract: (file: File) => Promise<DraftStop[]>;
-  onCommit: (drafts: DraftStop[]) => void;
+  onCommit: (drafts: DraftStop[]) => Promise<DraftStop[]>;
   loading?: boolean;
 };
 
@@ -27,6 +29,7 @@ function withKeys(rows: DraftStop[]): DraftStop[] {
 
 export function ScreenshotInputTab({ onExtract, onCommit, loading }: Props) {
   const tourActive = useTourStore((s) => s.active);
+  const { show } = useToast();
   const [drafts, setDrafts] = useState<DraftStop[]>([]);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
@@ -53,10 +56,17 @@ export function ScreenshotInputTab({ onExtract, onCommit, loading }: Props) {
           ...prev.slice(-5),
           { url, name: prepared.name || raw.name || "תמונה" },
         ]);
-        const rows = withKeys(await onExtract(prepared));
-        if (rows.length > 0) {
-          added += rows.length;
-          setDrafts((prev) => [...prev, ...rows]);
+        try {
+          const rows = withKeys(await onExtract(prepared));
+          if (rows.length > 0) {
+            added += rows.length;
+            setDrafts((prev) => [...prev, ...rows]);
+          } else {
+            show("לא זוהו כתובות בתמונה. נסו צילום חד יותר של הרשימה.", "error");
+          }
+        } catch (e) {
+          // Keep going with the other photos; tell the crew what went wrong with this one.
+          show(apiErrorMessage(e), "error");
         }
       }
       if (added > 0) emitTourEvent("tour:ocr-ready");
@@ -201,10 +211,13 @@ export function ScreenshotInputTab({ onExtract, onCommit, loading }: Props) {
         drafts={drafts}
         onChange={setDrafts}
         loading={loading || busy}
-        onCommit={(rows) => {
-          onCommit(rows);
-          const keep = new Set(rows.map((r) => r.draft_key));
-          setDrafts((prev) => prev.filter((d) => !keep.has(d.draft_key)));
+        onCommit={async (rows) => {
+          // Remove only what the server actually saved; failures stay for fixing.
+          const notSaved = await onCommit(rows);
+          const keep = new Set(notSaved.map((r) => r.draft_key));
+          const sent = new Set(rows.map((r) => r.draft_key));
+          setDrafts((prev) => prev.filter((d) => !sent.has(d.draft_key) || keep.has(d.draft_key)));
+          return notSaved;
         }}
       />
     </div>
