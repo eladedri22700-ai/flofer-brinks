@@ -1,3 +1,4 @@
+import { swReady } from "./sw";
 /** Browser / PWA permission helpers for field onboarding. */
 
 export type PermissionKind = "geolocation" | "notifications";
@@ -82,7 +83,7 @@ export async function requestNotificationAccess(): Promise<boolean> {
 
 async function showReadyNotification(): Promise<void> {
   try {
-    const reg = await navigator.serviceWorker?.ready;
+    const reg = await swReady(4000);
     const opts: NotificationOptions = {
       body: "ההתראות מוכנות. תקבלו עדכונים חשובים גם כשהאפליקציה ברקע.",
       icon: "/icons/icon-192.png",

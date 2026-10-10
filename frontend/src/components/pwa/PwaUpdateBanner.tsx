@@ -1,38 +1,31 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { registerSW } from "virtual:pwa-register";
+import { applyUpdate, onNeedRefresh } from "../../lib/sw";
 import { getTodayRoute } from "../../api/planning";
 import { isRoundLive } from "../../lib/roundBrief";
 import styles from "./PwaUpdateBanner.module.css";
 
 export function PwaUpdateBanner() {
   const [needRefresh, setNeedRefresh] = useState(false);
-  const [update, setUpdate] = useState<((reload?: boolean) => Promise<void>) | null>(
-    null,
-  );
   const routeQ = useQuery({ queryKey: ["route-today"], queryFn: getTodayRoute });
   const live = isRoundLive(routeQ.data?.status);
 
-  useEffect(() => {
-    const u = registerSW({
-      immediate: true,
-      onNeedRefresh() {
+  useEffect(
+    () =>
+      onNeedRefresh(() => {
         // Auto-update when not mid-round so phones leave stale builds behind.
         void getTodayRoute()
           .then((route) => {
             if (!isRoundLive(route?.status)) {
-              void u(true);
+              void applyUpdate();
               return;
             }
             setNeedRefresh(true);
           })
-          .catch(() => {
-            setNeedRefresh(true);
-          });
-      },
-    });
-    setUpdate(() => u);
-  }, []);
+          .catch(() => setNeedRefresh(true));
+      }),
+    [],
+  );
 
   if (!needRefresh) return null;
 
@@ -46,7 +39,7 @@ export function PwaUpdateBanner() {
       <button
         type="button"
         className={styles.btn}
-        onClick={() => void update?.(true)}
+        onClick={() => void applyUpdate()}
       >
         רענן עכשיו
       </button>

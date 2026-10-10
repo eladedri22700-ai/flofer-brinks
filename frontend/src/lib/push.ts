@@ -1,4 +1,5 @@
 import { apiFetch } from "../api/client";
+import { swReady } from "./sw";
 
 /**
  * Web Push: lets the server alert the crew (delay, deadline at risk, missing
@@ -38,7 +39,8 @@ export async function ensurePushSubscription(askPermission = false): Promise<boo
     if (!askPermission) return false;
     if ((await Notification.requestPermission()) !== "granted") return false;
   }
-  const reg = await navigator.serviceWorker.ready;
+  const reg = await swReady(8000);
+  if (!reg) return false;
   const { public_key } = await apiFetch<{ public_key: string }>("/api/push/public-key");
   const key = b64urlToBytes(public_key);
 

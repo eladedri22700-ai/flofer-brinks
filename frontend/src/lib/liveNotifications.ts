@@ -1,3 +1,4 @@
+import { swReady } from "./sw";
 /** Lock-screen / background alerts for a live round (PWA Notification API). */
 
 import { formatTimeHe } from "./roundBrief";
@@ -36,7 +37,7 @@ async function showNotice(
     data: { url: "/app/live" },
   } as NotificationOptions;
   try {
-    const reg = await navigator.serviceWorker?.ready.catch(() => undefined);
+    const reg = await swReady(4000);
     if (reg) {
       await reg.showNotification(title, options);
       return;
@@ -90,7 +91,7 @@ export async function alertArrive(name: string): Promise<void> {
 
 export async function clearLivePin(): Promise<void> {
   try {
-    const reg = await navigator.serviceWorker?.ready.catch(() => undefined);
+    const reg = await swReady(4000);
     if (!reg?.getNotifications) return;
     const list = await reg.getNotifications({ tag: TAG_LIVE });
     list.forEach((n) => n.close());
