@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from src.api.router import api_router
@@ -83,37 +83,16 @@ if settings.serve_frontend and _DIST is not None:
     if assets.is_dir():
         app.mount("/assets", StaticFiles(directory=str(assets)), name="assets")
 
-    def _dist_file(name: str) -> FileResponse | None:
-        candidate = _DIST / name
-        return FileResponse(candidate) if candidate.is_file() else None
+    dist_root = _DIST.resolve()
 
-    @app.get("/")
-    def spa_root():
-        return FileResponse(_DIST / "index.html")
-
-    @app.get("/app/{full_path:path}")
-    def spa_app(full_path: str):
-        return FileResponse(_DIST / "index.html")
-
-    @app.get("/icons/{file_path:path}")
-    def spa_icons(file_path: str):
-        candidate = _DIST / "icons" / file_path
-        if candidate.is_file():
-            return FileResponse(candidate)
-        return FileResponse(_DIST / "index.html")
-
-    @app.get("/manifest.webmanifest")
-    def spa_manifest():
-        return _dist_file("manifest.webmanifest") or FileResponse(_DIST / "index.html")
-
-    @app.get("/sw.js")
-    def spa_sw():
-        return _dist_file("sw.js") or FileResponse(_DIST / "index.html")
-
-    @app.get("/registerSW.js")
-    def spa_register_sw():
-        return _dist_file("registerSW.js") or FileResponse(_DIST / "index.html")
-
-    @app.get("/workbox-{rest:path}")
-    def spa_workbox(rest: str):
-        return _dist_file(f"workbox-{rest}") or FileResponse(_DIST / "index.html")
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def spa_files(full_path: str):
+        """Any file in the PWA build (sw.js, push-sw.js, demo/, icons/…); else the app shell."""
+        if full_path.startswith("api/"):
+            return JSONResponse({"detail": "Not Found"}, status_code=404)
+        if full_path:
+            candidate = (dist_root / full_path).resolve()
+            # Never serve outside the build folder (path traversal)
+            if candidate.is_file() and candidate.is_relative_to(dist_root):
+                return FileResponse(candidate)
+        return FileResponse(dist_root / "index.html")
