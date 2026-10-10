@@ -66,9 +66,21 @@ export default function StartPage() {
     <div className={styles.screen}>
       <div className={styles.body}>
         <div>
-          <div className={styles.eyebrow}>FLOFER · פתיחת משמרת</div>
+          <div className={styles.topRow}>
+            <div className={styles.eyebrow}>FLOFER · פתיחת משמרת</div>
+            <button
+              type="button"
+              className={`${styles.closeBtn} tap`}
+              onClick={() => nav("/app/dashboard")}
+              aria-label="חזרה לבית"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          </div>
           <h1 className={styles.title}>{greetingHe()}, {firstName}</h1>
-          <p className={styles.lead}>שלוש בדיקות ואתה בדרך. הכל נרשם על השטר.</p>
+          <p className={styles.lead}>שלוש בדיקות קצרות — ויוצאים לדרך.</p>
         </div>
 
         <div className={styles.checks}>

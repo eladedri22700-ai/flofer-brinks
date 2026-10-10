@@ -1,13 +1,17 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Depot, StopDto } from "../../api/client";
 import {
   ROUND_MAP_STYLES,
+  googleMapsFailed,
   loadGoogleMaps,
+  markGoogleMapsFailed,
+  onGoogleMapsFailed,
   type GoogleInfoWindow,
   type GoogleMapInstance,
   type GoogleMarker,
   type LatLng,
 } from "../../lib/loadGoogleMaps";
+import { OsmRoundMap } from "./OsmRoundMap";
 import styles from "./RoundMap.module.css";
 
 export type RoundMapStop = Pick<
@@ -26,6 +30,8 @@ type Props = {
   showLegend?: boolean;
   className?: string;
 };
+
+export type RoundMapProps = Props;
 
 type PolylineLike = { setMap: (m: unknown) => void };
 
@@ -61,15 +67,54 @@ function stopSignature(stops: RoundMapStop[], depot: Props["depot"]): string {
   return `${d}|${stops.map((s) => `${s.id}:${s.lat},${s.lng}`).join(";")}`;
 }
 
-export function RoundMap({
+/** Round map — Google when a working key exists, otherwise free OpenStreetMap. */
+export function RoundMap(props: Props) {
+  const { mapKey, stops, userPosition = null, showLegend = true, className } = props;
+  const [failed, setFailed] = useState(googleMapsFailed);
+  useEffect(() => onGoogleMapsFailed(() => setFailed(true)), []);
+
+  if (stops.length === 0) {
+    return (
+      <div className={`${styles.placeholder} ${className ?? ""}`}>
+        <p>אין עדיין יעדים להצגה על המפה.</p>
+      </div>
+    );
+  }
+
+  const useOsm = !mapKey || failed;
+
+  return (
+    <div className={`${styles.wrap} ${className ?? ""}`}>
+      {useOsm ? <OsmRoundMap {...props} /> : <GoogleCanvas {...props} />}
+      {showLegend ? (
+        <div className={styles.legend} aria-hidden>
+          <span>
+            <i className={`${styles.dot} ${styles.dotDepot}`} /> סניף
+          </span>
+          <span>
+            <i className={`${styles.dot} ${styles.dotStop}`} /> יעד
+          </span>
+          <span>
+            <i className={`${styles.dot} ${styles.dotPath}`} /> מסלול
+          </span>
+          {userPosition ? (
+            <span>
+              <i className={`${styles.dot} ${styles.dotYou}`} /> אתם
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function GoogleCanvas({
   mapKey,
   stops,
   depot,
   selectedStopId = null,
   onSelectStop,
   userPosition = null,
-  showLegend = true,
-  className,
 }: Props) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<GoogleMapInstance | null>(null);
@@ -89,7 +134,7 @@ export function RoundMap({
     let resizeObs: ResizeObserver | null = null;
     let resizeTimer: number | undefined;
 
-    void loadGoogleMaps(mapKey).then(() => {
+    void loadGoogleMaps(mapKey).catch(markGoogleMapsFailed).then(() => {
       if (cancelled || !window.google?.maps || !canvasRef.current) return;
       const g = window.google.maps;
       const center: LatLng = depot
@@ -283,43 +328,5 @@ export function RoundMap({
     }
   }, [mapKey, userPosition]);
 
-  if (!mapKey) {
-    return (
-      <div className={`${styles.placeholder} ${className ?? ""}`}>
-        <p>המפה תופיע אחרי הגדרת Google Browser Key בהגדרות.</p>
-      </div>
-    );
-  }
-
-  if (stops.length === 0) {
-    return (
-      <div className={`${styles.placeholder} ${className ?? ""}`}>
-        <p>אין עדיין יעדים להצגה על המפה.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`${styles.wrap} ${className ?? ""}`}>
-      <div ref={canvasRef} className={styles.canvas} role="img" aria-label="מפת סבב היום" />
-      {showLegend ? (
-        <div className={styles.legend} aria-hidden>
-          <span>
-            <i className={`${styles.dot} ${styles.dotDepot}`} /> סניף
-          </span>
-          <span>
-            <i className={`${styles.dot} ${styles.dotStop}`} /> יעד
-          </span>
-          <span>
-            <i className={`${styles.dot} ${styles.dotPath}`} /> מסלול
-          </span>
-          {userPosition ? (
-            <span>
-              <i className={`${styles.dot} ${styles.dotYou}`} /> אתם
-            </span>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
-  );
+  return <div ref={canvasRef} className={styles.canvas} role="img" aria-label="מפת סבב היום" />;
 }

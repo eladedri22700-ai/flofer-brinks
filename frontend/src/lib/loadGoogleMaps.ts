@@ -50,6 +50,41 @@ export type GoogleInfoWindow = {
   close: () => void;
 };
 
+/*
+ * Google calls window.gm_authFailure when the key is rejected (billing off,
+ * referrer not allowed, API disabled). We then switch maps to OpenStreetMap.
+ */
+const FAILED_EVENT = "flofer:google-maps-failed";
+let googleFailed = false;
+
+export function googleMapsFailed(): boolean {
+  return googleFailed;
+}
+
+export function markGoogleMapsFailed(): void {
+  if (googleFailed) return;
+  googleFailed = true;
+  window.dispatchEvent(new Event(FAILED_EVENT));
+}
+
+export function onGoogleMapsFailed(fn: () => void): () => void {
+  window.addEventListener(FAILED_EVENT, fn);
+  return () => window.removeEventListener(FAILED_EVENT, fn);
+}
+
+(window as unknown as { gm_authFailure?: () => void }).gm_authFailure = markGoogleMapsFailed;
+
+// Billing / API-not-activated errors are only reported via console.error
+// ("Google Maps JavaScript API error: BillingNotEnabledMapError"), so watch for them.
+const originalConsoleError = console.error.bind(console);
+console.error = (...args: unknown[]) => {
+  const first = args[0];
+  if (typeof first === "string" && first.startsWith("Google Maps JavaScript API error")) {
+    markGoogleMapsFailed();
+  }
+  originalConsoleError(...args);
+};
+
 export function loadGoogleMaps(key: string): Promise<void> {
   return new Promise((resolve, reject) => {
     if (window.google?.maps) {

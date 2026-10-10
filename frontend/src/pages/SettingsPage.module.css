@@ -148,3 +148,30 @@
   flex-direction: column;
   gap: var(--space-8);
 }
+
+.advanced {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-16);
+  background: var(--surface-2);
+}
+
+.advancedSummary {
+  display: flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 0 var(--space-16);
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.advanced[open] .advancedSummary {
+  border-bottom: 1px solid var(--border);
+}
+
+.advancedBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  padding: var(--space-16);
+}

@@ -64,14 +64,15 @@ export default function AddStopPage() {
 
   useEffect(() => {
     setPreview(null);
-    if (!route || !live || !name.trim() || !address.trim()) return;
+    // Impact preview needs real coordinates — only after a suggestion is picked.
+    if (!route || !live || !name.trim() || !address.trim() || lat == null || lng == null) return;
     const t = window.setTimeout(() => {
       setPreviewing(true);
       void whatIfStop(route.id, {
         customer_name: name.trim(),
         address: address.trim(),
-        lat: lat ?? 32.08,
-        lng: lng ?? 34.78,
+        lat,
+        lng,
         service_duration_min: 12,
         tw_type: "none",
         priority: "normal",
@@ -89,8 +90,9 @@ export default function AddStopPage() {
       addStop(route!.id, {
         customer_name: name.trim(),
         address: address.trim(),
-        lat: lat ?? 32.08,
-        lng: lng ?? 34.78,
+        // No picked suggestion → let the server geocode the typed address.
+        ...(lat != null && lng != null ? { lat, lng } : {}),
+        ...(placeId ? { place_id: placeId } : {}),
         service_duration_min: 12,
         tw_type: "none",
         priority: "normal",

@@ -81,3 +81,9 @@
   margin: 0;
   max-width: 28ch;
 }
+
+/* Leaflet divIcon wrapper — no default white box */
+.osmPin {
+  background: transparent;
+  border: 0;
+}

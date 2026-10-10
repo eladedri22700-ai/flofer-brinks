@@ -1,6 +1,5 @@
 .shell {
   min-height: 100dvh;
-  min-height: -webkit-fill-available;
   display: flex;
   flex-direction: column;
   padding-top: env(safe-area-inset-top, 0px);

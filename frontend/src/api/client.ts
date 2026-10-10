@@ -81,6 +81,13 @@ export function loginRequest(username: string, password: string) {
   });
 }
 
+export function changePasswordRequest(currentPassword: string, newPassword: string) {
+  return apiFetch<{ ok: boolean }>("/api/auth/password", {
+    method: "POST",
+    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+  });
+}
+
 export function meRequest() {
   return apiFetch<AuthUser>("/api/auth/me");
 }

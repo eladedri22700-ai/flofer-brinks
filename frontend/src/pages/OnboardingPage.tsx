@@ -393,6 +393,11 @@ export default function OnboardingPage({ onStartTour }: Props) {
         <p className={styles.hint}>
           בלי מיקום והתראות החוויה בשטח חלקית. אפשר לתקן תמיד בהגדרות המכשיר.
         </p>
+        {step !== "tour" ? (
+          <button type="button" className={styles.skipLink} onClick={startLiveTour}>
+            דלג — אגדיר הרשאות אחר כך
+          </button>
+        ) : null}
       </div>
 
       {iosSheet ? (

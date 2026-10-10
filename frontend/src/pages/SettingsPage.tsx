@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { getPrefs, putPrefs } from "../api/live";
 import { disableDemo, enableDemo } from "../api/phase5";
-import { resetTourForReplay, setOnboardingUser } from "../lib/onboarding";
+import { readOnboarding, resetTourForReplay, setOnboardingUser } from "../lib/onboarding";
 import { useAuthStore } from "../store/authStore";
 import {
   getDepot,
@@ -12,6 +12,7 @@ import {
   testTelegram,
 } from "../api/planning";
 import { apiErrorMessage } from "../api/errors";
+import { changePasswordRequest } from "../api/client";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
@@ -42,6 +43,24 @@ export default function SettingsPage() {
   const [depotAddress, setDepotAddress] = useState("");
   const [depotLat, setDepotLat] = useState("");
   const [depotLng, setDepotLng] = useState("");
+  const [curPassword, setCurPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const username = useAuthStore((st) => st.user?.username);
+
+  const passwordM = useMutation({
+    mutationFn: () => changePasswordRequest(curPassword, newPassword),
+    onSuccess: () => {
+      setCurPassword("");
+      setNewPassword("");
+      show("הסיסמה עודכנה", "success");
+    },
+    onError: (e) => show(apiErrorMessage(e), "error"),
+  });
+
+  function onChangePassword(e: FormEvent) {
+    e.preventDefault();
+    passwordM.mutate();
+  }
 
   useEffect(() => {
     if (prefsQ.data) {
@@ -198,14 +217,9 @@ export default function SettingsPage() {
       <PageHeader
         kicker="מערכת"
         title="הגדרות"
-        lead="סניף, התראות ו־SOS. מפתחות מפות — רק במעבר מהדגמה לעבודה אמיתית."
+        lead="סניף, תצוגה, התראות ו־SOS."
       />
       <HowItWorks block={HELP_SETTINGS} />
-      <p className={styles.lead}>
-        בלי מפתחות האפליקציה רצה במצב הדגמה (כתובות מדומות וחילוץ OCR מדומה).
-        כשתהיו מוכנים — הדביקו כאן מפתחות מ-Google Cloud ו-Anthropic. מפתחות השרת
-        נשמרים רק בשרת ולא מוצגים שוב אחרי השמירה.
-      </p>
 
       <Card data-tour="settings-depot">
         <h2 className={styles.h2}>נקודת התחלה וסיום (משרדי ברינקס)</h2>
@@ -253,6 +267,137 @@ export default function SettingsPage() {
         </Button>
       </Card>
 
+      <Card>
+        <h2 className={styles.h2}>התראות Telegram</h2>
+        <p className={styles.lead}>
+          מסך נעול: התראות המערכת (אחרי התקנה למסך הבית) מציגות את היעד הבא.
+          Telegram עובד גם כשהאפליקציה נסגרה לגמרי — מומלץ כגיבוי בשטח.
+        </p>
+        <ol className={styles.steps}>
+          <li>בטלגרם פתחו את @BotFather וצרו בוט חדש — העתיקו את הטוקן לשדה למעלה ושמרו מפתחות.</li>
+          <li>פתחו את הבוט החדש ולחצו Start.</li>
+          <li>גלו את ה־Chat ID שלכם (למשל דרך @userinfobot) והדביקו למטה.</li>
+          <li>שמרו, הפעילו התראות, ולחצו «שלח הודעת בדיקה».</li>
+        </ol>
+        <Input
+          label="Telegram Chat ID"
+          value={telegramChatId}
+          onChange={(e) => setTelegramChatId(e.target.value)}
+          placeholder="לדוגמה: 123456789"
+        />
+        <label className={styles.checkRow}>
+          <input
+            type="checkbox"
+            checked={telegramEnabled}
+            onChange={(e) => setTelegramEnabled(e.target.checked)}
+          />
+          הפעל התראות Telegram בנסיעה
+        </label>
+        <div className={styles.btnRow}>
+          <Button size="lg" loading={telegramM.isPending} onClick={() => telegramM.mutate()}>
+            שמור Telegram
+          </Button>
+          <Button
+            size="lg"
+            variant="secondary"
+            loading={telegramTestM.isPending}
+            onClick={() => telegramTestM.mutate()}
+          >
+            שלח הודעת בדיקה
+          </Button>
+        </div>
+      </Card>
+
+      <Card data-tour="settings-drive">
+        <h2 className={styles.h2}>נסיעה ו־SOS</h2>
+        <p className={styles.lead}>
+          מספר מוקד לבקרת SOS (חיוג בלבד) ורדיוס גיאופנס במטרים. שעון העבודה הוא
+          כלי מעקב ותצוגה — לא מערכת שכר רשמית.
+        </p>
+        <Input
+          label="מספר SOS"
+          type="tel"
+          value={sosPhone}
+          onChange={(e) => setSosPhone(e.target.value)}
+          placeholder="050-0000000"
+        />
+        <Input
+          label="רדיוס גיאופנס (מ')"
+          type="number"
+          value={geofence}
+          onChange={(e) => setGeofence(e.target.value)}
+        />
+        <Button
+          size="lg"
+          loading={prefsM.isPending}
+          onClick={() => prefsM.mutate()}
+        >
+          שמור העדפות נסיעה
+        </Button>
+      </Card>
+
+      <Card data-tour="settings-theme">
+        <h2 className={styles.h2}>מראה התצוגה · יום / לילה</h2>
+        <p className={styles.lead}>
+          ברירת המחדל בהירה. בחרו כהה לנסיעת לילה — נשמר בחשבון שלכם בלבד.
+        </p>
+        <div className={styles.themeRow}>
+          <Button
+            onClick={() => themeM.mutate("light")}
+            variant={theme === "light" ? "primary" : "secondary"}
+            loading={themeM.isPending && themeM.variables === "light"}
+          >
+            יום · בהיר
+          </Button>
+          <Button
+            onClick={() => themeM.mutate("dark")}
+            variant={theme === "dark" ? "primary" : "secondary"}
+            loading={themeM.isPending && themeM.variables === "dark"}
+          >
+            לילה · כהה
+          </Button>
+        </div>
+      </Card>
+
+      <Card>
+        <h2 className={styles.h2}>חשבון וסיסמה</h2>
+        <p className={styles.lead}>
+          מחוברים כ־<strong dir="ltr">{username ?? "—"}</strong>. מומלץ להחליף את
+          הסיסמה הראשונית לסיסמה אישית.
+        </p>
+        <form className={styles.form} onSubmit={onChangePassword}>
+          <Input
+            label="סיסמה נוכחית"
+            type="password"
+            autoComplete="current-password"
+            value={curPassword}
+            onChange={(e) => setCurPassword(e.target.value)}
+            required
+          />
+          <Input
+            label="סיסמה חדשה (לפחות 6 תווים)"
+            type="password"
+            autoComplete="new-password"
+            minLength={6}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            required
+          />
+          <Button type="submit" variant="secondary" loading={passwordM.isPending}>
+            עדכון סיסמה
+          </Button>
+        </form>
+      </Card>
+
+      <details className={styles.advanced} open={!readOnboarding().done}>
+        <summary className={styles.advancedSummary}>
+          מתקדם · חיבורי שירותים ומפתחות
+        </summary>
+        <div className={styles.advancedBody}>
+          <p className={styles.lead}>
+            בלי מפתח Google המפות והכתובות עובדות דרך OpenStreetMap (חינמי).
+            מפתחות שרת נשמרים רק בשרת ולא מוצגים שוב אחרי השמירה.
+          </p>
       <Card className={styles.statusCard}>
         <h2 className={styles.h2}>סטטוס נוכחי</h2>
         <ul className={styles.statusList}>
@@ -356,97 +501,8 @@ export default function SettingsPage() {
         </form>
       </Card>
 
-      <Card>
-        <h2 className={styles.h2}>התראות Telegram</h2>
-        <p className={styles.lead}>
-          מסך נעול: התראות המערכת (אחרי התקנה למסך הבית) מציגות את היעד הבא.
-          Telegram עובד גם כשהאפליקציה נסגרה לגמרי — מומלץ כגיבוי בשטח.
-        </p>
-        <ol className={styles.steps}>
-          <li>בטלגרם פתחו את @BotFather וצרו בוט חדש — העתיקו את הטוקן לשדה למעלה ושמרו מפתחות.</li>
-          <li>פתחו את הבוט החדש ולחצו Start.</li>
-          <li>גלו את ה־Chat ID שלכם (למשל דרך @userinfobot) והדביקו למטה.</li>
-          <li>שמרו, הפעילו התראות, ולחצו «שלח הודעת בדיקה».</li>
-        </ol>
-        <Input
-          label="Telegram Chat ID"
-          value={telegramChatId}
-          onChange={(e) => setTelegramChatId(e.target.value)}
-          placeholder="לדוגמה: 123456789"
-        />
-        <label className={styles.checkRow}>
-          <input
-            type="checkbox"
-            checked={telegramEnabled}
-            onChange={(e) => setTelegramEnabled(e.target.checked)}
-          />
-          הפעל התראות Telegram בנסיעה
-        </label>
-        <div className={styles.btnRow}>
-          <Button size="lg" loading={telegramM.isPending} onClick={() => telegramM.mutate()}>
-            שמור Telegram
-          </Button>
-          <Button
-            size="lg"
-            variant="secondary"
-            loading={telegramTestM.isPending}
-            onClick={() => telegramTestM.mutate()}
-          >
-            שלח הודעת בדיקה
-          </Button>
         </div>
-      </Card>
-
-      <Card data-tour="settings-drive">
-        <h2 className={styles.h2}>נסיעה ו־SOS</h2>
-        <p className={styles.lead}>
-          מספר מוקד לבקרת SOS (חיוג בלבד) ורדיוס גיאופנס במטרים. שעון העבודה הוא
-          כלי מעקב ותצוגה — לא מערכת שכר רשמית.
-        </p>
-        <Input
-          label="מספר SOS"
-          type="tel"
-          value={sosPhone}
-          onChange={(e) => setSosPhone(e.target.value)}
-          placeholder="050-0000000"
-        />
-        <Input
-          label="רדיוס גיאופנס (מ')"
-          type="number"
-          value={geofence}
-          onChange={(e) => setGeofence(e.target.value)}
-        />
-        <Button
-          size="lg"
-          loading={prefsM.isPending}
-          onClick={() => prefsM.mutate()}
-        >
-          שמור העדפות נסיעה
-        </Button>
-      </Card>
-
-      <Card data-tour="settings-theme">
-        <h2 className={styles.h2}>מראה התצוגה · יום / לילה</h2>
-        <p className={styles.lead}>
-          ברירת המחדל בהירה. בחרו כהה לנסיעת לילה — נשמר בחשבון שלכם בלבד.
-        </p>
-        <div className={styles.themeRow}>
-          <Button
-            onClick={() => themeM.mutate("light")}
-            variant={theme === "light" ? "primary" : "secondary"}
-            loading={themeM.isPending && themeM.variables === "light"}
-          >
-            יום · בהיר
-          </Button>
-          <Button
-            onClick={() => themeM.mutate("dark")}
-            variant={theme === "dark" ? "primary" : "secondary"}
-            loading={themeM.isPending && themeM.variables === "dark"}
-          >
-            לילה · כהה
-          </Button>
-        </div>
-      </Card>
+      </details>
 
       <Card>
         <h2 className={styles.h2}>מצב הדגמה</h2>
