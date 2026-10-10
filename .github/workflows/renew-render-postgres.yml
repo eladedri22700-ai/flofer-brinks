@@ -1,10 +1,16 @@
-# Monthly check: free Render Postgres expires after 30 days.
-# Requires repo secret RENDER_API_KEY (Account Settings → API Keys).
+# Free Render Postgres expires 30 days after it is created.
+# Requires repo secret RENDER_API_KEY (Render → Account Settings → API Keys).
+#
+# Runs WEEKLY, not monthly. The script below treats a database with more than
+# 7 days left as healthy and does nothing, so the check has to run more often
+# than that window or it can miss an expiry entirely: a database created on
+# the 10th expires on the 9th, a monthly run on the 1st sees 8 days left and
+# skips it, and the next check lands three weeks after the service is dead.
 name: renew-render-postgres
 
 on:
   schedule:
-    - cron: "0 9 1 * *"
+    - cron: "17 9 * * 1"
   workflow_dispatch:
 
 jobs:
@@ -19,14 +25,36 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${RENDER_API_KEY:-}" ]; then
-            echo "Missing secrets.RENDER_API_KEY — skip (add once in GitHub repo settings)."
-            exit 0
+            echo "::error::secrets.RENDER_API_KEY is not set, so the free Postgres"
+            echo "::error::cannot be renewed and the service will go down when it"
+            echo "::error::expires. Add it in Settings -> Secrets and variables ->"
+            echo "::error::Actions, from Render -> Account Settings -> API Keys."
+            exit 1
           fi
+
           AUTH="Authorization: Bearer $RENDER_API_KEY"
           echo "Listing Postgres..."
-          curl -fsS -H "$AUTH" -H "Accept: application/json" \
-            "https://api.render.com/v1/postgres?limit=20&ownerId=$OWNER_ID" \
-            -o /tmp/pg.json
+          # Capture the status code instead of letting -f collapse every
+          # failure into "curl: (22)". A 401 here is the whole story and it
+          # should read like one.
+          code=$(curl -sS -o /tmp/pg.json -w "%{http_code}" \
+            -H "$AUTH" -H "Accept: application/json" \
+            "https://api.render.com/v1/postgres?limit=20&ownerId=$OWNER_ID" || echo 000)
+
+          if [ "$code" = "401" ] || [ "$code" = "403" ]; then
+            echo "::error::Render rejected RENDER_API_KEY (HTTP $code). The secret is"
+            echo "::error::set but no longer valid - most likely revoked or rotated."
+            echo "::error::Fix: Render -> Account Settings -> API Keys -> create a new"
+            echo "::error::key, then update the RENDER_API_KEY secret in this repo."
+            echo "::error::Until this is fixed the free Postgres cannot be replaced"
+            echo "::error::and the service stays down once the current one expires."
+            exit 1
+          fi
+          if [ "$code" != "200" ]; then
+            echo "::error::Render API returned HTTP $code when listing Postgres."
+            head -c 500 /tmp/pg.json || true
+            exit 1
+          fi
           python3 - <<'PY'
           import json, os, sys, urllib.request, datetime
           key = os.environ["RENDER_API_KEY"]

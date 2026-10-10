@@ -14,15 +14,32 @@ jobs:
       - name: Wake production
         run: |
           set -e
-          for i in 1 2 3 4 5 6; do
-            code=$(curl -sS -o /tmp/health.json -w "%{http_code}" --max-time 90 \
+          # 3 attempts, not 6, and 45s rather than 90s. A cold start on the
+          # free plan finishes well inside 45s; anything slower is not a cold
+          # start, it is a service that is not coming up. The old shape took
+          # 10m30s to conclude that (6 x 90s + 6 x 15s) on a job scheduled
+          # every 10 minutes, so a sustained outage ran runs back to back
+          # around the clock and buried the signal it was meant to raise.
+          for i in 1 2 3; do
+            code=$(curl -sS -o /tmp/health.json -w "%{http_code}" --max-time 45 \
               "https://flofer-brinks.onrender.com/api/health" || true)
             echo "attempt=$i http=$code"
             if [ "$code" = "200" ]; then
               cat /tmp/health.json || true
               exit 0
             fi
-            sleep 15
+            if [ "$i" -lt 3 ]; then sleep 10; fi
           done
-          echo "Health check failed after retries"
+
+          echo "::error::/api/health did not return 200 (last http=$code)."
+          if [ "$code" = "000" ]; then
+            # TLS completes and then the request hangs: Render's edge is up
+            # but has no healthy instance behind it. The usual cause here is
+            # the free Postgres having expired, because /api/health runs a
+            # SELECT 1 and so cannot pass without a database.
+            echo "::error::No HTTP response at all. Render's edge is reachable but"
+            echo "::error::has no healthy instance. /api/health needs the database,"
+            echo "::error::so check the renew-render-postgres workflow first - if"
+            echo "::error::that is failing, this will keep failing until it is fixed."
+          fi
           exit 1
