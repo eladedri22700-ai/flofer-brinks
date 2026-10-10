@@ -35,3 +35,9 @@ def test_blocks_traversal_and_unknown_api(tmp_path, monkeypatch):
     c = _client(tmp_path, monkeypatch)
     assert "nope" not in c.get("/..%2Fsecret.txt").text
     assert c.get("/api/does-not-exist").status_code == 404
+
+
+def test_head_requests_supported(tmp_path, monkeypatch):
+    c = _client(tmp_path, monkeypatch)
+    assert c.head("/").status_code == 200
+    assert c.head("/push-sw.js").status_code == 200

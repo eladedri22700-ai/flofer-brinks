@@ -85,7 +85,7 @@ if settings.serve_frontend and _DIST is not None:
 
     dist_root = _DIST.resolve()
 
-    @app.get("/{full_path:path}", include_in_schema=False)
+    @app.api_route("/{full_path:path}", methods=["GET", "HEAD"], include_in_schema=False)
     def spa_files(full_path: str):
         """Any file in the PWA build (sw.js, push-sw.js, demo/, icons/…); else the app shell."""
         if full_path.startswith("api/"):

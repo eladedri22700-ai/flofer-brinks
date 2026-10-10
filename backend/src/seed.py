@@ -103,9 +103,8 @@ def seed() -> None:
             logger.info("Depot already exists — skipped")
 
         db.commit()
-        print("Seed OK. Isolated pilot logins:")
-        for row in PILOT_USERS:
-            print(f"  {row['username']} / {row['password']}  ({row['full_name']})")
+        # Never print passwords — this runs on every deploy and lands in hosted logs.
+        print("Seed OK. Pilot accounts:", ", ".join(row["username"] for row in PILOT_USERS))
     except Exception:
         db.rollback()
         raise
