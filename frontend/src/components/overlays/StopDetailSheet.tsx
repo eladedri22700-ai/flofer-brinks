@@ -21,6 +21,7 @@ function statusHe(status: string): { label: string; bg: string; color: string } 
 export function StopDetailSheet({ route, onSetAsNext }: Props) {
   const detailStopId = useOverlayStore((s) => s.detailStopId);
   const closeDetail = useOverlayStore((s) => s.closeDetail);
+  const openFeedback = useOverlayStore((s) => s.openFeedback);
   if (detailStopId == null) return null;
   const stops = sortedStops(route);
   const stop = stops.find((s) => s.id === detailStopId);
@@ -121,6 +122,14 @@ export function StopDetailSheet({ route, onSetAsNext }: Props) {
               </div>
             </div>
           </div>
+
+          <button
+            type="button"
+            className={`${styles.noteBtn} tap`}
+            onClick={() => openFeedback(stop.id)}
+          >
+            הערה על היעד (חניה, כניסה, זמן המתנה…)
+          </button>
 
           <div className={styles.footerBtns}>
             <a href={navHref} target="_blank" rel="noreferrer" className={`${styles.footerOutline} tap`}>

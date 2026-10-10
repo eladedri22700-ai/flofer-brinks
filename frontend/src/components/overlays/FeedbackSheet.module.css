@@ -1,0 +1,118 @@
+.body {
+  overflow: auto;
+  padding: 16px 22px calc(22px + env(safe-area-inset-bottom, 0px));
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.segment {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.seg,
+.segOn {
+  min-height: 44px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--field-hairline-light);
+  background: var(--field-surface-alt);
+  color: var(--field-body-text);
+  font: 700 13px var(--field-font-body);
+  cursor: pointer;
+}
+
+.segOn {
+  background: var(--field-ink);
+  border-color: var(--field-ink);
+  color: #fff;
+}
+
+.label {
+  font: 700 14px var(--field-font-body);
+  color: var(--field-ink);
+}
+
+.textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1.5px solid var(--field-hairline-light);
+  background: #fff;
+  color: var(--field-ink);
+  font: 16px/1.5 var(--field-font-body);
+  resize: vertical;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--field-brass);
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.2);
+}
+
+.tip {
+  margin: -4px 0 0;
+  font-size: 12.5px;
+  color: var(--field-muted);
+}
+
+.error {
+  margin: 0;
+  font-size: 14px;
+  color: var(--field-exception);
+}
+
+.primary {
+  min-height: 54px;
+  border: none;
+  border-radius: var(--field-radius-btn);
+  background: var(--field-ink);
+  color: #fff;
+  font: 800 17px var(--field-font-body);
+  cursor: pointer;
+}
+
+.primary:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.resultTitle {
+  margin: 0;
+  font: 800 19px var(--field-font-body);
+  color: var(--field-done);
+}
+
+.resultSummary {
+  margin: 0;
+  font-size: 15px;
+  color: var(--field-body-text);
+}
+
+.resultLabel {
+  margin: 4px 0 0;
+  font: 700 14px var(--field-font-body);
+  color: var(--field-ink);
+}
+
+.appliedList {
+  margin: 0;
+  padding-inline-start: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 15px;
+  color: var(--field-ink);
+}

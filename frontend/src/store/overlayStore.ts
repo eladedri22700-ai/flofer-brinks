@@ -12,6 +12,10 @@ type OverlayState = {
   closeDetail: () => void;
   openFullList: () => void;
   closeFullList: () => void;
+  /** Field-note sheet; stopId links the note to a stop (or null for a general note). */
+  feedback: { open: boolean; stopId: number | null };
+  openFeedback: (stopId?: number | null) => void;
+  closeFeedback: () => void;
 };
 
 export const useOverlayStore = create<OverlayState>((set) => ({
@@ -21,4 +25,8 @@ export const useOverlayStore = create<OverlayState>((set) => ({
   closeDetail: () => set({ detailStopId: null }),
   openFullList: () => set({ fullListOpen: true }),
   closeFullList: () => set({ fullListOpen: false }),
+  feedback: { open: false, stopId: null },
+  openFeedback: (stopId = null) =>
+    set({ feedback: { open: true, stopId }, detailStopId: null, fullListOpen: false }),
+  closeFeedback: () => set({ feedback: { open: false, stopId: null } }),
 }));

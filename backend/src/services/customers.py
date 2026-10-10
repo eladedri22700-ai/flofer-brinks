@@ -46,6 +46,12 @@ def normalize_address(raw: str) -> str:
 def get_service_estimate(customer: Customer) -> tuple[int, str]:
     if customer.service_sample_count >= 3 and customer.learned_service_min is not None:
         return int(round(customer.learned_service_min)), "learned"
+    # A customer-specific time (set by hand or from a field note) beats the
+    # generic category default; real learned visits beat both.
+    if customer.default_service_min is not None and customer.default_service_min != CATEGORY_DEFAULTS.get(
+        customer.category
+    ):
+        return customer.default_service_min, "default"
     if customer.category in CATEGORY_DEFAULTS:
         return CATEGORY_DEFAULTS[customer.category], "category"
     if customer.default_service_min is not None:

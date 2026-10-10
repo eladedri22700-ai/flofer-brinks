@@ -28,7 +28,8 @@ type IconName =
   | "help"
   | "legal"
   | "install"
-  | "logout";
+  | "logout"
+  | "note";
 
 const ICON_PATHS: Record<IconName, ReactNode> = {
   map: (
@@ -94,6 +95,12 @@ const ICON_PATHS: Record<IconName, ReactNode> = {
       <path d="M5 21h14" />
     </>
   ),
+  note: (
+    <>
+      <path d="M4 5h16v11H8l-4 4V5z" />
+      <path d="M8 9h8M8 12.5h5" />
+    </>
+  ),
   logout: (
     <>
       <path d="M15 4h4v16h-4" />
@@ -122,12 +129,14 @@ function Icon({ name }: { name: IconName }) {
 
 type Entry =
   | { kind: "link"; to: string; title: string; desc?: string; icon: IconName }
-  | { kind: "fullList"; title: string; desc?: string; icon: IconName };
+  | { kind: "fullList"; title: string; desc?: string; icon: IconName }
+  | { kind: "feedback"; title: string; desc?: string; icon: IconName };
 
 const GROUPS: { title: string; items: Entry[] }[] = [
   {
     title: "הסבב של היום",
     items: [
+      { kind: "feedback", title: "הערה מהשטח", desc: "המערכת לומדת ומתעדכנת מיד", icon: "note" },
       { kind: "fullList", title: "כל הסבב", desc: "כל העצירות והזמנים", icon: "list" },
       { kind: "link", to: "/app/board", title: "מפת הסבב", desc: "המסלול והנקודות על המפה", icon: "map" },
       { kind: "link", to: "/app/route", title: "סדר הנקודות", desc: "שינוי ידני והסרה", icon: "order" },
@@ -156,6 +165,7 @@ export function MoreSheet({ open, onClose, userName }: Props) {
   const clearSession = useAuthStore((s) => s.clearSession);
   const username = useAuthStore((s) => s.user?.username);
   const openFullList = useOverlayStore((s) => s.openFullList);
+  const openFeedback = useOverlayStore((s) => s.openFeedback);
   const qc = useQueryClient();
   const { canPrompt, promptInstall } = usePwaInstall();
   const standalone = isStandaloneDisplay();
@@ -256,7 +266,8 @@ export function MoreSheet({ open, onClose, userName }: Props) {
                         type="button"
                         className={styles.row}
                         onClick={() => {
-                          openFullList();
+                          if (e.kind === "feedback") openFeedback(null);
+                          else openFullList();
                           onClose();
                         }}
                       >

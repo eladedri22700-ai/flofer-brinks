@@ -15,6 +15,7 @@ import { BottomNav } from "./BottomNav";
 import { MoreSheet } from "./MoreSheet";
 import { StopDetailSheet } from "../overlays/StopDetailSheet";
 import { FullRoundSheet } from "../overlays/FullRoundSheet";
+import { FeedbackSheet } from "../overlays/FeedbackSheet";
 import { syncThemeColor } from "../../lib/standalone";
 import { useChromeStore } from "../../store/chromeStore";
 import { ensurePushSubscription } from "../../lib/push";
@@ -132,6 +133,7 @@ export function AppLayout() {
       )}
       <StopDetailSheet route={routeQ.data} onSetAsNext={(id) => setAsNextM.mutate(id)} />
       <FullRoundSheet route={routeQ.data} />
+      <FeedbackSheet route={routeQ.data} />
     </div>
   );
 }

@@ -60,6 +60,7 @@ export default function LivePage() {
   const setDrivingLocked = useChromeStore((s) => s.setDrivingLocked);
   const openDetail = useOverlayStore((s) => s.openDetail);
   const openFullList = useOverlayStore((s) => s.openFullList);
+  const openFeedback = useOverlayStore((s) => s.openFeedback);
 
   const [offlineN, setOfflineN] = useState(0);
   const [proposal, setProposal] = useState<{ message_he: string; lat: number; lng: number } | null>(null);
@@ -665,8 +666,8 @@ export default function LivePage() {
                 <button type="button" className={`${styles.chipBtn} tap`} onClick={() => setExceptionOpen(true)}>
                   לא בוצע
                 </button>
-                <button type="button" className={`${styles.chipBtn} tap`} onClick={() => openDetail(current.id)}>
-                  פרטי הנקודה
+                <button type="button" className={`${styles.chipBtn} tap`} onClick={() => openFeedback(current.id)}>
+                  הערה
                 </button>
                 <button
                   type="button"

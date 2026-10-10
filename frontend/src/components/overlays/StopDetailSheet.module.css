@@ -88,3 +88,15 @@
   font-weight: 800;
   font-size: 16px;
 }
+
+.noteBtn {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 14px;
+  border-radius: 14px;
+  border: 1.5px dashed var(--field-hairline-light);
+  background: var(--field-surface-alt);
+  color: var(--field-ink);
+  font: 700 14.5px var(--field-font-body);
+  cursor: pointer;
+}

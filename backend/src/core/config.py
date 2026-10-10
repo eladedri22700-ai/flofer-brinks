@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     # Re-apply pilot seed passwords on every boot. Off in production so a
     # password changed by the customer is never silently reset.
     seed_reset_passwords: bool = False
+    # Field notes about app problems/ideas open GitHub issues here (optional).
+    # Token: fine-grained PAT with "Issues: read and write" on this repo only.
+    github_feedback_token: str = ""
+    github_feedback_repo: str = "eladedri22700-ai/flofer-brinks"
     serve_frontend: bool = False
 
     @property
