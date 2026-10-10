@@ -41,5 +41,13 @@ services:
         sync: false
       - key: TELEGRAM_BOT_TOKEN
         sync: false
+      # Real-time traffic + closures for live ETAs (TomTom free tier)
+      - key: TOMTOM_API_KEY
+        sync: false
+      # Field notes about app problems/ideas -> GitHub issues
+      - key: GITHUB_FEEDBACK_TOKEN
+        sync: false
+      - key: GITHUB_FEEDBACK_REPO
+        value: eladedri22700-ai/flofer-brinks
       - key: PYTHONPATH
         value: /app

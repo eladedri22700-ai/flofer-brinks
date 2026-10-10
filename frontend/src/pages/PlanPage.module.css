@@ -26,7 +26,7 @@
 }
 
 .stepOn {
-  color: var(--brass-300);
+  color: var(--accent-text);
 }
 
 .stepNum {
@@ -186,7 +186,7 @@
 .chipOn {
   border-color: var(--brass-500);
   background: oklch(72% 0.15 55 / 15%);
-  color: var(--brass-300);
+  color: var(--accent-text);
 }
 
 .advancedToggle {

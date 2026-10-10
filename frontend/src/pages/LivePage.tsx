@@ -380,6 +380,19 @@ export default function LivePage() {
     setNote("");
   }, [current?.id]);
 
+  const expl = (route?.solver_explanation ?? {}) as {
+    traffic_source?: string;
+    next_leg_traffic_min?: number | null;
+  };
+  const forecastNote =
+    expl.traffic_source === "live"
+      ? (expl.next_leg_traffic_min ?? 0) > 0
+        ? `תנועה בזמן אמת · פקקים מוסיפים ${expl.next_leg_traffic_min} דק' עד היעד הבא`
+        : "תנועה בזמן אמת · הדרך ליעד הבא פנויה"
+      : expl.traffic_source === "learned"
+        ? "צפי לפי מה שהמערכת למדה מסבבים קודמים"
+        : null;
+
   if (routeQ.isLoading) {
     return <LoadingScreen label="טוען את מסך הנסיעה" />;
   }
@@ -582,6 +595,7 @@ export default function LivePage() {
                 {delayMin > 0 ? <span className={styles.returnDelay}>+{delayMin}</span> : null}
               </span>
             </div>
+            {forecastNote ? <p className={styles.forecastNote}>{forecastNote}</p> : null}
 
             {vipRisk ? (
               <button

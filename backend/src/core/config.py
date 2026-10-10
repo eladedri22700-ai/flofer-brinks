@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     seed_reset_passwords: bool = False
     # Field notes about app problems/ideas open GitHub issues here (optional).
     # Token: fine-grained PAT with "Issues: read and write" on this repo only.
+    # Real-time traffic + closures for the live forecast (TomTom free tier).
+    tomtom_api_key: str = ""
     github_feedback_token: str = ""
     github_feedback_repo: str = "eladedri22700-ai/flofer-brinks"
     serve_frontend: bool = False

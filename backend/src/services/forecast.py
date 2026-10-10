@@ -20,11 +20,15 @@ from src.models.depot import Depot
 from src.models.route import Route
 from src.models.stop import Stop
 from src.services import matrix as matrix_svc
+from src.services import traffic
 from src.services.matrix_learning import hour_to_bucket, raw_matrix
 
 JERUSALEM = ZoneInfo("Asia/Jerusalem")
 MIN_INTERVAL_S = 60
 POSITION_FRESH_MIN = 30
+# Real-time traffic is the best predictor for the next hour; beyond that the
+# learned time-of-day pattern is more reliable than today's momentary jam.
+LIVE_TRAFFIC_HORIZON_MIN = 60
 
 
 def _now() -> datetime:
@@ -144,6 +148,9 @@ async def live_reforecast(
         force_refresh=True,
     )
 
+    live = await traffic.live_legs(coords)
+    t_start = t
+
     # Lunch break: plan it like the morning plan did, unless already taken or missed.
     bw0 = _tmin(route.break_window_start) or 690
     bw1 = _tmin(route.break_window_end) or 840
@@ -157,6 +164,8 @@ async def live_reforecast(
             break_left = False
         bucket = hour_to_bucket((t // 60) % 24)
         travel = matrices[bucket][prev][k]
+        if live is not None and t - t_start <= LIVE_TRAFFIC_HORIZON_MIN:
+            travel = live[k - 1].minutes
         # The first leg may start mid-drive (GPS); keep its full-leg baseline for learning.
         if k > 1 or arrived is not None:
             stop.planned_leg_raw_min = float(raw_matrix(matrices, bucket)[prev][k])
@@ -170,13 +179,18 @@ async def live_reforecast(
     if break_left and pending:
         t = max(t, bw0) + route.break_duration_min
     bucket = hour_to_bucket((t // 60) % 24)
-    return_min = t + matrices[bucket][prev][len(coords) - 1]
+    back = matrices[bucket][prev][len(coords) - 1]
+    if live is not None and t - t_start <= LIVE_TRAFFIC_HORIZON_MIN:
+        back = live[-1].minutes
+    return_min = t + back
 
     expl = dict(route.solver_explanation or {})
     return_at = _min_to_dt(route.date, return_min)
     expl["return_at"] = return_at.isoformat()
     expl["return_hm"] = _clock_hm(return_min)
     expl["live_updated_at"] = now.isoformat()
+    expl["traffic_source"] = "live" if live is not None else "learned"
+    expl["next_leg_traffic_min"] = live[0].traffic_delay_min if live else None
     planned = expl.get("planned_return_at")
     if planned:
         try:

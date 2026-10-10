@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { duplicateRoute, getAccuracy, getHistory, getRouteCompare } from "../api/phase5";
+import { getLearningSummary } from "../api/live";
 import { apiErrorMessage } from "../api/errors";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
@@ -62,6 +63,7 @@ export default function HistoryPage() {
   const [openId, setOpenId] = useState<number | null>(null);
   const histQ = useQuery({ queryKey: ["history"], queryFn: getHistory });
   const accQ = useQuery({ queryKey: ["accuracy"], queryFn: getAccuracy });
+  const learnQ = useQuery({ queryKey: ["learning-summary"], queryFn: getLearningSummary });
 
   const dupM = useMutation({
     mutationFn: (id: number) => duplicateRoute(id),
@@ -86,6 +88,41 @@ export default function HistoryPage() {
         block={HELP_HISTORY}
         defaultOpen={(histQ.data ?? []).length === 0}
       />
+
+      {learnQ.data ? (
+        <Card className={styles.accuracy}>
+          <h2 className={styles.learnTitle}>מה המערכת למדה</h2>
+          {learnQ.data.leg_samples === 0 ? (
+            <p>
+              עדיין אין מספיק נסיעות. אחרי כל סבב המערכת משווה כמה זמן לקחה כל
+              נסיעה מול מה שחזתה, ומתקנת את הצפי לפעם הבאה.
+            </p>
+          ) : (
+            <ul className={styles.weeks}>
+              <li>
+                {learnQ.data.leg_samples} נסיעות נמדדו · {learnQ.data.segments_learned} מקטעים עם זמן נלמד
+              </li>
+              {(
+                [
+                  ["morning", "בוקר"],
+                  ["midday", "צהריים"],
+                  ["afternoon", "אחה״צ"],
+                ] as const
+              ).map(([k, label]) => {
+                const pct = learnQ.data.traffic_pct_by_time[k];
+                if (pct == null) return null;
+                return (
+                  <li key={k}>
+                    {label}: הנסיעות{" "}
+                    {pct === 0 ? "בדיוק כצפוי" : pct > 0 ? `איטיות ב־${pct}%` : `מהירות ב־${-pct}%`}{" "}
+                    מהמפה — מתוקן אוטומטית
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Card>
+      ) : null}
 
       {accQ.data?.improvement_he ? (
         <Card className={styles.accuracy} statusBar="gold">
