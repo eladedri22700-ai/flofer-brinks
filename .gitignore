@@ -40,3 +40,7 @@ _claude_handoff/
 *.zip
 .cursor/
 
+
+# Playwright
+frontend/test-results/
+frontend/playwright-report/

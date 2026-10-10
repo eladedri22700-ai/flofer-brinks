@@ -1,4 +1,4 @@
-import { BrandLockup } from "./BrandLockup";
+import { BrinksMark } from "./BrinksMark";
 import styles from "./LoadingScreen.module.css";
 
 type Props = {
@@ -17,11 +17,11 @@ export function LoadingScreen({ label = "טוען…", full = false }: Props) {
       aria-busy="true"
       aria-label={label}
     >
-      <div className={styles.aurora} aria-hidden />
+      {full ? <div className={styles.aurora} aria-hidden /> : null}
       <div className={styles.markWrap}>
         <span className={styles.ring} aria-hidden />
         <span className={styles.mark} aria-hidden>
-          <BrandLockup size="lg" stacked to={null} />
+          <BrinksMark size={56} />
         </span>
       </div>
       <p className={styles.label}>

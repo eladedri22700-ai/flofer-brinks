@@ -131,7 +131,7 @@ function RowCells({
         style={{
           fontSize: isCurrent ? 15 : 13,
           fontWeight: isCurrent ? 700 : 400,
-          color: isDone ? "var(--field-disabled-numeral)" : isCurrent ? "var(--field-ink)" : "var(--field-body-text)",
+          color: isDone ? "var(--text-muted)" : isCurrent ? "var(--text-primary)" : "var(--text-secondary)",
         }}
       >
         {formatTimeHe(stop.eta)}
@@ -142,8 +142,8 @@ function RowCells({
           style={{
             width: isCurrent ? 17 : 11,
             height: isCurrent ? 17 : 11,
-            background: isDone ? "var(--field-done)" : isCurrent ? "var(--field-brass-light)" : "#fff",
-            border: isCurrent ? "4px solid var(--field-ink)" : isDone ? "none" : "2.5px solid #dcd9cf",
+            background: isDone ? "var(--field-done)" : isCurrent ? "var(--field-brass-light)" : "var(--surface-1)",
+            border: isCurrent ? "4px solid var(--text-primary)" : isDone ? "none" : "2.5px solid var(--border-strong)",
             boxShadow: isCurrent ? "0 0 0 5px rgba(232,198,90,.28)" : "none",
           }}
         />
@@ -154,7 +154,7 @@ function RowCells({
           style={{
             fontSize: isCurrent ? 17 : 15,
             fontWeight: isCurrent ? 800 : 600,
-            color: isDone ? "#a8b2c0" : "var(--field-ink)",
+            color: isDone ? "var(--text-muted)" : "var(--text-primary)",
             textDecoration: isDone ? "line-through" : "none",
           }}
         >

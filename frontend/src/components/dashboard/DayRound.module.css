@@ -106,7 +106,7 @@
 
 .timelineLabel {
   font-size: 12.5px;
-  color: var(--field-muted);
+  color: var(--text-muted);
   margin-bottom: 10px;
 }
 
@@ -133,7 +133,7 @@
 
 .connector {
   width: 2px;
-  background: #e0dfd9;
+  background: var(--border-strong);
 }
 
 .nameCell {
@@ -148,7 +148,7 @@
 
 .sub {
   font-size: 13px;
-  color: var(--field-muted);
+  color: var(--text-secondary);
 }
 
 .vipTag {
@@ -164,4 +164,10 @@
   background: none;
   border: none;
   padding: 0;
+}
+
+/* Night theme: lift the ink CTA off the dark page */
+:global([data-theme="dark"]) .cta:not(.ctaDone) {
+  background: var(--surface-3);
+  border: 1px solid var(--border-brass);
 }

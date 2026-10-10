@@ -5,7 +5,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-8);
-  min-height: 56dvh;
+  min-height: 50dvh;
   padding: var(--space-32) var(--space-24);
   overflow: hidden;
 }
@@ -32,16 +32,15 @@
   z-index: 1;
   display: grid;
   place-items: center;
-  width: min(280px, 90vw);
-  min-height: 140px;
+  width: 104px;
+  height: 104px;
   margin-bottom: var(--space-8);
-  padding: var(--space-16);
 }
 
 /* Spinning conic ring around the brand */
 .ring {
   position: absolute;
-  inset: 8px;
+  inset: 0;
   border-radius: 50%;
   background: conic-gradient(
     from 0deg,
@@ -103,11 +102,9 @@
 @keyframes breathe {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 6px 20px rgba(201, 162, 39, 0.2);
   }
   50% {
-    transform: scale(1.04);
-    box-shadow: 0 10px 32px rgba(201, 162, 39, 0.42);
+    transform: scale(1.05);
   }
 }
 
