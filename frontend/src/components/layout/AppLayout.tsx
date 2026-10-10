@@ -101,11 +101,6 @@ export function AppLayout() {
           <OfflineBanner />
         </header>
       )}
-      {boardMode && sandbox ? (
-        <div className={styles.sandboxStrip} role="status">
-          סביבת בדיקה
-        </div>
-      ) : null}
       <main
         id="main"
         className={boardMode ? styles.bodyBleed : styles.body}

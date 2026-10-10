@@ -9,6 +9,7 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { HowItWorks } from "../components/ui/HowItWorks";
 import { PageHeader } from "../components/ui/PageHeader";
 import { HELP_HISTORY } from "../lib/helpCopy";
+import { roundStatusHe } from "../lib/roundBrief";
 import { LoadingScreen } from "../components/ui/LoadingScreen";
 import { Skeleton } from "../components/ui/Skeleton";
 import { useToast } from "../components/ui/ToastProvider";
@@ -106,7 +107,9 @@ export default function HistoryPage() {
             description="אחרי סיום יום עבודה יופיעו כאן הסבבים. אפשר להשוות תוכנית מול ביצוע ולשכפל רשימה דומה."
           />
         ) : null}
-        {(histQ.data ?? []).map((r) => {
+        {(histQ.data ?? [])
+          .filter((r) => (r as { stops_total: number }).stops_total > 0)
+          .map((r) => {
           const row = r as {
             id: number;
             date: string;
@@ -126,7 +129,7 @@ export default function HistoryPage() {
                     {row.is_demo ? <span className={styles.demo}>דמו</span> : null}
                   </div>
                   <div className={styles.meta}>
-                    {row.stops_done}/{row.stops_total} · {row.status}
+                    {row.stops_done}/{row.stops_total} · {roundStatusHe(row.status)}
                     {row.savings_min != null ? ` · חיסכון ${row.savings_min} דק'` : ""}
                   </div>
                 </div>
