@@ -2,6 +2,9 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
+// Override when :8000 is taken by another local service, e.g. API_PROXY_TARGET=http://127.0.0.1:8001
+const apiTarget = process.env.API_PROXY_TARGET || "http://127.0.0.1:8000";
+
 export default defineConfig({
   plugins: [
     react(),
@@ -71,7 +74,7 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:8000",
+        target: apiTarget,
         changeOrigin: true,
       },
     },
@@ -81,7 +84,7 @@ export default defineConfig({
     port: 5180,
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:8000",
+        target: apiTarget,
         changeOrigin: true,
       },
     },

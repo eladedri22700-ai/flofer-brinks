@@ -13,11 +13,14 @@ from sqlalchemy.orm import Session
 
 from src.core.config import get_settings
 from src.core.exceptions import AppError
-from src.services import matrix_mock
+from src.services import free_geo, maps, matrix_mock
 from src.services.matrix_learning import apply_learned_factors
 
 logger = logging.getLogger(__name__)
 JERUSALEM = ZoneInfo("Asia/Jerusalem")
+
+# OSRM is free-flow; scale to typical urban traffic per time bucket.
+OSRM_TRAFFIC = {"morning": 1.35, "midday": 1.2, "afternoon": 1.4}
 
 # In-memory cache: (route_id, departure_iso) -> matrices
 _MATRIX_CACHE: dict[tuple[int, str], dict[str, list[list[int]]]] = {}
@@ -160,25 +163,50 @@ async def build_matrices(
     settings = get_settings()
     day = route_date or datetime.now(JERUSALEM)
 
-    if not settings.maps_live:
-        matrices = matrix_mock.build_mock_matrices(coords, departure_time)
-    else:
-        buckets = _bucket_datetimes(departure_time, day)
-        # Large rounds: one live matrix + mild time-of-day factors (avoids 429 bursts)
-        if len(coords) >= 16:
-            primary = await _google_matrix(coords, buckets["morning"])
+    matrices: dict[str, list[list[int]]] | None = None
+    # Cache only the best source available, so Google is retried once it recovers.
+    cacheable = not settings.maps_live
+    if maps.google_ready():
+        try:
+            matrices = await _google_matrices(coords, departure_time, day)
+            cacheable = True
+        except AppError:
+            # Never block planning or starting a round on Google — fall back.
+            maps.mark_google_failed("route matrix")
+    if matrices is None and settings.free_geo:
+        try:
+            base = await free_geo.osrm_table(coords)
             matrices = {
-                "morning": primary,
-                "midday": [[max(0, int(c * 1.05)) for c in row] for row in primary],
-                "afternoon": [[max(0, int(c * 1.12)) for c in row] for row in primary],
+                name: [[max(0, round(c * factor)) for c in row] for row in base]
+                for name, factor in OSRM_TRAFFIC.items()
             }
-        else:
-            matrices = {}
-            for name, dep in buckets.items():
-                matrices[name] = await _google_matrix(coords, dep)
+        except free_geo.FreeGeoError as exc:
+            logger.warning("OSRM matrix failed, using estimate: %s", exc)
+            cacheable = False
+    if matrices is None:
+        matrices = matrix_mock.build_mock_matrices(coords, departure_time)
 
     matrices = apply_learned_factors(db, matrices, coords)
-    _MATRIX_CACHE[cache_key] = matrices
+    if cacheable:
+        _MATRIX_CACHE[cache_key] = matrices
+    return matrices
+
+
+async def _google_matrices(
+    coords: list[tuple[float, float]], departure_time: time, day: datetime
+) -> dict[str, list[list[int]]]:
+    buckets = _bucket_datetimes(departure_time, day)
+    # Large rounds: one live matrix + mild time-of-day factors (avoids 429 bursts)
+    if len(coords) >= 16:
+        primary = await _google_matrix(coords, buckets["morning"])
+        return {
+            "morning": primary,
+            "midday": [[max(0, int(c * 1.05)) for c in row] for row in primary],
+            "afternoon": [[max(0, int(c * 1.12)) for c in row] for row in primary],
+        }
+    matrices = {}
+    for name, dep in buckets.items():
+        matrices[name] = await _google_matrix(coords, dep)
     return matrices
 
 

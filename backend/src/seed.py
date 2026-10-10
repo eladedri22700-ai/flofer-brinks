@@ -2,6 +2,7 @@
 
 import logging
 
+from src.core.config import get_settings
 from src.core.security import hash_password
 from src.db.session import SessionLocal
 from src.models.depot import Depot
@@ -54,7 +55,10 @@ def _ensure_user(db, *, username: str, password: str, full_name: str, role: str)
         db.add(UserSettings(user_id=user.id))
         logger.info("Seeded user '%s'", username)
     else:
-        user.password_hash = hash_password(password)
+        # Only re-apply seed passwords when explicitly asked — otherwise a
+        # password the user changed in the app would be reset on every deploy.
+        if get_settings().seed_reset_passwords:
+            user.password_hash = hash_password(password)
         user.full_name = full_name
         if db.query(UserSettings).filter(UserSettings.user_id == user.id).first() is None:
             db.add(UserSettings(user_id=user.id))

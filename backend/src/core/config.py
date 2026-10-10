@@ -31,6 +31,12 @@ class Settings(BaseSettings):
         "http://localhost:3100,http://127.0.0.1:3100"
     )
     demo_auth: bool = True
+    # Free OpenStreetMap fallback (Photon / Nominatim / OSRM) when Google is
+    # unset, unbilled or failing. Set FREE_GEO=false to force mock data offline.
+    free_geo: bool = True
+    # Re-apply pilot seed passwords on every boot. Off in production so a
+    # password changed by the customer is never silently reset.
+    seed_reset_passwords: bool = False
     serve_frontend: bool = False
 
     @property
