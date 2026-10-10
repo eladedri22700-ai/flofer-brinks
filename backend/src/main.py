@@ -49,6 +49,17 @@ async def security_headers(request, call_next):
     return response
 
 
+@app.on_event("startup")
+async def start_live_watch() -> None:
+    """Background watcher: live forecasts + push alerts while the app is closed."""
+    import asyncio
+
+    from src.services.live_watch import run_forever
+
+    if os.environ.get("LIVE_WATCH", "true").lower() != "false":
+        app.state.live_watch = asyncio.create_task(run_forever())
+
+
 app.add_exception_handler(AppError, app_error_handler)
 app.add_exception_handler(Exception, unhandled_error_handler)
 app.include_router(api_router)

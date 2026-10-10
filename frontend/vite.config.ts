@@ -57,6 +57,8 @@ export default defineConfig({
       },
       workbox: {
         navigateFallback: "/index.html",
+        // Web Push handlers (notifications while the app is closed)
+        importScripts: ["push-sw.js"],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.pathname.startsWith("/api/"),

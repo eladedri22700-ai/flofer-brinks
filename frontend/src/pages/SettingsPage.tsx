@@ -13,6 +13,7 @@ import {
 } from "../api/planning";
 import { apiErrorMessage } from "../api/errors";
 import { changePasswordRequest } from "../api/client";
+import { ensurePushSubscription, pushSupported, sendTestPush } from "../lib/push";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
@@ -55,6 +56,32 @@ export default function SettingsPage() {
       show("הסיסמה עודכנה", "success");
     },
     onError: (e) => show(apiErrorMessage(e), "error"),
+  });
+
+  const [pushState, setPushState] = useState<"unknown" | "on" | "off" | "denied" | "unsupported">(
+    () =>
+      !pushSupported()
+        ? "unsupported"
+        : Notification.permission === "denied"
+          ? "denied"
+          : Notification.permission === "granted"
+            ? "on"
+            : "off",
+  );
+  const pushM = useMutation({
+    mutationFn: async () => {
+      const ok = await ensurePushSubscription(true);
+      if (!ok) throw new Error("push");
+      return sendTestPush();
+    },
+    onSuccess: (r) => {
+      setPushState("on");
+      show(r.devices > 0 ? "נשלחה התראת בדיקה לטלפון" : "ההתראות הופעלו", "success");
+    },
+    onError: () => {
+      setPushState(Notification.permission === "denied" ? "denied" : "off");
+      show("לא ניתן להפעיל התראות במכשיר הזה כרגע", "error");
+    },
   });
 
   function onChangePassword(e: FormEvent) {
@@ -357,6 +384,28 @@ export default function SettingsPage() {
             לילה · כהה
           </Button>
         </div>
+      </Card>
+
+      <Card>
+        <h2 className={styles.h2}>התראות לטלפון</h2>
+        <p className={styles.lead}>
+          התראה גם כשהאפליקציה סגורה: איחור בצפי החזרה, יעד שבסיכון לפספס חלון
+          זמן, או הגעה שלא סומנה.
+          {pushState === "unsupported"
+            ? " באייפון: התקינו את האפליקציה למסך הבית (iOS 16.4 ומעלה) ופתחו משם."
+            : ""}
+          {pushState === "denied"
+            ? " ההתראות חסומות — אפשרו אותן בהגדרות הדפדפן/המכשיר לאתר הזה."
+            : ""}
+        </p>
+        <Button
+          variant={pushState === "on" ? "secondary" : "primary"}
+          loading={pushM.isPending}
+          disabled={pushState === "unsupported" || pushState === "denied"}
+          onClick={() => pushM.mutate()}
+        >
+          {pushState === "on" ? "שלח התראת בדיקה" : "הפעל התראות"}
+        </Button>
       </Card>
 
       <Card>

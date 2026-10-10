@@ -16,6 +16,7 @@ import {
   requestNotificationAccess,
   requestWakeLockSample,
 } from "../lib/permissions";
+import { ensurePushSubscription } from "../lib/push";
 import styles from "./OnboardingPage.module.css";
 
 type Props = {
@@ -147,6 +148,7 @@ export default function OnboardingPage({ onStartTour }: Props) {
       const ok = await requestNotificationAccess();
       setNotifyOk(ok);
       writeOnboarding({ notifyOk: ok });
+      if (ok) void ensurePushSubscription(false).catch(() => undefined);
       if (ok) go("tour");
     } finally {
       setBusy(null);

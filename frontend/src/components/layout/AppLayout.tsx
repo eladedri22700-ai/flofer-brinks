@@ -17,6 +17,7 @@ import { StopDetailSheet } from "../overlays/StopDetailSheet";
 import { FullRoundSheet } from "../overlays/FullRoundSheet";
 import { syncThemeColor } from "../../lib/standalone";
 import { useChromeStore } from "../../store/chromeStore";
+import { ensurePushSubscription } from "../../lib/push";
 import styles from "./AppLayout.module.css";
 
 const IMMERSIVE_PREFIXES = ["/app/board", "/app/route", "/app/hours", "/app/add-stop", "/app/start"];
@@ -58,6 +59,12 @@ export function AppLayout() {
     Boolean(nextOpenStop(sortedStops(routeQ.data))) &&
     !location.pathname.startsWith("/app/live") &&
     !boardMode;
+
+  // Keep this device's push subscription registered (no prompt here).
+  useEffect(() => {
+    if (!user?.id) return;
+    void ensurePushSubscription(false).catch(() => undefined);
+  }, [user?.id]);
 
   useEffect(() => {
     const root = document.documentElement;
