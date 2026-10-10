@@ -101,7 +101,7 @@
 }
 
 .tips li::marker {
-  color: var(--brass-500);
+  color: var(--accent-text);
 }
 
 .checklist {

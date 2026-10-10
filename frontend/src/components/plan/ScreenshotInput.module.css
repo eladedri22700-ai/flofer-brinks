@@ -93,7 +93,7 @@
 
 .actionSecondary .actionIcon {
   background: rgba(201, 162, 39, 0.12);
-  color: var(--brass-500);
+  color: var(--accent-text);
 }
 
 .actionTitle {

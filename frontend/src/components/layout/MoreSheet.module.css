@@ -96,7 +96,7 @@
 }
 
 :global([data-theme="dark"]) .install {
-  color: var(--brass-400);
+  color: var(--accent-text);
 }
 
 .group + .group {

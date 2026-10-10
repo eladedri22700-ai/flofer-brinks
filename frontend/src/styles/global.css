@@ -149,7 +149,7 @@ html.is-standalone {
 }
 
 a {
-  color: var(--brass-400);
+  color: var(--brass-700); /* 5:1+ on light surfaces; dark theme maps it to a bright gold */
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
@@ -190,7 +190,7 @@ a {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--brass-500);
+  color: var(--accent-text);
 }
 
 .pageTitle {

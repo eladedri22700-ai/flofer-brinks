@@ -32,7 +32,7 @@
 }
 
 :global([data-theme="dark"]) .chipCta {
-  color: var(--brass-400);
+  color: var(--accent-text);
 }
 
 .overlay {

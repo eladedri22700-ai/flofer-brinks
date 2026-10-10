@@ -42,67 +42,36 @@
 
 .primary {
   color: var(--on-primary);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, transparent 42%),
-    linear-gradient(165deg, var(--primary-600) 0%, var(--primary) 55%, #0a2444 100%);
-  border-color: rgba(8, 22, 42, 0.35);
-  box-shadow: var(--btn-bevel), var(--btn-shadow);
+  background: var(--primary);
+  border-color: var(--primary);
+  box-shadow: var(--btn-shadow);
 }
 
 .primary:hover:not(:disabled) {
-  filter: brightness(1.06);
-  box-shadow: var(--btn-bevel), 0 5px 0 rgba(8, 22, 42, 0.2), 0 14px 28px rgba(11, 31, 58, 0.22);
+  background: var(--primary-600);
+  border-color: var(--primary-600);
 }
 
 .primary:active:not(:disabled) {
-  transform: translateY(2px) scale(0.985);
-  box-shadow: var(--btn-press), 0 1px 0 rgba(8, 22, 42, 0.25);
-  filter: brightness(0.97);
-}
-
-:root[data-theme="dark"] .primary {
-  color: var(--on-primary);
-  background: var(--gold-metallic);
-  border-color: rgba(0, 0, 0, 0.35);
-  box-shadow: var(--btn-bevel), var(--btn-shadow-gold);
-}
-
-:root[data-theme="dark"] .primary:hover:not(:disabled) {
-  filter: brightness(1.05);
+  transform: scale(0.985);
+  box-shadow: var(--btn-press);
 }
 
 .secondary {
   color: var(--text-primary);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, transparent 50%),
-    var(--surface-1);
+  background: var(--surface-1);
   border-color: var(--border-strong);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    0 2px 0 rgba(11, 31, 58, 0.06),
-    var(--shadow-soft);
+  box-shadow: var(--shadow-soft);
 }
 
 .secondary:hover:not(:disabled) {
   border-color: var(--border-brass);
-  color: var(--brass-700);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, transparent 50%),
-    var(--surface-2);
+  background: var(--surface-2);
 }
 
 .secondary:active:not(:disabled) {
-  transform: translateY(1px) scale(0.985);
+  transform: scale(0.985);
   box-shadow: var(--btn-press);
-}
-
-:root[data-theme="dark"] .secondary {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 50%),
-    var(--surface-2);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 2px 0 rgba(0, 0, 0, 0.35);
 }
 
 .ghost {
@@ -118,16 +87,19 @@
 
 .danger {
   color: #fff;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, transparent 40%),
-    linear-gradient(165deg, #e05555, var(--danger) 60%, #a82828);
-  border-color: rgba(120, 20, 20, 0.35);
-  box-shadow: var(--btn-bevel), 0 3px 0 rgba(100, 20, 20, 0.35), 0 8px 18px rgba(201, 52, 52, 0.25);
+  background: var(--danger);
+  border-color: var(--danger);
+  box-shadow: var(--shadow-soft);
 }
 
 .danger:active:not(:disabled) {
-  transform: translateY(2px) scale(0.985);
+  transform: scale(0.985);
   box-shadow: var(--btn-press);
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--brass-500);
+  outline-offset: 2px;
 }
 
 .loading .labelHidden {

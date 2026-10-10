@@ -46,7 +46,7 @@
 }
 
 :global([data-theme="dark"]) .active {
-  color: var(--brass-400);
+  color: var(--accent-text);
 }
 
 .iconWrap {

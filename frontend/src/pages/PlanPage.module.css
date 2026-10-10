@@ -193,7 +193,7 @@
   align-self: start;
   border: none;
   background: transparent;
-  color: var(--brass-400);
+  color: var(--accent-text);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;

@@ -1,14 +1,14 @@
 .hero {
-  background: var(--field-surface);
-  border: 1px solid var(--field-hairline-light);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
   border-radius: 24px;
   padding: 20px;
-  box-shadow: var(--field-shadow-card);
+  box-shadow: var(--shadow-card);
 }
 
 .heroLabel {
   font-size: 13px;
-  color: var(--field-body-text);
+  color: var(--text-secondary);
 }
 
 .heroRow {
@@ -22,13 +22,13 @@
   font-size: 62px;
   font-weight: 700;
   line-height: 0.9;
-  color: var(--field-ink);
+  color: var(--text-primary);
 }
 
 .savings {
   font: 600 12.5px var(--field-font-body);
-  color: var(--field-done);
-  background: rgba(31, 170, 99, 0.12);
+  color: var(--success);
+  background: var(--success-bg);
   border-radius: 999px;
   padding: 4px 9px;
   margin-bottom: 10px;
@@ -43,14 +43,14 @@
 
 .railTime {
   font-size: 11px;
-  color: var(--field-muted);
+  color: var(--text-muted);
 }
 
 .track {
   flex: 1;
   height: 10px;
   border-radius: 999px;
-  background: #ecebe6;
+  background: var(--surface-3);
   position: relative;
   overflow: hidden;
 }
@@ -70,8 +70,8 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: var(--field-ink);
-  border: 3px solid #fff;
+  background: var(--text-primary);
+  border: 3px solid var(--surface-1);
   box-shadow: 0 2px 6px rgba(10, 22, 38, 0.3);
 }
 
@@ -80,7 +80,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 12.5px;
-  color: var(--field-body-text);
+  color: var(--text-secondary);
 }
 
 .cta {
