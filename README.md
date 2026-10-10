@@ -131,6 +131,15 @@ docker compose exec api python -m src.seed
 2. פתחו את הבוט ולחצו Start; העתיקו Chat ID (למשל מ־@userinfobot).  
 3. בהגדרות האפליקציה: הזינו Chat ID והפעילו התראות.
 
+## ניטור זמינות
+
+אין כרגע ניטור על production. ה-workflow `keep-render-awake` נמחק אחרי
+שנמדד שהוא רץ בפועל אחת ל-5 שעות בערך במקום כל 10 דקות, כך שמעולם לא
+מנע spin-down. ההסבר המלא וההוראות להקמת פינגר חיצוני:
+[`docs/uptime-monitoring.md`](docs/uptime-monitoring.md).
+
+---
+
 ## בדיקות
 
 ```bash
