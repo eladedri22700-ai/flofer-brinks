@@ -10,7 +10,9 @@ settings = get_settings()
 engine = create_engine(
     settings.sqlalchemy_database_url,
     pool_pre_ping=True,
-    # Free Render Postgres can expire; fail fast instead of hanging cold starts.
+    # Neon free suspends idle compute; recycle so we never reuse a dropped socket.
+    pool_recycle=300,
+    # Fail fast instead of hanging cold starts when the DB is unreachable.
     connect_args={"connect_timeout": 10},
 )
 

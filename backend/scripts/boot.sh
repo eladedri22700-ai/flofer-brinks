@@ -23,8 +23,8 @@ try:
 except Exception as exc:
     print(f"boot: database unreachable: {exc}", file=sys.stderr)
     print(
-        "boot: If this is Render free Postgres, it may have expired (30 days). "
-        "Create a new free DB and set DATABASE_URL, then redeploy.",
+        "boot: Check DATABASE_URL (Neon connection string, see docs/DEPLOY.md) "
+        "and that the database is not deleted or suspended, then redeploy.",
         file=sys.stderr,
     )
     sys.exit(1)
