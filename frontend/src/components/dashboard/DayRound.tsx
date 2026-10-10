@@ -88,6 +88,15 @@ export function DayRound({ route }: Props) {
         </svg>
       </Link>
 
+      {!allDone ? (
+        <Link to="/app/route" className={`${styles.reorder} tap`}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+            <path d="M7 4v16M7 4 4 7M7 4l3 3M17 20V4M17 20l-3-3M17 20l3-3" />
+          </svg>
+          שינוי סדר העצירות
+        </Link>
+      ) : null}
+
       <div>
         <div className={styles.timelineLabel}>הציר של היום</div>
         <div className={styles.grid}>

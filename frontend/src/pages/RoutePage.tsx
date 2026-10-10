@@ -30,12 +30,16 @@ import styles from "./RoutePage.module.css";
 function SortableRow({
   stop,
   index,
+  count,
+  onMove,
   onToggleLock,
   onRemove,
   removing,
 }: {
   stop: StopDto;
   index: number;
+  count: number;
+  onMove: (index: number, delta: -1 | 1) => void;
   onToggleLock: (id: number, locked: boolean) => void;
   onRemove: (id: number) => void;
   removing: boolean;
@@ -54,17 +58,36 @@ function SortableRow({
       style={{ transform: CSS.Transform.toString(transform), transition, borderInlineStartColor: accent }}
       className={styles.row}
     >
+      <span className={styles.moveCol}>
+        <button
+          type="button"
+          className={styles.moveBtn}
+          disabled={stop.locked || index === 0}
+          onClick={() => onMove(index, -1)}
+          aria-label={`הקדם את ${stop.customer_name}`}
+        >
+          ▲
+        </button>
+        <button
+          type="button"
+          className={styles.moveBtn}
+          disabled={stop.locked || index === count - 1}
+          onClick={() => onMove(index, 1)}
+          aria-label={`דחה את ${stop.customer_name}`}
+        >
+          ▼
+        </button>
+      </span>
       <button
         type="button"
-        className={styles.grip}
-        aria-label={stop.locked ? "יעד נעול" : "גרור לשינוי סדר"}
+        className={`${styles.grip} num`}
+        aria-label={stop.locked ? "יעד נעול" : `גרור את ${stop.customer_name} לשינוי סדר`}
         disabled={stop.locked}
         {...attributes}
         {...listeners}
       >
-        ⋮⋮
+        {String(index + 1).padStart(2, "0")}
       </button>
-      <span className={`${styles.n} num`}>{String(index + 1).padStart(2, "0")}</span>
       <span className={styles.main}>
         <span className={styles.name}>
           {stop.customer_name}
@@ -77,11 +100,13 @@ function SortableRow({
       </span>
       <button
         type="button"
-        className={styles.sqBtn}
+        className={`${styles.sqBtn} ${stop.locked ? styles.sqOn : ""}`}
         onClick={() => onToggleLock(stop.id, !stop.locked)}
-        aria-label={stop.locked ? "שחרר נעילה" : "נעל יעד"}
+        aria-pressed={stop.locked}
+        aria-label={stop.locked ? `${stop.customer_name} נעול במקומו — לחצו לשחרור` : `נעל את ${stop.customer_name} במקומו`}
+        title={stop.locked ? "נעול במקום — חישוב מחדש לא יזיז אותו" : "נעילה במקום"}
       >
-        {stop.locked ? "🔓" : "🔒"}
+        {stop.locked ? "נעול" : "נעל"}
       </button>
       {confirmDel ? (
         <button type="button" className={`${styles.sqBtn} ${styles.sqDanger}`} disabled={removing} onClick={() => onRemove(stop.id)}>
@@ -165,16 +190,26 @@ export default function RoutePage() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
-  function onDragEnd(e: DragEndEvent) {
-    const { active, over } = e;
-    if (!over || active.id === over.id || !route) return;
-    const oldIndex = localStops.findIndex((s) => s.id === active.id);
-    const newIndex = localStops.findIndex((s) => s.id === over.id);
-    const next = arrayMove(localStops, oldIndex, newIndex);
+  function applyOrder(next: StopDto[]) {
+    if (!route) return;
     setLocalStops(next);
     setDirty(true);
     const doneIds = allSorted.filter((s) => s.status === "done" || s.status === "skipped").map((s) => s.id);
     reorderM.mutate([...doneIds, ...next.map((s) => s.id)]);
+  }
+
+  function onDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIndex = localStops.findIndex((s) => s.id === active.id);
+    const newIndex = localStops.findIndex((s) => s.id === over.id);
+    applyOrder(arrayMove(localStops, oldIndex, newIndex));
+  }
+
+  function onMove(index: number, delta: -1 | 1) {
+    const target = index + delta;
+    if (target < 0 || target >= localStops.length || localStops[target].locked) return;
+    applyOrder(arrayMove(localStops, index, target));
   }
 
   if (routeQ.isLoading) return <LoadingScreen label="טוען את המסלול" />;
@@ -205,7 +240,11 @@ export default function RoutePage() {
       <div className={styles.topbar}>
         <div>
           <div className={styles.title}>סדר הנקודות</div>
-          <div className={styles.sub}>{dirty ? "הסדר שונה ידנית" : "מסודר לחזרה המהירה ביותר"}</div>
+          <div className={styles.sub}>
+            {dirty || route.status === "manual"
+              ? "סדר ידני · הזמנים מחושבים לפי הסדר שלכם"
+              : "הסדר המומלץ · ▲▼ או גרירה כדי לשנות"}
+          </div>
         </div>
         <button type="button" className={`${styles.closeBtn} tap`} onClick={() => nav(closeHref)} aria-label="סגור">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
@@ -241,6 +280,8 @@ export default function RoutePage() {
                   key={s.id}
                   stop={s}
                   index={i}
+                  count={localStops.length}
+                  onMove={onMove}
                   onToggleLock={(id, locked) => lockM.mutate({ id, locked })}
                   onRemove={(id) => deleteM.mutate(id)}
                   removing={deleteM.isPending && deleteM.variables === s.id}

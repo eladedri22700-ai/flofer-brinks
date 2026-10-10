@@ -73,7 +73,7 @@
 
 .row {
   display: grid;
-  grid-template-columns: 20px 30px 1fr auto auto;
+  grid-template-columns: 34px 30px 1fr auto auto;
   align-items: center;
   column-gap: 8px;
   padding: 12px 14px;
@@ -84,12 +84,38 @@
 }
 
 .grip {
+  min-height: 44px;
   border: none;
   background: none;
-  color: var(--field-muted);
+  color: var(--field-body-text);
+  font-size: 13px;
+  font-weight: 700;
   cursor: grab;
   touch-action: none;
-  padding: 4px;
+  padding: 4px 0;
+}
+
+.moveCol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.moveBtn {
+  width: 34px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--field-hairline-light);
+  background: var(--field-surface-alt);
+  color: var(--field-ink);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.moveBtn:disabled {
+  opacity: 0.25;
+  cursor: default;
 }
 
 .grip:disabled {
@@ -214,4 +240,10 @@
   color: #fff !important;
   font-weight: 700;
   text-decoration: none;
+}
+
+.sqOn {
+  background: var(--field-ink);
+  border-color: var(--field-ink);
+  color: #fff;
 }

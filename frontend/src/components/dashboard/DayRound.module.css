@@ -171,3 +171,19 @@
   background: var(--surface-3);
   border: 1px solid var(--border-brass);
 }
+
+.reorder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  margin-top: -6px;
+  border-radius: 14px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: none;
+}
