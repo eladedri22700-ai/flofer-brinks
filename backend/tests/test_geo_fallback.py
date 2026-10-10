@@ -42,7 +42,7 @@ def test_matrix_uses_osrm_when_google_fails(monkeypatch):
 
     monkeypatch.setattr(matrix, "_google_matrices", google_down)
     monkeypatch.setattr(free_geo, "osrm_table", osrm)
-    monkeypatch.setattr(matrix, "apply_learned_factors", lambda _db, m, _c: m)
+    monkeypatch.setattr(matrix, "apply_learned_factors", lambda _db, m, _c, **_kw: m)
 
     coords = [(32.0, 34.7), (32.1, 34.8), (32.2, 34.9)]
     out = asyncio.run(

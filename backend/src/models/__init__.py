@@ -1,6 +1,8 @@
 from src.models.customer import Customer
 from src.models.depot import Depot
+from src.models.feedback import Feedback
 from src.models.leg_sample import LegSample
+from src.models.push_subscription import NotificationLog, PushSubscription
 from src.models.route import Route
 from src.models.route_event import RouteEvent
 from src.models.service_sample import ServiceSample
@@ -20,4 +22,7 @@ __all__ = [
     "LegSample",
     "WorkDay",
     "RouteEvent",
+    "Feedback",
+    "PushSubscription",
+    "NotificationLog",
 ]

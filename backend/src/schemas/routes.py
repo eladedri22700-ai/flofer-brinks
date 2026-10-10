@@ -83,6 +83,7 @@ class StopOut(BaseModel):
     notes: str | None
     status: str
     eta: datetime | None = None
+    planned_eta: datetime | None = None
     actual_arrival: datetime | None = None
     actual_departure: datetime | None = None
     geocode_confidence: float | None = None

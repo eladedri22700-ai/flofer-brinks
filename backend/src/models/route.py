@@ -38,6 +38,11 @@ class Route(Base):
     naive_duration_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
     optimized_duration_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
     solver_explanation: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    # Last crew GPS fix reported by the app — lets the server keep forecasting when it's closed
+    last_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    last_lng: Mapped[float | None] = mapped_column(Float, nullable=True)
+    last_pos_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    live_eta_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

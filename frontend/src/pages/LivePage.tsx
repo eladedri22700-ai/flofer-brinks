@@ -6,6 +6,7 @@ import {
   arriveStop,
   completeStopResilient,
   getDelay,
+  postPosition,
   getPrefs,
   logRouteEvent,
   notifyApproach,
@@ -339,25 +340,39 @@ export default function LivePage() {
     onError: (e) => show(apiErrorMessage(e), "error"),
   });
 
+  // Latest GPS fix without re-running the polling effect on every position update.
+  const positionRef = useRef(geo.position);
+  positionRef.current = geo.position;
+  const proposalRef = useRef(proposal);
+  proposalRef.current = proposal;
+  const routeId = route?.id;
+  const routeLive = route?.status === "in_progress";
+
   useEffect(() => {
-    if (!route || route.status !== "in_progress") return;
-    const pull = () => {
-      void getDelay(route.id).then((d) => {
-        setDelayMin(d.delay_min);
-        setReturnAt(d.adjusted_return_at);
-        if (d.should_propose && !proposal && geo.position) {
-          void reoptimizePropose(route.id, geo.position.lat, geo.position.lng).then((p) => {
-            if (p.feasible && p.savings_min > 0) {
-              setProposal({ message_he: p.message_he, lat: geo.position!.lat, lng: geo.position!.lng });
-            }
-          });
+    if (!routeId || !routeLive) return;
+    const pull = async () => {
+      const pos = positionRef.current;
+      if (pos) {
+        // Server re-forecasts every remaining ETA from here and now (traffic + learning).
+        const res = await postPosition(routeId, pos.lat, pos.lng).catch(() => null);
+        if (res?.forecast) void qc.invalidateQueries({ queryKey: ["route-today"] });
+      }
+      const d = await getDelay(routeId).catch(() => null);
+      if (!d) return;
+      setDelayMin(d.delay_min);
+      setReturnAt(d.adjusted_return_at);
+      const here = positionRef.current;
+      if (d.should_propose && !proposalRef.current && here) {
+        const p = await reoptimizePropose(routeId, here.lat, here.lng).catch(() => null);
+        if (p?.feasible && p.savings_min > 0) {
+          setProposal({ message_he: p.message_he, lat: here.lat, lng: here.lng });
         }
-      });
+      }
     };
-    pull();
-    const t = window.setInterval(pull, 60_000);
+    void pull();
+    const t = window.setInterval(() => void pull(), 90_000);
     return () => window.clearInterval(t);
-  }, [route, geo.position, proposal]);
+  }, [routeId, routeLive, qc]);
 
   useEffect(() => {
     setApproachBanner(false);

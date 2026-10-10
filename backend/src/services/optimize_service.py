@@ -14,6 +14,7 @@ from src.models.depot import Depot
 from src.models.route import Route
 from src.models.stop import Stop
 from src.services import matrix as matrix_svc
+from src.services.forecast import assign_planned_legs, live_reforecast
 from src.services.conflicts import ConflictReport, build_conflict_report
 from src.services.customers import get_solver_service_min
 from src.services.optimizer import (
@@ -190,6 +191,12 @@ async def optimize_route(db: Session, route: Route) -> dict[str, Any]:
         mins = result.etas_min_from_midnight.get(sid)
         if mins is not None:
             st.eta = _min_to_dt(route.date, mins)
+    node_of = {s.id: i + 1 for i, s in enumerate(ordered)}
+    assign_planned_legs(
+        matrices,
+        [id_to_stop[sid] for sid in result.sequence_stop_ids],
+        [node_of[sid] for sid in result.sequence_stop_ids],
+    )
 
     savings = max(0, naive - (result.duration_min or 0))
     return_hm = _clock_hm(result.return_min) if result.return_min is not None else None
@@ -291,8 +298,24 @@ async def apply_order_etas(
             status_code=400,
         )
 
-    depot = _get_depot(db)
     ordered_stops = [by_id[i] for i in stop_ids]
+    if route.status == "in_progress":
+        # Mid-round: keep what already happened, re-forecast only what's left from now.
+        for order, stop in enumerate(ordered_stops):
+            stop.sequence_order = order
+        forecast = await live_reforecast(db, route, force=True) or {}
+        return {
+            "feasible": True,
+            "route_id": route.id,
+            "sequence_stop_ids": stop_ids,
+            "etas": {str(s.id): s.eta.isoformat() if s.eta else None for s in ordered_stops},
+            "break_start": None,
+            "return_at": forecast.get("return_at"),
+            "duration_min": route.optimized_duration_min,
+            "warnings_he": [],
+        }
+
+    depot = _get_depot(db)
     coords = [(depot.lat, depot.lng)] + [(s.lat, s.lng) for s in ordered_stops]
 
     matrices = await matrix_svc.build_matrices(
@@ -338,6 +361,8 @@ async def apply_order_etas(
             limit = (_tmin(stop.tw_end) or 0) - route.deadline_buffer_min
             if arr > limit:
                 warnings.append(f"«{stop.customer_name}» חורג מחלון הזמן.")
+
+    assign_planned_legs(matrices, ordered_stops, list(range(1, len(ordered_stops) + 1)))
 
     duration = return_min - dep
     route.optimized_duration_min = duration
@@ -517,6 +542,7 @@ async def _solve_remaining(
                 st.eta = _min_to_dt(route.date, mins)
         route.optimized_duration_min = result.duration_min
         db.commit()
+        await live_reforecast(db, route, lat=origin_lat, lng=origin_lng, force=True)
 
     return {
         "feasible": True,

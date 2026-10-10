@@ -149,6 +149,7 @@ def capture_leg_sample(
     departure_at: datetime,
     arrival_at: datetime,
     predicted_min: float,
+    predicted_source: str = "estimate",
 ) -> LegSample:
     actual = max(0.5, (arrival_at - departure_at).total_seconds() / 60.0)
     row = LegSample(
@@ -161,6 +162,7 @@ def capture_leg_sample(
         hour_bucket=hour_bucket(departure_at),
         day_bucket=day_bucket(departure_at),
         predicted_min=max(0.5, predicted_min),
+        predicted_source=predicted_source,
         actual_min=actual,
         recorded_at=arrival_at,
     )

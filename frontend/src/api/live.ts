@@ -84,6 +84,29 @@ export const getDelay = (routeId: number) =>
     adjusted_return_at: string | null;
   }>(`/api/routes/${routeId}/delay`);
 
+export type LiveForecast = {
+  return_at: string;
+  return_delta_min: number | null;
+  etas: Record<string, string | null>;
+  updated_at: string;
+};
+
+/** GPS ping — server stores the position and re-forecasts ETAs (at most once a minute). */
+export const postPosition = (routeId: number, lat: number, lng: number) =>
+  apiFetch<{ ok: boolean; forecast: LiveForecast | null }>(`/api/routes/${routeId}/position`, {
+    method: "POST",
+    body: JSON.stringify({ lat, lng, source: "gps" }),
+  });
+
+export type LearningSummary = {
+  leg_samples: number;
+  segments_learned: number;
+  traffic_pct_by_time: Record<"morning" | "midday" | "afternoon", number | null>;
+  overall_pct: number | null;
+};
+
+export const getLearningSummary = () => apiFetch<LearningSummary>("/api/learning/summary");
+
 export const notifyApproach = (
   routeId: number,
   body: { stop_id?: number; distance_m?: number },

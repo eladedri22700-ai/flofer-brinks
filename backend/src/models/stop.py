@@ -39,7 +39,11 @@ class Stop(Base):
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
+    # eta = latest forecast (refreshed live); planned_eta = baseline at round start
     eta: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    planned_eta: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Raw provider minutes for the leg into this stop (before learned factors)
+    planned_leg_raw_min: Mapped[float | None] = mapped_column(Float, nullable=True)
     actual_arrival: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

@@ -24,6 +24,8 @@ class LegSample(Base):
     day_bucket: Mapped[str] = mapped_column(String(32), nullable=False)
     predicted_min: Mapped[float] = mapped_column(Float, nullable=False)
     actual_min: Mapped[float] = mapped_column(Float, nullable=False)
+    # "provider" = raw routing-provider minutes the plan used · "estimate" = straight-line guess
+    predicted_source: Mapped[str] = mapped_column(String(16), nullable=False, default="estimate")
     recorded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

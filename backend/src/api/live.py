@@ -1,5 +1,7 @@
 """Live Mode HTTP endpoints."""
 
+import logging
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
@@ -29,9 +31,22 @@ from src.services.optimize_service import (
     apply_reoptimize,
     what_if_add_stop,
 )
+from src.services.forecast import live_reforecast
+from src.services.matrix_learning import learning_summary
 from src.services.routes import get_route_for_user, stop_to_out
 
 router = APIRouter(tags=["live"])
+logger = logging.getLogger(__name__)
+
+
+async def _reforecast_safely(db: Session, route, **kw) -> dict | None:
+    """A forecast failure must never block a field action (arrive / complete / skip)."""
+    try:
+        return await live_reforecast(db, route, force=True, **kw)
+    except Exception:  # noqa: BLE001
+        logger.exception("live re-forecast failed for route %s", getattr(route, "id", "?"))
+        db.rollback()
+        return None
 
 
 def _route_out(route) -> RouteOut:
@@ -77,6 +92,7 @@ async def post_arrive(
     stop = live_svc.mark_arrive(
         db, stop, lat=body.lat, lng=body.lng, source=body.source
     )
+    await _reforecast_safely(db, get_route_for_user(db, stop.route_id, user.id), lat=body.lat, lng=body.lng)
     await telegram_notify.notify_event(
         db,
         user.id,
@@ -123,7 +139,7 @@ async def post_notify_approach(
 
 
 @router.post("/stops/{stop_id}/complete")
-def post_complete(
+async def post_complete(
     stop_id: int,
     body: CompleteStopBody,
     db: Session = Depends(get_db),
@@ -144,11 +160,12 @@ def post_complete(
         departure_at=body.departure_at,
         source=body.source,
     )
+    await _reforecast_safely(db, get_route_for_user(db, route.id, user.id), lat=body.lat, lng=body.lng)
     return result
 
 
 @router.post("/stops/{stop_id}/skip")
-def post_skip(
+async def post_skip(
     stop_id: int,
     body: SkipStopBody | None = None,
     db: Session = Depends(get_db),
@@ -156,7 +173,30 @@ def post_skip(
 ) -> dict:
     stop, route = _get_stop_for_user(db, stop_id, user)
     body = body or SkipStopBody()
-    return live_svc.skip_stop(db, route, stop, note=body.note)
+    result = live_svc.skip_stop(db, route, stop, note=body.note)
+    await _reforecast_safely(db, get_route_for_user(db, route.id, user.id))
+    return result
+
+
+@router.post("/routes/{route_id}/position")
+async def post_position(
+    route_id: int,
+    body: GpsBody,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """Crew GPS ping: stores the last position and refreshes the live forecast (≤1/min)."""
+    route = get_route_for_user(db, route_id, user.id)
+    forecast = await live_reforecast(db, route, lat=body.lat, lng=body.lng)
+    return {"ok": True, "forecast": forecast}
+
+
+@router.get("/learning/summary")
+def get_learning_summary(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    return learning_summary(db)
 
 
 @router.post("/routes/{route_id}/work-day")

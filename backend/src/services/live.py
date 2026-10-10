@@ -17,6 +17,7 @@ from src.models.user_settings import UserSettings
 from src.models.work_day import WorkDay
 from src.services import learning
 from src.services.matrix_mock import haversine_km
+from src.services.forecast import freeze_plan_baseline
 from src.services.optimize_service import apply_order_etas
 
 JERUSALEM = ZoneInfo("Asia/Jerusalem")
@@ -85,6 +86,7 @@ async def start_route(db: Session, route: Route, user_id: int) -> Route:
         stop_ids = [s.id for s in sorted(route.stops, key=lambda x: x.sequence_order)]
 
     await apply_order_etas(db, route, stop_ids, set_status=None)
+    freeze_plan_baseline(route)
 
     route.status = "in_progress"
     wd = get_or_create_work_day(db, user_id, route)
@@ -250,16 +252,20 @@ def _maybe_leg_sample(db: Session, route: Route, arrived_stop: Stop) -> None:
         return
 
     depot = get_depot(db)
+    prev = None
     if idx == 0:
         from_lat, from_lng = depot.lat, depot.lng
         from_cid = None
-        # departure from depot ≈ route start / work day start
-        wd = (
-            db.query(WorkDay)
-            .filter(WorkDay.route_id == route.id)
+        # Departure from the depot = when the round was started (latest start event)
+        started = (
+            db.query(RouteEvent)
+            .filter(RouteEvent.route_id == route.id, RouteEvent.type == "route_started")
+            .order_by(RouteEvent.id.desc())
             .first()
         )
-        dep_at = (wd.start_at if wd and wd.start_at else None) or arrived_stop.actual_arrival
+        dep_at = started.created_at if started is not None else None
+        if dep_at is None:
+            return
     else:
         prev = None
         for j in range(idx - 1, -1, -1):
@@ -277,7 +283,13 @@ def _maybe_leg_sample(db: Session, route: Route, arrived_stop: Stop) -> None:
 
     to_lat = arrived_stop.actual_park_lat or arrived_stop.lat
     to_lng = arrived_stop.actual_park_lng or arrived_stop.lng
-    predicted = _estimate_predicted_min(from_lat, from_lng, to_lat, to_lng)
+    # Learn against what the plan really assumed (raw provider minutes) when the
+    # crew drove the planned leg; otherwise fall back to a straight-line estimate.
+    direct = idx == 0 or (prev is not None and ordered[idx - 1].id == prev.id)
+    if direct and arrived_stop.planned_leg_raw_min:
+        predicted, source = float(arrived_stop.planned_leg_raw_min), "provider"
+    else:
+        predicted, source = _estimate_predicted_min(from_lat, from_lng, to_lat, to_lng), "estimate"
     learning.capture_leg_sample(
         db,
         from_lat=from_lat,
@@ -289,6 +301,7 @@ def _maybe_leg_sample(db: Session, route: Route, arrived_stop: Stop) -> None:
         departure_at=dep_at,
         arrival_at=arrived_stop.actual_arrival,
         predicted_min=predicted,
+        predicted_source=source,
     )
 
 
@@ -382,8 +395,9 @@ def cumulative_delay_min(route: Route) -> int:
     """Sum of (actual_arrival - eta) for arrived/done stops with both times."""
     delay = 0
     for s in route.stops or []:
-        if s.eta and s.actual_arrival and s.status in ("arrived", "done"):
-            d = int((s.actual_arrival - s.eta).total_seconds() / 60)
+        baseline = s.planned_eta or s.eta
+        if baseline and s.actual_arrival and s.status in ("arrived", "done"):
+            d = int((s.actual_arrival - baseline).total_seconds() / 60)
             if d > 0:
                 delay += d
     return delay
@@ -394,6 +408,9 @@ def adjusted_return_iso(route: Route) -> str | None:
     from datetime import timedelta
 
     expl = route.solver_explanation if isinstance(route.solver_explanation, dict) else {}
+    if expl.get("live_updated_at") and expl.get("return_at"):
+        # Live forecast already starts from the real clock and position.
+        return str(expl["return_at"])
     raw = expl.get("return_at")
     if not raw:
         # Fallback: last pending/done stop ETA + 20 min buffer to depot

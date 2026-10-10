@@ -127,6 +127,7 @@ export type StopDto = {
   notes: string | null;
   status: string;
   eta?: string | null;
+  planned_eta?: string | null;
   actual_arrival?: string | null;
   actual_departure?: string | null;
   geocode_confidence: number | null;

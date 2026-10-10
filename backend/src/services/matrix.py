@@ -186,8 +186,12 @@ async def build_matrices(
     if matrices is None:
         matrices = matrix_mock.build_mock_matrices(coords, departure_time)
 
-    matrices = apply_learned_factors(db, matrices, coords)
+    from src.services.learning import day_bucket
+
+    matrices = apply_learned_factors(db, matrices, coords, day_type=day_bucket(day))
     if cacheable:
+        if len(_MATRIX_CACHE) > 200:  # live re-forecasts use fresh keys every minute
+            _MATRIX_CACHE.clear()
         _MATRIX_CACHE[cache_key] = matrices
     return matrices
 
