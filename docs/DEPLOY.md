@@ -46,7 +46,7 @@
 
 ### אחרי שהכל עובד
 - מוחקים ב־Render את מסד הנתונים הישן שפג (`flofer-brinks-db-v2`), אם הוא עדיין מופיע.
-- ב־GitHub → Settings → Secrets אפשר למחוק את `RENDER_API_KEY`. כבר לא צריך אותו.
+- ב־GitHub → Settings → Secrets אפשר למחוק את `RENDER_API_KEY`. כבר לא צריך אותו: ה־workflow `renew-render-postgres` הוסר, כי עם Neon הוא היה יוצר מסד חדש ב־Render ודורס את `DATABASE_URL`.
 
 ## שלב 3 — כניסה ראשונה ואבטחה
 
@@ -57,10 +57,18 @@
 מעכשיו פריסות חדשות **לא** מאפסות סיסמאות (`SEED_RESET_PASSWORDS=false`).
 כניסה נחסמת ל־5 דקות אחרי 8 ניסיונות שגויים.
 
-## שלב 4 — "שרת ער" (כבר מוגדר)
+## שלב 4 — לשמור את השרת ער (UptimeRobot, חינם) — חובה
 
-השרת החינמי של Render נרדם אחרי 15 דקות בלי שימוש, והעלייה לוקחת 30–60 שניות.
-ה־GitHub Action ‏`keep-render-awake` שולח בדיקה כל 10 דקות ושומר עליו ער. לא צריך לעשות כלום.
+השרת החינמי של Render נרדם אחרי 15 דקות בלי בקשות. כשהוא ישן:
+- הכניסה הראשונה לוקחת 30–60 שניות;
+- **התראות ה־Push לא נשלחות**, כי בודק הסבבים בשרת לא רץ.
+
+ה־GitHub Action הישן `keep-render-awake` נמחק: נמדד שהוא רץ בפועל אחת ל־3–7 שעות (פירוט ב־[uptime-monitoring.md](uptime-monitoring.md)).
+פינגר חיצוני גם שומר את השרת ער וגם מתריע כשהאתר נופל:
+
+1. https://uptimerobot.com → הרשמה (חינם).
+2. **Add New Monitor** → HTTP(s) → URL: `https://flofer-brinks.onrender.com/api/health` → Interval: **5 minutes**.
+3. Alert Contacts: המייל שלכם.
 
 אם רוצים שרת שלעולם לא נרדם: Render Starter עולה ‎$7 לחודש. משנים את `plan: free` ל־`plan: starter` ב־`render.yaml`.
 

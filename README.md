@@ -131,6 +131,18 @@ docker compose exec api python -m src.seed
 2. פתחו את הבוט ולחצו Start; העתיקו Chat ID (למשל מ־@userinfobot).  
 3. בהגדרות האפליקציה: הזינו Chat ID והפעילו התראות.
 
+## ניטור זמינות
+
+ה-workflow `keep-render-awake` נמחק אחרי שנמדד שהוא רץ בפועל אחת ל-5 שעות
+בערך במקום כל 10 דקות. צריך פינגר חיצוני (UptimeRobot, 5 דקות). הוא גם
+מונע מהשרת להירדם, וזה נדרש כדי שהתראות Push יישלחו כשהאפליקציה סגורה.
+הוראות: [`docs/DEPLOY.md`](docs/DEPLOY.md) שלב 4, והרקע:
+[`docs/uptime-monitoring.md`](docs/uptime-monitoring.md).
+
+**Deploy מלא (Neon, Render, דומיין, TomTom, Push, הערות שטח):** [`docs/DEPLOY.md`](docs/DEPLOY.md).
+
+---
+
 ## בדיקות
 
 ```bash
