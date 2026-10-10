@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import type { HelpBlock } from "../../lib/helpCopy";
 import styles from "./HowItWorks.module.css";
 
@@ -6,10 +6,37 @@ type Props = {
   block: HelpBlock;
   /** Open on first view — use only when the screen is otherwise empty. */
   defaultOpen?: boolean;
+  /** Collapse after the first view (default). The Help page keeps it open. */
+  remember?: boolean;
 };
 
-export function HowItWorks({ block, defaultOpen = false }: Props) {
-  const [open, setOpen] = useState(defaultOpen);
+const SEEN_PREFIX = "flofer_help_seen:";
+
+function wasSeen(title: string): boolean {
+  try {
+    return localStorage.getItem(SEEN_PREFIX + title) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markSeen(title: string): void {
+  try {
+    localStorage.setItem(SEEN_PREFIX + title, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+export function HowItWorks({ block, defaultOpen = false, remember = true }: Props) {
+  // Open by default only the first time — after that the screen leads with work, not help.
+  const [open, setOpen] = useState(
+    () => defaultOpen && !(remember && wasSeen(block.title)),
+  );
+
+  useEffect(() => {
+    if (remember && open) markSeen(block.title);
+  }, [remember, open, block.title]);
   const panelId = useId();
 
   return (
@@ -19,7 +46,9 @@ export function HowItWorks({ block, defaultOpen = false }: Props) {
         className={styles.toggle}
         aria-expanded={open}
         aria-controls={panelId}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          setOpen((v) => !v);
+        }}
       >
         <span className={styles.mark} aria-hidden>
           ?

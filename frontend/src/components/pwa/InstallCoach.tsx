@@ -29,7 +29,8 @@ export function InstallCoach() {
       setSheet(false);
       return;
     }
-    if (!isInstallSnoozed()) setBanner(true);
+    if (isInstallSnoozed()) return;
+    setBanner(true);
     if (!installSheetShownToday()) {
       setSheet(true);
       markInstallSheetDay();
@@ -76,20 +77,24 @@ export function InstallCoach() {
 
   return (
     <>
-      {banner && !sheet ? (
-        <div className={styles.banner} role="status">
-          <p className={styles.bannerText}>
-            התקינו למסך הבית — כמו אפליקציה, בלי שורת כתובת.
-          </p>
-          <div className={styles.bannerActions}>
-            <button type="button" className={styles.bannerCta} onClick={() => void onInstallNow()}>
-              התקן
-            </button>
-            <button type="button" className={styles.bannerDismiss} onClick={dismissAll}>
-              אחר כך
-            </button>
-          </div>
-        </div>
+      {banner ? (
+        <span className={styles.chipGroup}>
+          <button
+            type="button"
+            className={styles.chipCta}
+            onClick={() => void onInstallNow()}
+          >
+            התקנה
+          </button>
+          <button
+            type="button"
+            className={styles.chipDismiss}
+            onClick={dismissAll}
+            aria-label="הסתר תזכורת התקנה"
+          >
+            ×
+          </button>
+        </span>
       ) : null}
 
       {sheet ? (

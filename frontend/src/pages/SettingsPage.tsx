@@ -261,8 +261,13 @@ export default function SettingsPage() {
             <span className={`${styles.chip} ${status?.google_server ? styles.ok : styles.warn}`}>
               {status?.google_server ? "מוגדר" : "חסר"}
             </span>
-            <span className={`${styles.chip} ${status?.maps_mode === "live" ? styles.ok : styles.demo}`}>
-              מפות: {status?.maps_mode === "live" ? "חי" : "הדגמה"}
+            <span className={`${styles.chip} ${status?.maps_mode === "mock" ? styles.demo : styles.ok}`}>
+              מפות:{" "}
+              {status?.maps_mode === "live"
+                ? "Google"
+                : status?.maps_mode === "osm"
+                  ? "OpenStreetMap (חינמי)"
+                  : "הדגמה"}
             </span>
           </li>
           <li className={styles.statusItem}>

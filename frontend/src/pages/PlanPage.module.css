@@ -104,13 +104,6 @@
   opacity: 0.9;
 }
 
-.planNote {
-  margin: 0 0 var(--space-16);
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--text-secondary);
-}
-
 .planNoteMuted {
   margin: 0 0 var(--space-12);
   font-size: 12px;
@@ -261,38 +254,6 @@
   color: var(--text-muted);
 }
 
-.liveQuickLinks {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-8);
-  margin-top: var(--space-12);
-}
-
-.liveQuickPrimary,
-.liveQuickGhost {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 48px;
-  padding: 0 12px;
-  border-radius: var(--radius-12);
-  font-weight: 700;
-  font-size: 14px;
-  text-decoration: none;
-  text-align: center;
-}
-
-.liveQuickPrimary {
-  background: var(--primary-050);
-  border: 1px solid var(--border-brass);
-  color: var(--brass-700);
-}
-
-.liveQuickGhost {
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-}
-
 .tabs {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -338,10 +299,22 @@
 
 .optimizeBar {
   position: sticky;
-  bottom: calc(var(--bottomnav-h) + var(--space-8));
+  bottom: calc(
+    var(--bottomnav-h) + var(--hud-h, 0px) + var(--space-8) +
+      env(safe-area-inset-bottom, 0px)
+  );
   z-index: 20;
   margin-top: var(--space-8);
   padding-top: var(--space-8);
+}
+
+/* Mid-round the HUD owns the bottom edge — recalculation stays in the flow. */
+.optimizeBarInline {
+  position: static;
+}
+
+.optimizeBarIdle {
+  display: none;
 }
 
 .optimizeInner {
@@ -349,7 +322,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-8);
-  padding: var(--space-12);
+  padding: var(--space-8);
   border-radius: var(--radius-16);
   border: 1px solid var(--border-brass);
   background: var(--nav-bg);
@@ -372,8 +345,7 @@
   width: 100%;
 }
 
-.optProgress,
-.optHint {
+.optProgress {
   margin: 0;
   text-align: center;
   font-size: 13px;

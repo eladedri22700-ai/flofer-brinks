@@ -1,49 +1,38 @@
-.banner {
-  display: flex;
-  flex-wrap: wrap;
+.chipGroup {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-8);
-  padding: 10px var(--space-16);
-  background: color-mix(in srgb, var(--primary-050) 80%, var(--surface-1));
-  border-bottom: 1px solid var(--border-brass);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-brass);
+  background: var(--surface-1);
+  overflow: hidden;
 }
 
-.bannerText {
-  margin: 0;
-  flex: 1 1 14rem;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.4;
-  color: var(--text-secondary);
-}
-
-.bannerActions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.bannerCta,
-.bannerDismiss {
-  min-height: 40px;
-  padding: 0 14px;
-  border-radius: var(--radius-12);
+.chipCta,
+.chipDismiss {
+  min-height: 32px;
+  border: 0;
+  background: transparent;
   font-weight: 700;
   font-size: 13px;
   cursor: pointer;
+  color: var(--brass-700);
 }
 
-.bannerCta {
-  border: 1px solid var(--border-brass);
-  background: var(--gold-metallic);
-  color: var(--text-inverse);
+.chipCta {
+  padding: 0 12px;
 }
 
-.bannerDismiss {
-  border: 1px solid var(--border);
-  background: transparent;
+.chipDismiss {
+  min-width: 32px;
+  padding: 0 8px;
+  font-size: 18px;
+  line-height: 1;
   color: var(--text-muted);
+  border-inline-start: 1px solid var(--border);
+}
+
+:global([data-theme="dark"]) .chipCta {
+  color: var(--brass-400);
 }
 
 .overlay {

@@ -15,7 +15,6 @@ import { BottomNav } from "./BottomNav";
 import { MoreSheet } from "./MoreSheet";
 import { StopDetailSheet } from "../overlays/StopDetailSheet";
 import { FullRoundSheet } from "../overlays/FullRoundSheet";
-import { isStandaloneDisplay } from "../../lib/onboarding";
 import { syncThemeColor } from "../../lib/standalone";
 import { useChromeStore } from "../../store/chromeStore";
 import styles from "./AppLayout.module.css";
@@ -54,7 +53,6 @@ export function AppLayout() {
   const pathImmersive = IMMERSIVE_PREFIXES.some((p) => location.pathname.startsWith(p));
   const boardMode = pathImmersive || (location.pathname.startsWith("/app/live") && drivingLocked);
   const roundLive = isRoundLive(routeQ.data?.status);
-  const standalone = isStandaloneDisplay();
   const liveHud =
     roundLive &&
     Boolean(nextOpenStop(sortedStops(routeQ.data))) &&
@@ -79,24 +77,35 @@ export function AppLayout() {
       <a href="#main" className={styles.skip}>
         דלג לתוכן
       </a>
-      {sandbox ? (
-        <div className={styles.sandboxBanner} role="status">
-          סביבת בדיקה · לא משפיע על דניאל (FLOFER)
-        </div>
-      ) : null}
-      {demoMode && !boardMode ? (
-        <div className={styles.demoBanner} role="status">
-          מצב הדגמה פעיל
-        </div>
-      ) : null}
-      {boardMode ? null : <PwaUpdateBanner />}
-      {boardMode ? null : <OfflineBanner />}
-      {boardMode ? null : <InstallCoach />}
-      {boardMode || standalone ? null : (
-        <header className={styles.brandBar}>
-          <BrandLockup size="sm" markSize={30} />
+      {boardMode ? null : (
+        <header className={styles.topChrome}>
+          <div className={styles.brandBar}>
+            <span className={styles.brandWrap}>
+              <BrandLockup size="sm" markSize={28} />
+            </span>
+            <div className={styles.chips}>
+              {sandbox ? (
+                <span className={`${styles.chip} ${styles.chipSandbox}`} role="status">
+                  בדיקה
+                </span>
+              ) : null}
+              {demoMode ? (
+                <span className={`${styles.chip} ${styles.chipDemo}`} role="status">
+                  הדגמה
+                </span>
+              ) : null}
+              <InstallCoach />
+            </div>
+          </div>
+          <PwaUpdateBanner />
+          <OfflineBanner />
         </header>
       )}
+      {boardMode && sandbox ? (
+        <div className={styles.sandboxStrip} role="status">
+          סביבת בדיקה
+        </div>
+      ) : null}
       <main
         id="main"
         className={boardMode ? styles.bodyBleed : styles.body}

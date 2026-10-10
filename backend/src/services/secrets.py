@@ -68,7 +68,16 @@ def keys_status() -> dict:
         "google_browser": bool(s.google_maps_browser_key.strip()),
         "anthropic": bool(s.anthropic_api_key.strip()),
         "telegram": bool(s.telegram_bot_token.strip()),
-        "maps_mode": "live" if s.maps_live else "mock",
+        # live = Google · osm = free OpenStreetMap fallback · mock = offline demo
+        "maps_mode": _maps_mode(s),
         "ocr_mode": "live" if s.ocr_live else "mock",
         "telegram_mode": "live" if s.telegram_live else "off",
     }
+
+
+def _maps_mode(s) -> str:
+    from src.services.maps import google_ready
+
+    if google_ready():
+        return "live"
+    return "osm" if s.free_geo else "mock"

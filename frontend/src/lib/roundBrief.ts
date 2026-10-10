@@ -25,7 +25,7 @@ export function returnTimeLabel(route: RouteDto | null | undefined): string {
   if (!route) return "—";
   const expl = route.solver_explanation;
   if (expl && typeof expl.return_hm === "string" && expl.return_hm) {
-    return String(expl.return_hm);
+    return clockHm(String(expl.return_hm));
   }
   if (expl && typeof expl.return_at === "string" && expl.return_at) {
     return formatTimeHe(String(expl.return_at));
@@ -33,6 +33,14 @@ export function returnTimeLabel(route: RouteDto | null | undefined): string {
   const stops = sortedStops(route);
   const last = [...stops].reverse().find((s) => s.eta);
   return last?.eta ? formatTimeHe(last.eta) : "—";
+}
+
+/** Older rounds stored minutes past midnight as e.g. "29:12" — show wall-clock time. */
+function clockHm(hm: string): string {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hm.trim());
+  if (!m) return hm;
+  const h = Number(m[1]) % 24;
+  return `${String(h).padStart(2, "0")}:${m[2]}`;
 }
 
 export function roundStatusHe(status: string | undefined): string {

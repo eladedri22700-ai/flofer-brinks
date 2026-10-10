@@ -82,7 +82,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: calc(8px + env(safe-area-inset-top, 0px)) 24px calc(26px + env(safe-area-inset-bottom, 0px));
+  /* Bottom room for the floating SOS button so it never covers an action. */
+  padding: calc(8px + env(safe-area-inset-top, 0px)) 24px calc(96px + env(safe-area-inset-bottom, 0px));
   gap: 14px;
 }
 
@@ -266,7 +267,8 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--field-muted-dark-quiet);
-  padding: 6px;
+  min-height: 44px;
+  padding: 6px 10px;
 }
 .utilDot {
   color: var(--field-muted-dark-quiet);

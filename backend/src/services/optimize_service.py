@@ -24,6 +24,12 @@ from src.services.optimizer import (
 )
 
 
+
+def _clock_hm(minutes_from_midnight: int) -> str:
+    """Wall-clock HH:MM — a return past midnight reads 01:10, not 25:10."""
+    m = minutes_from_midnight % (24 * 60)
+    return f"{m // 60:02d}:{m % 60:02d}"
+
 def _stop_inputs(ordered: list[Stop]) -> list[StopInput]:
     inputs: list[StopInput] = []
     for s in ordered:
@@ -186,11 +192,7 @@ async def optimize_route(db: Session, route: Route) -> dict[str, Any]:
             st.eta = _min_to_dt(route.date, mins)
 
     savings = max(0, naive - (result.duration_min or 0))
-    return_hm = (
-        f"{result.return_min // 60:02d}:{result.return_min % 60:02d}"
-        if result.return_min is not None
-        else None
-    )
+    return_hm = _clock_hm(result.return_min) if result.return_min is not None else None
     explanation = {
         **result.explanation,
         "depot_name": depot.name,
@@ -342,7 +344,9 @@ async def apply_order_etas(
     if set_status is not None:
         route.status = set_status
     explanation = dict(route.solver_explanation or {})
-    explanation["return_hm"] = f"{return_min // 60:02d}:{return_min % 60:02d}"
+    explanation["return_hm"] = _clock_hm(return_min)
+    # Keep return_at in sync — Live reads it for the adjusted return ETA.
+    explanation["return_at"] = _min_to_dt(route.date, return_min).isoformat()
     route.solver_explanation = explanation
     flag_modified(route, "solver_explanation")
     db.commit()

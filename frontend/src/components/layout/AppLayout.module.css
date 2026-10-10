@@ -28,50 +28,83 @@
   top: var(--space-12);
 }
 
-.sandboxBanner {
-  position: sticky;
-  top: 0;
-  z-index: 41;
-  padding: 8px var(--space-20);
-  text-align: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: #1e3a8a;
-  background: rgba(37, 99, 235, 0.14);
-  border-bottom: 1px solid rgba(37, 99, 235, 0.28);
-}
-
-:global([data-theme="dark"]) .sandboxBanner {
-  color: #93c5fd;
-  background: rgba(37, 99, 235, 0.22);
-}
-
-.demoBanner {
+.topChrome {
   position: sticky;
   top: 0;
   z-index: 40;
-  padding: 8px var(--space-20);
-  text-align: center;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--brass-400);
-  background: oklch(72% 0.15 55 / 16%);
-  border-bottom: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface-1) 88%, transparent);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  border-bottom: 1px solid var(--border);
 }
 
 .brandBar {
-  position: sticky;
-  top: 0;
-  z-index: 35;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  width: min(var(--content-max), 100%);
   min-height: 52px;
-  padding: var(--space-8) var(--space-16);
-  background: color-mix(in srgb, var(--surface-1) 90%, transparent);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--border);
+  margin-inline: auto;
+  padding: 6px var(--space-16);
+}
+
+.brandWrap {
+  display: flex;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+/* Narrow phones with several status chips: keep just the shield mark. */
+@media (max-width: 400px) {
+  .brandBar:has(.chips > :nth-child(2)) .brandWrap :is(p, span, h1) {
+    display: none;
+  }
+}
+
+.chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.chipSandbox {
+  color: var(--info);
+  background: var(--info-bg);
+  border: 1px solid color-mix(in srgb, var(--info) 35%, transparent);
+}
+
+.chipDemo {
+  color: var(--warning);
+  background: var(--warning-bg);
+  border: 1px solid color-mix(in srgb, var(--warning) 35%, transparent);
+}
+
+.sandboxStrip {
+  position: fixed;
+  inset-inline-start: 50%;
+  bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(50%);
+  z-index: 60;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--info);
+  background: var(--info-bg);
+  pointer-events: none;
 }
 
 .body {

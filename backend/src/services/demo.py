@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from src.models.customer import Customer
 from src.models.leg_sample import LegSample
 from src.models.route import Route
+from src.models.route_event import RouteEvent
 from src.models.service_sample import ServiceSample
 from src.models.stop import Stop
 from src.models.user_settings import UserSettings
@@ -23,7 +24,8 @@ DEMO_PREFIX_LEGACY = "[דמו] "
 
 
 def _demo_name(user_id: int, name: str) -> str:
-    return f"[דמו u{user_id}] {name}"
+    # Isolation is by normalized_address (demo:{user_id}:...) — the name is display only.
+    return f"{name} · דמו"
 
 
 def _demo_addr_key(user_id: int, addr: str) -> str:
@@ -72,6 +74,10 @@ def purge_demo(db: Session, user_id: int) -> None:
             )
         db.query(Stop).filter(Stop.route_id.in_(route_ids)).delete(synchronize_session=False)
         db.query(WorkDay).filter(WorkDay.route_id.in_(route_ids)).delete(synchronize_session=False)
+        # Started demo rounds have an event log (start/arrive/sos…) referencing the route.
+        db.query(RouteEvent).filter(RouteEvent.route_id.in_(route_ids)).delete(
+            synchronize_session=False
+        )
         db.query(Route).filter(Route.id.in_(route_ids)).delete(synchronize_session=False)
 
     # Only this user's demo customers — never wipe another pilot's demo seed.

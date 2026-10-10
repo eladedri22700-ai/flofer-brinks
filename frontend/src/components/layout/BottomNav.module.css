@@ -40,8 +40,13 @@
 }
 
 .active {
-  color: var(--brass-600);
+  color: var(--brass-700);
   background: var(--primary-050);
+  font-weight: 700;
+}
+
+:global([data-theme="dark"]) .active {
+  color: var(--brass-400);
 }
 
 .iconWrap {

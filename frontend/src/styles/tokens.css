@@ -28,7 +28,7 @@
 
   --text-primary: #0b1f3a;
   --text-secondary: #3d516c;
-  --text-muted: #7a8ba3;
+  --text-muted: #5b6c85; /* ≥4.5:1 on white for small labels */
   --text-inverse: #0b1f3a;
 
   --primary: #0f2d52;

@@ -13,7 +13,7 @@ export default function HelpPage() {
         lead="ארבעה צעדים פשוטים. בלי מונחים מסובכים — רק מה שצריך בשטח."
       />
 
-      <HowItWorks block={HELP_DAY} defaultOpen />
+      <HowItWorks block={HELP_DAY} defaultOpen remember={false} />
 
       <ol className={styles.steps}>
         {HELP_DAY_STEPS.map((s) => (

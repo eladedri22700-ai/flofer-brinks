@@ -13,8 +13,8 @@ class KeysStatusResponse(BaseModel):
     google_browser: bool
     anthropic: bool
     telegram: bool = False
-    maps_mode: str = Field(description="mock | live")
-    ocr_mode: str = Field(description="mock | live")
+    maps_mode: str = Field(description="live | osm | mock")
+    ocr_mode: str = Field(description="live | osm | mock")
     telegram_mode: str = Field(default="off", description="off | live")
 
 

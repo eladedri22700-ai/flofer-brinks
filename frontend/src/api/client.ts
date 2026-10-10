@@ -90,14 +90,14 @@ export type KeysStatus = {
   google_browser: boolean;
   anthropic: boolean;
   telegram?: boolean;
-  maps_mode: "mock" | "live";
+  maps_mode: "mock" | "osm" | "live";
   ocr_mode: "mock" | "live";
   telegram_mode?: "off" | "live";
 };
 
 export type PublicConfig = {
   google_maps_browser_key: string | null;
-  maps_mode: "mock" | "live";
+  maps_mode: "mock" | "osm" | "live";
   ocr_mode: "mock" | "live";
 };
 

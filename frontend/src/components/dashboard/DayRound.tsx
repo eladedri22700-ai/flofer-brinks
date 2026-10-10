@@ -57,7 +57,12 @@ export function DayRound({ route }: Props) {
         <div className={styles.heroRow}>
           <div className={`${styles.heroNum} num`}>{returnHm}</div>
           {savingsMin != null && savingsMin > 0 ? (
-            <span className={styles.savings}>−{savingsMin} דק׳</span>
+            <span
+              className={styles.savings}
+              title="כמה דקות חסך סדר הסבב לעומת סדר הרשימה המקורי"
+            >
+              חסכתם {savingsMin} דק׳
+            </span>
           ) : null}
         </div>
         <div className={styles.rail}>

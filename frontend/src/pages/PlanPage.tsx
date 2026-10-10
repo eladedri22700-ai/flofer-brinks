@@ -432,6 +432,7 @@ export default function PlanPage() {
           block={live ? HELP_PLAN_LIVE : HELP_PLAN}
           defaultOpen={!live && stopCount === 0}
         />
+        {live ? null : (
         <div className={styles.steps} aria-label={`שלב ${step} מתוך 3`}>
           <div className={styles.stepOn}>
             <span className={styles.stepNum}>1</span>
@@ -448,6 +449,7 @@ export default function PlanPage() {
             נסיעה
           </div>
         </div>
+        )}
       </header>
 
       {depotQ.data ? (
@@ -464,8 +466,8 @@ export default function PlanPage() {
 
       {mockMaps ? (
         <StatusBanner tone="brass">
-          כתובות במצב הדגמה.{" "}
-          <Link to="/app/settings">חיבור Google Maps</Link>
+          אין חיבור לשירות מפות — הכתובות במצב הדגמה.{" "}
+          <Link to="/app/settings">הגדרות</Link>
         </StatusBanner>
       ) : null}
 
@@ -486,92 +488,6 @@ export default function PlanPage() {
         </StatusBanner>
       ) : null}
 
-      <Card className={styles.quickCard}>
-        <p className={styles.planNote}>
-          {live
-            ? "בזמן נסיעה: הוסיפו מצילום מסך למטה, גררו ברשימה לשינוי סדר, או לחצו «הסר» ליעד לא רלוונטי. לניהול מהיר עם מפה — «סדר הנקודות»."
-            : (
-              <>
-                אחרי «חשב מסלול» תאשרו את הסדר על המפה — ושם לוחצים{" "}
-                <strong>התחל סבב</strong>. שעת היציאה נקבעת בלחיצה, לא מראש.
-              </>
-            )}
-        </p>
-        {live ? (
-          <div className={styles.liveQuickLinks}>
-            <Link to="/app/route" className={styles.liveQuickPrimary}>
-              שנה סדר / הסר יעד
-            </Link>
-            <Link to="/app/live" className={styles.liveQuickGhost}>
-              חזרה לנסיעה
-            </Link>
-          </div>
-        ) : null}
-        <div className={styles.settingsRow}>
-          <span className={styles.settingsLabel}>הפסקת צהריים</span>
-          <div className={styles.chips}>
-            {[30, 45, 60].map((m) => {
-              const on = route.break_duration_min === m;
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  className={on ? styles.chipOn : styles.chip}
-                  aria-pressed={on}
-                  onClick={() => patchRouteM.mutate({ break_duration_min: m })}
-                >
-                  {m} דק'
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <button
-          type="button"
-          className={styles.advancedToggle}
-          aria-expanded={advancedOpen}
-          onClick={() => setAdvancedOpen((v) => !v)}
-        >
-          {advancedOpen ? "הסתר הגדרות נוספות" : "הגדרות נוספות"}
-        </button>
-        {advancedOpen ? (
-          <>
-            <div className={styles.settingsRow}>
-              <span className={styles.settingsLabel}>הערכת תכנון (אופציונלי)</span>
-              <label className={styles.timePick}>
-                <span className={styles.srOnly}>שעה להערכת מסלול לפני יציאה</span>
-                <input
-                  className={`${styles.timeInput} num`}
-                  type="time"
-                  value={route.departure_time.slice(0, 5)}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (!v) return;
-                    patchRouteM.mutate({ departure_time: `${v}:00` });
-                  }}
-                />
-              </label>
-            </div>
-            <p className={styles.planNoteMuted}>
-              משמש רק לחישוב מקדים. בלחיצת «התחל סבב» הזמנים מתעדכנים לפי השעה
-              האמיתית.
-            </p>
-            <label className={styles.check}>
-              <input
-                type="checkbox"
-                checked={route.variance_mode}
-                onChange={(e) =>
-                  patchRouteM.mutate({ variance_mode: e.target.checked })
-                }
-              />
-              <span>
-                גיוון מסלול
-                <small>מסלול שונה מעט מהימים הקודמים</small>
-              </span>
-            </label>
-          </>
-        ) : null}
-      </Card>
 
       <section
         className={styles.section}
@@ -679,7 +595,77 @@ export default function PlanPage() {
         )}
       </section>
 
-      <div className={styles.optimizeBar} data-tour="plan-optimize">
+      <Card className={styles.quickCard} aria-label="הגדרות סבב">
+        <div className={styles.settingsRow}>
+          <span className={styles.settingsLabel}>הפסקת צהריים</span>
+          <div className={styles.chips}>
+            {[30, 45, 60].map((m) => {
+              const on = route.break_duration_min === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  className={on ? styles.chipOn : styles.chip}
+                  aria-pressed={on}
+                  onClick={() => patchRouteM.mutate({ break_duration_min: m })}
+                >
+                  {m} דק'
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <button
+          type="button"
+          className={styles.advancedToggle}
+          aria-expanded={advancedOpen}
+          onClick={() => setAdvancedOpen((v) => !v)}
+        >
+          {advancedOpen ? "הסתר הגדרות נוספות" : "הגדרות נוספות"}
+        </button>
+        {advancedOpen ? (
+          <>
+            <div className={styles.settingsRow}>
+              <span className={styles.settingsLabel}>הערכת תכנון (אופציונלי)</span>
+              <label className={styles.timePick}>
+                <span className={styles.srOnly}>שעה להערכת מסלול לפני יציאה</span>
+                <input
+                  className={`${styles.timeInput} num`}
+                  type="time"
+                  value={route.departure_time.slice(0, 5)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (!v) return;
+                    patchRouteM.mutate({ departure_time: `${v}:00` });
+                  }}
+                />
+              </label>
+            </div>
+            <p className={styles.planNoteMuted}>
+              משמש רק לחישוב מקדים. בלחיצת «התחל סבב» הזמנים מתעדכנים לפי השעה
+              האמיתית.
+            </p>
+            <label className={styles.check}>
+              <input
+                type="checkbox"
+                checked={route.variance_mode}
+                onChange={(e) =>
+                  patchRouteM.mutate({ variance_mode: e.target.checked })
+                }
+              />
+              <span>
+                גיוון מסלול
+                <small>מסלול שונה מעט מהימים הקודמים</small>
+              </span>
+            </label>
+          </>
+        ) : null}
+      </Card>
+
+      <div
+        className={`${styles.optimizeBar} ${stopCount === 0 ? styles.optimizeBarIdle : ""} ${live ? styles.optimizeBarInline : ""}`}
+        data-tour="plan-optimize"
+      >
         <div className={styles.optimizeInner}>
           <Button
             size="lg"
@@ -700,12 +686,7 @@ export default function PlanPage() {
                 ? "מחשב מסלול גדול — זה עשוי לקחת עד חצי דקה…"
                 : OPT_STEPS[optStep]}
             </p>
-          ) : (
-            <p className={styles.optHint}>
-              החישוב ממזער את שעת החזרה לברינקס (יציאה→חזרה), כולל פקקים וזמני
-              שירות — עד {MAX_STOPS} יעדים לסבב.
-            </p>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
