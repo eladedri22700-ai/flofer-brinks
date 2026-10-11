@@ -149,6 +149,7 @@ async def live_reforecast(
         departure_time=time(now.hour, now.minute),
         route_date=now,
         force_refresh=True,
+        allow_google=False,
     )
 
     live = await traffic.live_legs(coords)

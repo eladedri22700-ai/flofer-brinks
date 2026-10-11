@@ -155,7 +155,10 @@ async def build_matrices(
     departure_time: time,
     route_date: datetime | None = None,
     force_refresh: bool = False,
+    allow_google: bool = True,
 ) -> dict[str, list[list[int]]]:
+    """allow_google=False for frequent live re-forecasts: Google bills per matrix
+    element, so live updates use the free router (+ learning, + TomTom traffic)."""
     cache_key = (route_id, departure_time.isoformat())
     if not force_refresh and cache_key in _MATRIX_CACHE:
         return _MATRIX_CACHE[cache_key]
@@ -166,7 +169,7 @@ async def build_matrices(
     matrices: dict[str, list[list[int]]] | None = None
     # Cache only the best source available, so Google is retried once it recovers.
     cacheable = not settings.maps_live
-    if maps.google_ready():
+    if allow_google and maps.google_ready():
         try:
             matrices = await _google_matrices(coords, departure_time, day)
             cacheable = True

@@ -540,6 +540,7 @@ async def _solve_remaining(
         departure_time=dep_time,
         route_date=now_local,
         force_refresh=True,
+        allow_google=False,
     )
     current_order_ids = [s.id for s in pending]
     naive = naive_duration_min(
@@ -666,6 +667,7 @@ async def what_if_add_stop(db: Session, route: Route, body) -> dict[str, Any]:
         departure_time=time(now.hour, now.minute),
         route_date=now,
         force_refresh=True,
+        allow_google=False,
     )
     # Without new stop
     services = [s.service_duration_min for s in pending]
