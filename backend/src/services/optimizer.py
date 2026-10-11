@@ -85,10 +85,15 @@ def simulate_route_duration(
     break_duration: int,
     break_window: tuple[int, int],
     place_break: bool = True,
+    tw_starts: list[int | None] | None = None,
 ) -> tuple[int, list[int], int | None]:
     """
-    Walk a stop order (node indices into coords matrix, 0=depot).
-    Returns (return_min, arrival_mins_per_stop_in_order, break_start_min).
+    Walk a stop order (node indices into coords matrix, 0=depot) at the
+    earliest feasible times. Returns (return_min, arrivals_in_order, break_start).
+
+    - waits only where a stop opens later (tw_starts, aligned with stop_indices)
+    - lunch is taken only if the round is still running inside the break window;
+      a round that is back before the window never waits for lunch.
     """
     t = departure_min
     arrivals: list[int] = []
@@ -119,21 +124,74 @@ def simulate_route_duration(
         travel = mat[i][j]
         t += travel
         if j != 0:
-            arrivals.append(t)
-            # service at stop
             idx_in_services = stop_indices.index(j)
+            opens = tw_starts[idx_in_services] if tw_starts else None
+            if opens is not None and t < opens:
+                t = opens
+            arrivals.append(t)
             t += services[idx_in_services]
         # if break never placed and we're past window, force after last stop before return
-    if not break_placed and place_break:
-        # insert before return
-        wait = max(0, bw0 - t)
-        t += wait
+    if not break_placed and place_break and bw0 <= t:
+        # Still out when the lunch window opened: break before driving back.
         break_start = t
         t += break_duration
     return t, arrivals, break_start
 
 
-def solve_vrptw(
+def solve_vrptw(**kwargs) -> SolveResult:
+    """Solve, then report a realistic (earliest-time) schedule for the chosen order.
+
+    The lunch break is a mandatory node inside its window in the model, which
+    forced short morning rounds to idle until 11:30 and spread waiting slack
+    between stops. Now: try without a break first and keep that plan if the
+    crew is back before the window opens; only otherwise add the break.
+    """
+    include_break = kwargs.pop("include_break", True)
+    result = _solve_once(include_break=False, **kwargs)
+    bw0 = _tmin(kwargs.get("break_window_start")) or (11 * 60 + 30)
+    needs_break = include_break and (
+        not result.feasible or result.return_min is None or result.return_min > bw0
+    )
+    if needs_break:
+        with_break = _solve_once(include_break=True, **kwargs)
+        if with_break.feasible or not result.feasible:
+            result = with_break
+    if result.feasible and result.sequence_stop_ids:
+        _earliest_schedule(result, include_break=include_break, **kwargs)
+    return result
+
+
+def _earliest_schedule(result: SolveResult, *, include_break: bool, **kw) -> None:
+    """Replace solver cumul values (may contain slack) with earliest arrivals."""
+    stops: list[StopInput] = kw["stops"]
+    by_id = {s.stop_id: (i + 1, s) for i, s in enumerate(stops)}
+    seq = [by_id[sid] for sid in result.sequence_stop_ids if sid in by_id]
+    departure = _tmin(kw["departure_time"]) or 0
+    ret, arrivals, break_start = simulate_route_duration(
+        kw["matrices"],
+        stop_indices=[node for node, _ in seq],
+        services=[max(0, s.service_min) for _, s in seq],
+        departure_min=departure,
+        break_duration=kw.get("break_duration_min", 0) if include_break else 0,
+        break_window=(
+            _tmin(kw.get("break_window_start")) or (11 * 60 + 30),
+            _tmin(kw.get("break_window_end")) or (14 * 60),
+        ),
+        place_break=include_break and kw.get("break_duration_min", 0) > 0,
+        tw_starts=[_tmin(s.tw_start) if s.tw_type in ("after", "window") else None for _, s in seq],
+    )
+    result.etas_min_from_midnight = {s.stop_id: a for (_, s), a in zip(seq, arrivals)}
+    result.return_min = ret
+    result.duration_min = ret - departure
+    result.break_start_min = break_start
+    result.explanation["makespan_min"] = ret
+    result.explanation["break_start_min"] = break_start
+    if break_start is None:
+        result.explanation["break_after_stop_id"] = None
+        result.explanation["break_reason_he"] = "לא נדרשה הפסקה — הסבב מסתיים לפני חלון ההפסקה."
+
+
+def _solve_once(
     *,
     matrices: dict[str, list[list[int]]],
     stops: list[StopInput],

@@ -139,7 +139,7 @@ async def resolve_coords(body: StopCreate) -> tuple[float, float, str, float]:
     if body.lat is not None and body.lng is not None:
         conf = body.geocode_confidence if body.geocode_confidence is not None else 1.0
         return body.lat, body.lng, body.address, conf
-    geo = await maps.geocode(body.address)
+    geo = await maps.geocode(body.address, name=body.customer_name)
     return geo["lat"], geo["lng"], geo["formatted_address"], float(geo["confidence"])
 
 

@@ -10,6 +10,7 @@ All calls are best-effort: callers catch ``FreeGeoError`` and fall back further.
 from __future__ import annotations
 
 import asyncio
+import re
 import logging
 import time as _time
 from urllib.parse import quote, unquote
@@ -104,7 +105,7 @@ async def autocomplete(
     return out
 
 
-async def geocode(address: str) -> dict:
+async def nominatim_geocode(address: str) -> dict:
     global _nominatim_last
     params = {
         "q": address,
@@ -146,6 +147,117 @@ async def geocode(address: str) -> dict:
         "location_type": location_type,
         "confidence": confidence,
     }
+
+
+# ---------------------------------------------------------------------------
+# Robust Hebrew geocoding: normalise → Photon → Nominatim → business name.
+# ---------------------------------------------------------------------------
+
+_ABBREV = [
+    (r'ת["״]א', "תל אביב"),
+    (r'ר["״]ג', "רמת גן"),
+    (r'פ["״]ת', "פתח תקווה"),
+    (r'ב["״]ב', "בני ברק"),
+    (r'ראשל["״]צ', "ראשון לציון"),
+    (r'ק["״]ש', "קריית שמונה"),
+    (r'(^|\s)י-?ם($|\s|,)', r"\1ירושלים\2"),
+    (r"(^|\s)שד['׳]\s*", r"\1שדרות "),
+    (r"(^|\s)רח['׳]\s*", r"\1"),
+    (r"(^|\s)רחוב\s+", r"\1"),
+    (r"(^|\s)דר['׳]\s*", r"\1דרך "),
+]
+_NOISE = re.compile(
+    r"\(.*?\)|(קומה|דירה|כניסה|בניין|ת\.?ד\.?|מיקוד)\s*[\w\d-]*|טל['׳]?[:\s]*[\d-]{7,}",
+)
+
+
+def normalize_address(address: str) -> str:
+    """Clean OCR / typed Hebrew addresses so OSM search engines match them."""
+    s = (address or "").replace("\n", " ").strip()
+    s = _NOISE.sub(" ", s)
+    for pat, rep in _ABBREV:
+        s = re.sub(pat, rep, s)
+    s = re.sub(r"\s*,\s*", ", ", s)
+    s = re.sub(r"\s{2,}", " ", s).strip(" ,-")
+    return s
+
+
+def _photon_confidence(kind: str | None) -> tuple[str, float]:
+    if kind == "house":
+        return "ROOFTOP", 0.9
+    if kind in ("street", "other"):
+        return "RANGE_INTERPOLATED", 0.6
+    return "APPROXIMATE", 0.3
+
+
+async def photon_geocode(query: str, *, poi: bool = False) -> dict:
+    params = {"q": query, "limit": "1", "lat": "31.9", "lon": "34.85", "bbox": "34.2,29.4,35.9,33.4"}
+    try:
+        async with httpx.AsyncClient(timeout=10.0, headers={"User-Agent": USER_AGENT}) as client:
+            res = await client.get("https://photon.komoot.io/api/", params=params)
+            res.raise_for_status()
+            data = res.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise FreeGeoError(f"photon: {exc}") from exc
+    feats = data.get("features") or []
+    if not feats:
+        raise FreeGeoError("photon: no results")
+    feat = feats[0]
+    lng, lat = feat["geometry"]["coordinates"]
+    props = feat.get("properties") or {}
+    location_type, confidence = _photon_confidence(props.get("type"))
+    if poi and props.get("type") not in ("city", "district", "locality", "county", "state"):
+        location_type, confidence = "ROOFTOP", 0.75
+    return {
+        "formatted_address": _photon_label(props) or query,
+        "lat": float(lat),
+        "lng": float(lng),
+        "location_type": location_type,
+        "confidence": confidence,
+        "_city": props.get("city") or props.get("town") or props.get("village") or "",
+    }
+
+
+def _same_city(result: dict, query: str) -> bool:
+    """Reject matches in a different city than the one written (OSM fuzzy-matches names)."""
+    city = (result.get("_city") or "").replace("־", " ").replace("–", " ").replace("-", " ")
+    q = query.replace("־", " ").replace("–", " ").replace("-", " ")
+    if not city:
+        return True
+    first_word = city.split()[0]
+    known = ("תל", "רמת", "פתח", "בני", "ראשון", "חולון", "בת", "הרצליה", "רעננה", "כפר", "גבעתיים",
+             "ירושלים", "חיפה", "באר", "אשדוד", "נתניה", "רחובות", "יהוד", "אור", "קריית", "לוד", "רמלה")
+    mentions_some_city = any(k in q for k in known)
+    return (first_word in q) or not mentions_some_city
+
+
+async def geocode(address: str, *, name: str | None = None) -> dict:
+    """Best free match for an Israeli address. Raises FreeGeoError if nothing credible."""
+    q = normalize_address(address)
+    candidates: list[dict] = []
+    for attempt in (lambda: photon_geocode(q), lambda: nominatim_geocode(q)):
+        try:
+            res = await attempt()
+        except FreeGeoError:
+            continue
+        if not _same_city(res, q):
+            res["confidence"] = min(res["confidence"], 0.25)
+        candidates.append(res)
+        if res["confidence"] >= 0.6:
+            break
+    best = max(candidates, key=lambda r: r["confidence"], default=None)
+    if (best is None or best["confidence"] < 0.6) and name:
+        # Business name + the address words (e.g. «סופר פארם אבן גבירול»)
+        try:
+            res = await photon_geocode(f"{name} {q}".strip(), poi=True)
+            if _same_city(res, q) and (best is None or res["confidence"] > best["confidence"]):
+                best = res
+        except FreeGeoError:
+            pass
+    if best is None:
+        raise FreeGeoError(f"no match for {address!r}")
+    best.pop("_city", None)
+    return best
 
 
 def _nominatim_label(row: dict) -> str:

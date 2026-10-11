@@ -150,7 +150,7 @@ async def place_details(place_id: str) -> dict:
     }
 
 
-async def geocode(address: str) -> dict:
+async def geocode(address: str, *, name: str | None = None) -> dict:
     google_exc: AppError | None = None
     if google_ready():
         try:
@@ -161,9 +161,16 @@ async def geocode(address: str) -> dict:
             google_exc = exc
     if _free_enabled():
         try:
-            return await free_geo.geocode(address)
+            return await free_geo.geocode(address, name=name)
         except free_geo.FreeGeoError as exc:
             logger.warning("Free geocode failed: %s", exc)
+        # Never invent a location in a real deployment: every unmatched address
+        # used to land on one shared Tel Aviv point and scrambled the route.
+        raise AppError(
+            code="geocode_empty",
+            message_he="הכתובת לא אותרה. בדקו איות או בחרו כתובת מהחיפוש.",
+            status_code=404,
+        )
     if google_exc is not None:
         raise google_exc
     return maps_mock.geocode(address)

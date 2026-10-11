@@ -85,6 +85,68 @@ def _min_to_dt(route_date, minutes: int) -> datetime:
     return base + timedelta(minutes=minutes)
 
 
+# The old offline fallback put every unmatched address on this exact point.
+_FALLBACK_POINT = (32.0853, 34.7818)
+
+
+def _at_fallback_point(lat: float, lng: float) -> bool:
+    return round(lat, 4) == _FALLBACK_POINT[0] and round(lng, 4) == _FALLBACK_POINT[1]
+
+
+async def repair_fallback_locations(db: Session, stops: list[Stop]) -> int:
+    """Re-locate stops (and their customers) still sitting on the fake fallback point."""
+    from src.services import maps
+
+    fixed = 0
+    for st in stops:
+        if st.status != "pending" or not _at_fallback_point(st.lat, st.lng):
+            continue
+        try:
+            geo = await maps.geocode(st.address, name=st.customer_name)
+        except AppError:
+            continue
+        if _at_fallback_point(geo["lat"], geo["lng"]):
+            continue
+        st.lat, st.lng = float(geo["lat"]), float(geo["lng"])
+        cust = st.customer
+        if cust is not None and _at_fallback_point(cust.lat, cust.lng):
+            cust.lat, cust.lng = st.lat, st.lng
+            cust.geocode_confidence = float(geo.get("confidence") or 0.6)
+        fixed += 1
+    if fixed:
+        db.commit()
+    return fixed
+
+
+def _shared_point_conflict(stops: list[Stop]) -> dict[str, Any] | None:
+    """Different addresses on one identical point = failed geocoding; don't solve garbage."""
+    groups: dict[tuple[float, float], set[str]] = {}
+    names: dict[tuple[float, float], list[str]] = {}
+    for st in stops:
+        key = (round(st.lat, 4), round(st.lng, 4))
+        addr = " ".join((st.address or "").split()).casefold()
+        groups.setdefault(key, set()).add(addr)
+        names.setdefault(key, []).append(st.customer_name)
+    bad = [names[k] for k, addrs in groups.items() if len(addrs) >= 2]
+    if not bad:
+        return None
+    listed = "، ".join(n for group in bad for n in group[:6])
+    return {
+        "feasible": False,
+        "conflicts": [
+            {
+                "type": "unlocated_addresses",
+                "message_he": (
+                    "כמה כתובות שונות קיבלו אותה נקודה במפה, כלומר לא אותרו במדויק: "
+                    f"{listed}. פתחו כל יעד ותקנו את הכתובת (או בחרו מהחיפוש), ואז חשבו שוב."
+                ),
+            }
+        ],
+        "options": [],
+        "naive_duration_min": None,
+    }
+
+
 async def optimize_route(db: Session, route: Route) -> dict[str, Any]:
     stops = list(route.stops or [])
     if len(stops) < 2:
@@ -105,6 +167,10 @@ async def optimize_route(db: Session, route: Route) -> dict[str, Any]:
 
     depot = _get_depot(db)
     ordered = sorted(stops, key=lambda s: s.sequence_order)
+    await repair_fallback_locations(db, ordered)
+    conflict = _shared_point_conflict([s for s in ordered if s.status == "pending"])
+    if conflict is not None:
+        return conflict
     inputs = _stop_inputs(ordered)
     coords = [(depot.lat, depot.lng)] + [(inp.lat, inp.lng) for inp in inputs]
 
@@ -343,6 +409,9 @@ async def apply_order_etas(
         break_duration=route.break_duration_min,
         break_window=bw,
         place_break=True,
+        tw_starts=[
+            _tmin(s.tw_start) if s.tw_type in ("after", "window") else None for s in ordered_stops
+        ],
     )
 
     warnings: list[str] = []

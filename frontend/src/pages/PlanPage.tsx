@@ -338,7 +338,13 @@ export default function PlanPage() {
       void qc.invalidateQueries({ queryKey: ["route-today"] });
       emitTourEvent("tour:optimized");
       if (!res.feasible) {
-        show("נמצאו התנגשויות — בחרו אפשרות במסך המסלול", "error");
+        const first = res.conflicts?.[0];
+        if (first?.type === "unlocated_addresses") {
+          // Stay here: the uncertain stops are edited in the list below.
+          show(first.message_he, "error");
+          return;
+        }
+        show(first?.message_he || "נמצאו התנגשויות — בחרו אפשרות במסך המסלול", "error");
         nav("/app/route");
         return;
       }

@@ -147,7 +147,7 @@ async def remember_drafts(db: Session, drafts: list[dict]) -> tuple[int, list[in
         category = str(raw.get("category") or "other")
         try:
             if lat is None or lng is None:
-                geo = await maps.geocode(address)
+                geo = await maps.geocode(address, name=name)
                 lat = float(geo["lat"])
                 lng = float(geo["lng"])
                 address = str(geo.get("formatted_address") or address)

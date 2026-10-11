@@ -122,6 +122,9 @@ async def live_reforecast(
     depot = _depot(db)
     if depot is None:
         return None
+    from src.services.optimize_service import repair_fallback_locations
+
+    await repair_fallback_locations(db, ordered)
     arrived = next((s for s in ordered if s.status == "arrived"), None)
     pending = [s for s in ordered if s.status == "pending"]
 
@@ -176,8 +179,8 @@ async def live_reforecast(
         stop.eta = _min_to_dt(route.date, arr)
         t = arr + stop.service_duration_min
         prev = k
-    if break_left and pending:
-        t = max(t, bw0) + route.break_duration_min
+    if break_left and pending and t >= bw0:
+        t += route.break_duration_min  # still out when lunch window opened
     bucket = hour_to_bucket((t // 60) % 24)
     back = matrices[bucket][prev][len(coords) - 1]
     if live is not None and t - t_start <= LIVE_TRAFFIC_HORIZON_MIN:

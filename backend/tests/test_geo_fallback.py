@@ -17,15 +17,26 @@ def test_osm_place_id_roundtrip():
     assert asyncio.run(maps.place_details(pid))["lng"] == got["lng"]
 
 
-def test_geocode_falls_back_to_mock_when_free_fails(monkeypatch):
-    monkeypatch.setattr(maps, "google_ready", lambda: False)
+def test_unmatched_address_is_an_error_not_a_fake_point(monkeypatch):
+    """Regression: every unmatched address used to land on one Tel Aviv point."""
+    import pytest
 
-    async def boom(_address):
-        raise free_geo.FreeGeoError("offline")
+    monkeypatch.setattr(maps, "google_ready", lambda: False)
+    monkeypatch.setattr(maps, "_free_enabled", lambda: True)
+
+    async def boom(_address, **_kw):
+        raise free_geo.FreeGeoError("no match")
 
     monkeypatch.setattr(free_geo, "geocode", boom)
-    out = asyncio.run(maps.geocode("דיזנגוף 50"))
-    assert "lat" in out and "lng" in out
+    with pytest.raises(AppError) as exc:
+        asyncio.run(maps.geocode("כתובת שלא קיימת 999"))
+    assert exc.value.code == "geocode_empty"
+
+
+def test_normalize_hebrew_abbreviations():
+    assert free_geo.normalize_address("שד' רוטשילד 22 ת\"א") == "שדרות רוטשילד 22 תל אביב"
+    assert free_geo.normalize_address("רח' הרצל 12 קומה 3, ראשל\"צ") == "הרצל 12, ראשון לציון"
+    assert free_geo.normalize_address("ויצמן 80, כפר סבא (כניסה מהחניון)") == "ויצמן 80, כפר סבא"
 
 
 def test_matrix_uses_osrm_when_google_fails(monkeypatch):
@@ -52,3 +63,20 @@ def test_matrix_uses_osrm_when_google_fails(monkeypatch):
     assert out["morning"][0][1] == round(10 * matrix.OSRM_TRAFFIC["morning"])
     # A fallback result is not cached, so Google is retried once it recovers.
     assert (-1, time(7, 0).isoformat()) not in matrix._MATRIX_CACHE
+
+
+def test_shared_point_blocks_optimization():
+    from types import SimpleNamespace as S
+
+    from src.services.optimize_service import _shared_point_conflict
+
+    same = dict(lat=32.0853, lng=34.7818)
+    stops = [
+        S(address="הרצל 1 חולון", customer_name="א", **same),
+        S(address="ויצמן 3 כפר סבא", customer_name="ב", **same),
+        S(address="סוקולוב 40 חולון", customer_name="ג", lat=32.016, lng=34.779),
+    ]
+    out = _shared_point_conflict(stops)
+    assert out is not None and out["feasible"] is False
+    # Two stops at the same building are fine
+    assert _shared_point_conflict([S(address="הרצל 1", customer_name="א", **same), S(address="הרצל 1", customer_name="ב", **same)]) is None
